@@ -1,0 +1,13 @@
+{
+  "name": "sol-mining-app",
+  "version": "1.0.0",
+  "description": "Solana Mining Bot Mini App",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongoose": "^8.3.1"
+  }
+}
