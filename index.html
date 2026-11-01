@@ -533,7 +533,7 @@
             <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 space-y-3">
                 <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">🔗 Your Referral Link</span>
                 <div class="flex items-center space-x-2 bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
-                    <input type="text" id="ref-link-input" value="https://t.me/SolMiningFarmBot?start=000" readonly class="bg-transparent text-xs text-gray-300 w-full outline-none font-mono">
+                    <input type="text" id="ref-link-input" value="https://t.me/SolMiningFarmBot?start=5939907983" readonly class="bg-transparent text-xs text-gray-300 w-full outline-none font-mono">
                     <button onclick="copyRefLink()" class="bg-solPurple hover:bg-solPurple/80 transition text-white text-xs font-bold px-3 py-1.5 rounded-lg shrink-0">
                         Copy
                     </button>
@@ -616,7 +616,7 @@
                     <span>Save Profile & Withdrawal Address</span>
                 </button>
 
-                <!-- Admin Access Button inside Profile (Hidden by default, shown only for Admin Telegram ID) -->
+                <!-- Admin Access Button inside Profile (Hidden by default, shown only for Admin Telegram ID 5939907983) -->
                 <button id="admin-panel-btn" onclick="openAdminPanel()" class="w-full bg-slate-900 hover:bg-slate-800 transition py-2.5 rounded-xl font-bold text-xs text-amber-400 border border-amber-500/30 hidden items-center justify-center space-x-1.5 mt-2">
                     <span>🔐</span>
                     <span>Open Admin Panel (Management)</span>
@@ -692,7 +692,7 @@
                 <button onclick="closeModal('referModal')" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
             </div>
             <p class="text-xs text-gray-300">Share your unique link instantly via Telegram or WhatsApp:</p>
-            <input type="text" id="modal-ref-link-input" value="https://t.me/SolMiningFarmBot?start=000" readonly class="bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white w-full outline-none font-mono">
+            <input type="text" id="modal-ref-link-input" value="https://t.me/SolMiningFarmBot?start=5939907983" readonly class="bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs text-white w-full outline-none font-mono">
             
             <div class="grid grid-cols-2 gap-2 pt-1">
                 <button onclick="shareViaTelegram()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1">
@@ -730,10 +730,10 @@
     <!-- FULL APPLICATION SCRIPT -->
     <script>
         // ==========================================
-        // 🔒 STRICT ADMIN CONFIGURATION
+        // 🔒 CONFIGURED FOR ADMIN ID: 5939907983
         // ==========================================
-        const MY_ADMIN_TELEGRAM_ID = "YOUR_TELEGRAM_USER_ID_HERE"; 
-        let currentUserId = "user_000";
+        const MY_ADMIN_TELEGRAM_ID = "5939907983"; 
+        let currentUserId = "000";
         let username = "@CryptoFarmer";
         let selectedPlan = 'STARTER';
         let selectedPct = 0.5;
@@ -991,7 +991,7 @@
                     document.getElementById('ref-link-input').value = refUrl;
                     document.getElementById('modal-ref-link-input').value = refUrl;
 
-                    // STRICT ADMIN SHIELD CHECK
+                    // STRICT ADMIN SHIELD CHECK FOR 5939907983
                     if (currentUserId === MY_ADMIN_TELEGRAM_ID) {
                         const adminBtn = document.getElementById('admin-panel-btn');
                         if (adminBtn) {
