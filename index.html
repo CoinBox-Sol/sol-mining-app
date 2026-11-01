@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Farming Telegram Mini App - Full Enterprise Edition</title>
+    <title>Solana Farming Telegram Mini App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
@@ -25,10 +25,11 @@
 <body class="bg-darkBg text-white font-sans antialiased pb-24 selection:bg-solPurple selection:text-white">
 
     <!-- Top Navigation Header -->
-    <header class="sticky top-0 z-50 bg-darkBg/90 backdrop-blur-md border-b border-cardBorder px-4 py-3 flex justify-between items-center shadow-lg">
+    <header class="sticky top-0 z-50 bg-darkBg/90 backdrop-blur-md border-b border-cardBorder px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-2">
             <div id="user-avatar-container" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-solPurple to-solGreen flex items-center justify-center font-black text-sm shadow-lg shadow-solPurple/20 overflow-hidden border border-purple-500/30">
                 <span id="user-avatar-initial" class="text-white hidden">S</span>
+                <!-- Solana Coin Logo Fallback when no profile photo -->
                 <svg id="user-sol-logo" class="w-5 h-5 text-white" viewBox="0 0 395 325.2" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h309.5c5.9 0 8.8 7.1 4.7 11.2l-51.4 51.4c-2.4 2.4-5.7 3.8-9.2 3.8H18.9c-5.9 0-8.8-7.1-4.7-11.2l50.4-51.4z" fill="url(#paint0_linear_sol)"/>
                     <path d="M64.6 14.3C67 11.9 70.3 10.5 73.8 10.5h309.5c5.9 0 8.8 7.1 4.7 11.2l-51.4 51.4c-2.4 2.4-5.7 3.8-9.2 3.8H18.9c-5.9 0-8.8-7.1-4.7-11.2L64.6 14.3z" fill="url(#paint1_linear_sol)"/>
@@ -44,7 +45,7 @@
             <div>
                 <h1 id="username" class="text-sm font-bold tracking-wide">@CryptoFarmer</h1>
                 <span class="inline-flex items-center text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span> Active ID: 0000000000
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span> Active ID
                 </span>
             </div>
         </div>
@@ -75,6 +76,7 @@
                     </span>
                 </div>
 
+                <!-- Animated Running AI Robot Mining Visualizer -->
                 <div class="py-2 flex flex-col items-center justify-center space-y-2 relative">
                     <style>
                         @keyframes robotRun {
@@ -84,18 +86,41 @@
                             75% { transform: translateY(-4px) rotate(3deg); }
                             100% { transform: translateY(0px) rotate(0deg); }
                         }
-                        @keyframes legMove1 { 0% { transform: rotate(15deg); } 50% { transform: rotate(-25deg); } 100% { transform: rotate(15deg); } }
-                        @keyframes legMove2 { 0% { transform: rotate(-25deg); } 50% { transform: rotate(15deg); } 100% { transform: rotate(-25deg); } }
-                        @keyframes fullCircleRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                        @keyframes legMove1 {
+                            0% { transform: rotate(15deg); }
+                            50% { transform: rotate(-25deg); }
+                            100% { transform: rotate(15deg); }
+                        }
+                        @keyframes legMove2 {
+                            0% { transform: rotate(-25deg); }
+                            50% { transform: rotate(15deg); }
+                            100% { transform: rotate(-25deg); }
+                        }
+                        @keyframes fullCircleRotate {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
                         @keyframes circlePulse360 {
                             0%, 100% { opacity: 0.4; transform: scale(1); box-shadow: 0 0 15px rgba(20, 241, 149, 0.4), inset 0 0 15px rgba(20, 241, 149, 0.3); }
                             50% { opacity: 1; transform: scale(1.05); box-shadow: 0 0 35px rgba(20, 241, 149, 0.8), inset 0 0 25px rgba(20, 241, 149, 0.6); }
                         }
-                        .anim-robot-run { animation: robotRun 0.6s infinite ease-in-out; }
-                        .anim-leg-1 { animation: legMove1 0.6s infinite ease-in-out; transform-origin: top center; }
-                        .anim-leg-2 { animation: legMove2 0.6s infinite ease-in-out; transform-origin: top center; }
-                        .anim-rotate-ring { animation: fullCircleRotate 4s linear infinite; }
-                        .anim-pulse-360 { animation: circlePulse360 2s infinite ease-in-out; }
+                        .anim-robot-run {
+                            animation: robotRun 0.6s infinite ease-in-out;
+                        }
+                        .anim-leg-1 {
+                            animation: legMove1 0.6s infinite ease-in-out;
+                            transform-origin: top center;
+                        }
+                        .anim-leg-2 {
+                            animation: legMove2 0.6s infinite ease-in-out;
+                            transform-origin: top center;
+                        }
+                        .anim-rotate-ring {
+                            animation: fullCircleRotate 4s linear infinite;
+                        }
+                        .anim-pulse-360 {
+                            animation: circlePulse360 2s infinite ease-in-out;
+                        }
                     </style>
 
                     <div class="relative w-40 h-40 flex items-center justify-center">
@@ -144,16 +169,26 @@
             <!-- Auto Top-Up Card -->
             <div class="bg-cardBg border border-amber-500/40 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-xl">
                 <div class="flex justify-between items-center">
-                    <span class="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider">
-                        🔥 ACTIVE PROMO EVENT
+                    <span class="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-extrabold px-2.5 py-1 rounded-lg flex items-center space-x-1 uppercase tracking-wider">
+                        <span>🔥</span> <span>ACTIVE PROMO EVENT</span>
                     </span>
-                    <span class="text-xs font-mono font-black text-amber-300">AUTO TOPUP AT 0.10 SOL</span>
+                    <div class="text-right">
+                        <span class="text-[9px] text-amber-400/80 font-mono block uppercase font-bold tracking-wider">AUTO TOPUP AT</span>
+                        <span class="text-xs font-mono font-black text-amber-300">0.10 SOL</span>
+                    </div>
                 </div>
-                <div class="space-y-1.5 pt-1 text-xs text-gray-300 font-mono">
+
+                <div class="space-y-1.5 pt-1">
                     <h3 class="text-base font-black text-white tracking-wide">Bot Join & Referral Promo Protocol</h3>
-                    <p>Join via Referral Link Get <strong class="text-amber-300">0.00 SOL</strong> Joining Bonus!</p>
+                    <ul class="space-y-1 text-xs text-gray-300 font-mono">
+                        <li class="flex items-center space-x-1.5">
+                            <span class="text-amber-400 font-bold">•</span>
+                            <span>Join via Referral Link Get <strong class="text-amber-300 font-bold">0.00 SOL</strong> Joining Bonus!</span>
+                        </li>
+                    </ul>
                 </div>
-                <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+
+                <div class="grid grid-cols-2 gap-2 pt-1 font-mono">
                     <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                         <span class="text-[10px] text-gray-400 block font-sans">Promo Bonus Balance</span>
                         <strong class="text-xs text-amber-300 font-black" id="promo-bonus-text">0.0000 / 0.10 SOL</strong>
@@ -163,52 +198,90 @@
                         <strong class="text-xs text-solGreen font-black">0% Reached</strong>
                     </div>
                 </div>
+
                 <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                    <div id="promo-progress" class="bg-gradient-to-r from-amber-500 to-solGreen h-full w-[0%]"></div>
+                    <div id="promo-progress" class="bg-gradient-to-r from-amber-500 via-yellow-400 to-solGreen h-full w-[0%] transition-all duration-500"></div>
                 </div>
+
                 <button onclick="openModal('referModal')" class="w-full bg-gradient-to-r from-amber-600 via-orange-600 to-amber-600 hover:opacity-90 transition py-2.5 px-3 rounded-xl font-bold text-xs text-center text-white shadow-md flex items-center justify-center space-x-2">
-                    <span>🔗</span> <span>Refer Friends & Increase Balance</span>
+                    <span>🔗</span>
+                    <span>Refer Friends & Increase Balance</span>
                 </button>
+            </div>
+
+            <!-- Earning Cap Status Card -->
+            <div class="bg-gradient-to-r from-purple-950/40 via-cardBg to-purple-950/40 border border-purple-500/30 rounded-2xl p-4 space-y-2 relative overflow-hidden">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center space-x-1.5">
+                        <span>⚡</span> <span>Earning Cap Status</span>
+                    </span>
+                    <span id="capping-badge" class="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30 font-bold">Active Limit: 250%</span>
+                </div>
+                <div class="space-y-2 font-mono text-xs pt-1">
+                    <div class="flex justify-between items-center text-gray-300 border-b border-purple-500/10 pb-1">
+                        <span>Base Max Cap:</span>
+                        <strong id="capping-base" class="text-white font-bold">250% (Active)</strong>
+                    </div>
+                    <div class="flex justify-between items-center text-gray-300">
+                        <span>Super Max Cap (1 Direct):</span>
+                        <strong id="capping-super" class="text-gray-500 font-bold">500% (Locked)</strong>
+                    </div>
+                </div>
             </div>
 
             <!-- Active Package & Self Farming Cards -->
             <div class="grid grid-cols-2 gap-3" id="home-dynamic-cards-grid">
-                <div id="card-active-package" class="bg-cardBg border border-cardBorder rounded-2xl p-3.5 space-y-1">
+                <div id="card-active-package" class="bg-cardBg border border-cardBorder rounded-2xl p-3.5 space-y-1 relative overflow-hidden transition-all duration-300">
                     <span class="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Active Package</span>
-                    <h3 id="active-plan-name" class="text-base font-black text-solGreen font-mono">🌱 NONE</h3>
+                    <h3 id="active-plan-name" class="text-base font-black text-solGreen flex items-center space-x-1 font-mono">
+                        <span>🌱</span> <span>NONE</span>
+                    </h3>
                     <p id="active-plan-limit" class="text-[10px] text-gray-400 font-mono">Limit: 0.00 SOL</p>
                 </div>
-                <div id="card-self-farming" class="bg-cardBg border border-cardBorder rounded-2xl p-3.5 space-y-1">
+                <div id="card-self-farming" class="bg-cardBg border border-cardBorder rounded-2xl p-3.5 space-y-1 relative overflow-hidden transition-all duration-300">
                     <span class="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Self Farming</span>
                     <h3 id="self-farming-display" class="text-base font-black text-solGreen font-mono">0.00 SOL</h3>
-                    <p class="text-[10px] text-emerald-400 font-mono font-bold"><span id="self-farming-pct">0.0%</span> Daily Bonus</p>
+                    <p id="self-farming-pct-p" class="text-[10px] text-emerald-400 font-mono font-bold"><span id="self-farming-pct">0.0%</span> Daily Farming Bonus</p>
                 </div>
             </div>
 
             <!-- Earning Breakdown Card -->
             <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 space-y-3">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                    <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider">💼 EARNING BREAKDOWN</h3>
+                    <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center space-x-1.5">
+                        <span>💼</span> <span>EARNING BREAKDOWN</span>
+                    </h3>
+                    <span class="text-[10px] font-mono text-solGreen bg-solGreen/10 px-2 py-0.5 rounded border border-solGreen/20">Wallet Stream</span>
                 </div>
                 <div class="space-y-3 font-mono text-xs pt-1">
                     <div class="flex justify-between items-center border-b border-slate-800/50 pb-2">
-                        <span class="text-emerald-400">🌱 Self Farming Bonus</span>
+                        <span class="text-gray-300 flex items-center space-x-2">
+                            <span>🌱</span> <span class="text-emerald-400 font-semibold">Self Farming Bonus</span>
+                        </span>
                         <strong id="stat-self-bonus" class="text-emerald-400 font-bold">0.0000 SOL</strong>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-800/50 pb-2">
-                        <span class="text-sky-400">🎯 Direct Referral Bonus (L1)</span>
+                        <span class="text-gray-300 flex items-center space-x-2">
+                            <span>🎯</span> <span class="text-sky-400 font-semibold">Direct Referral Bonus (L1)</span>
+                        </span>
                         <strong class="text-sky-400 font-bold">0.0000 SOL</strong>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-800/50 pb-2">
-                        <span class="text-purple-400">🤝 Team Referral Bonus (L2–L5)</span>
+                        <span class="text-gray-300 flex items-center space-x-2">
+                            <span>🤝</span> <span class="text-purple-400 font-semibold">Team Referral Bonus (L2–L5)</span>
+                        </span>
                         <strong class="text-purple-400 font-bold">0.0000 SOL</strong>
                     </div>
                     <div class="flex justify-between items-center border-b border-slate-800/50 pb-2">
-                        <span class="text-amber-400">🌟 Team Override Bonus (L1–L25)</span>
+                        <span class="text-gray-300 flex items-center space-x-2">
+                            <span>🌟</span> <span class="text-amber-400 font-semibold">Team Override Bonus (L1–L25)</span>
+                        </span>
                         <strong class="text-amber-400 font-bold">0.0000 SOL</strong>
                     </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-[#FF6B81]">👑 Rank & Royalty Bonus</span>
+                    <div class="flex justify-between items-center pt-0.5">
+                        <span class="text-gray-300 flex items-center space-x-2">
+                            <span>👑</span> <span class="text-[#FF6B81] font-bold">Rank & Royalty Bonus</span>
+                        </span>
                         <strong class="text-[#FF6B81] font-bold">0.0000 SOL</strong>
                     </div>
                 </div>
@@ -217,15 +290,41 @@
             <!-- AVAILABLE BALANCE Card -->
             <div class="bg-gradient-to-br from-slate-900 via-cardBg to-slate-900 border border-slate-700/60 rounded-2xl p-4 space-y-4 shadow-xl">
                 <div class="space-y-1">
-                    <span class="text-xs font-black text-emerald-400 uppercase tracking-wider">💳 AVAILABLE BALANCE</span>
+                    <span class="text-xs font-black text-emerald-400 tracking-wider flex items-center space-x-1.5 uppercase">
+                        <span>💳</span> <span>AVAILABLE BALANCE</span>
+                    </span>
                     <h2 class="text-3xl font-black font-mono tracking-tight flex items-baseline space-x-2" id="balance-display">
-                        <span class="text-white font-extrabold">0.0000</span>
+                        <span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">0.0000</span>
                         <span class="text-xl text-[#14F195] font-bold">SOL</span>
                     </h2>
                 </div>
+
                 <div class="grid grid-cols-2 gap-3 pt-1">
-                    <button onclick="openModal('depositModal')" class="bg-blue-600 hover:bg-blue-500 transition py-2.5 rounded-xl font-black text-xs text-white">💰 Deposit</button>
-                    <button onclick="openModal('withdrawModal')" class="bg-emerald-600 hover:bg-emerald-500 transition py-2.5 rounded-xl font-black text-xs text-white">🎁 Withdraw</button>
+                    <button onclick="openModal('depositModal')" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 transition py-2.5 rounded-xl font-black text-xs text-white shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2">
+                        <span>💰</span>
+                        <span>Deposit</span>
+                    </button>
+                    <button onclick="openModal('withdrawModal')" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 transition py-2.5 rounded-xl font-black text-xs text-white shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2">
+                        <span>🎁</span>
+                        <span>Withdraw</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Total Earned Card -->
+            <div class="bg-gradient-to-r from-emerald-950/60 via-cardBg to-teal-950/60 border border-emerald-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
+                <div class="flex justify-between items-center">
+                    <div class="space-y-0.5">
+                        <span class="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider block">
+                            💰 Total Earned
+                        </span>
+                        <span class="text-xs font-black text-emerald-300 uppercase tracking-wider block">
+                            ⚡ CAPPING PROTOCOL
+                        </span>
+                    </div>
+                    <div class="text-right font-mono">
+                        <h3 class="text-lg font-black text-solGreen" id="total-earned-display">0.0000 <span class="text-xs text-white">SOL</span></h3>
+                    </div>
                 </div>
             </div>
         </div>
@@ -236,6 +335,7 @@
                 <h2 class="text-xl font-extrabold text-white">💎 Farming Packages</h2>
                 <p class="text-xs text-gray-400">Choose your package tier and start earning daily farming bonus rewards.</p>
             </div>
+
             <div class="space-y-3">
                 <div class="bg-cardBg border border-emerald-500/30 rounded-2xl p-4 space-y-3">
                     <div class="flex justify-between"><span class="text-emerald-400 text-xs font-bold">TIER 1</span><span class="text-solGreen font-mono">0.5% Daily</span></div>
@@ -260,11 +360,11 @@
             </div>
         </div>
 
-        <!-- TAB: TEAM (Fully Expanded 25 Levels) -->
-        <div id="tab-team" class="tab-pane hidden space-y-4 pb-6">
+        <!-- TAB: TEAM -->
+        <div id="tab-team" class="tab-pane hidden space-y-4">
             <div class="space-y-1">
-                <h2 class="text-xl font-extrabold text-white">👥 Team & 25-Level Override Matrix</h2>
-                <p class="text-xs text-gray-400">Build your downline across 25 levels with condition-based overrides.</p>
+                <h2 class="text-xl font-extrabold text-white">👥 Team & Referral Network</h2>
+                <p class="text-xs text-gray-400">Build your downline across 25 levels and unlock commission bonuses.</p>
             </div>
 
             <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 space-y-3">
@@ -277,21 +377,17 @@
 
             <div class="space-y-3">
                 <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider">🌟 Team Override Bonus Conditions (Levels 1-25)</h3>
-                <div id="levels-container" class="space-y-2 font-mono text-xs">
-                    <!-- Fully expanded 25 levels rendered programmatically in JS -->
-                </div>
+                <div id="levels-container" class="space-y-2"></div>
             </div>
         </div>
 
-        <!-- TAB: RANKS (Fully Expanded 10 Ranks) -->
-        <div id="tab-ranks" class="tab-pane hidden space-y-4 pb-6">
+        <!-- TAB: RANKS -->
+        <div id="tab-ranks" class="tab-pane hidden space-y-4">
             <div class="space-y-1">
                 <h2 class="text-xl font-extrabold text-white">🏆 Ranks & Royalty Program</h2>
-                <p class="text-xs text-gray-400">Achieve rank volume targets with strict 40/60 Leg Ratio rule.</p>
+                <p class="text-xs text-gray-400">Unlock daily recurring rewards by achieving higher rank volume criteria.</p>
             </div>
-            <div class="space-y-3 font-mono text-xs" id="all-ranks-container">
-                <!-- Fully expanded 10 ranks rendered programmatically in JS -->
-            </div>
+            <div class="space-y-3" id="all-ranks-container"></div>
         </div>
 
         <!-- TAB: PROFILE -->
@@ -300,22 +396,22 @@
                 <h2 class="text-xl font-extrabold text-white flex items-center space-x-2">
                     <span>👤</span> <span>User Profile & Wallet Settings</span>
                 </h2>
-                <p class="text-xs text-gray-400">Save your withdrawal address and upload avatar photo.</p>
+                <p class="text-xs text-gray-400">Save your withdrawal address and personal details once for instant one-click payouts.</p>
             </div>
 
             <div class="bg-cardBg border border-purple-500/40 rounded-2xl p-4 space-y-4 shadow-xl font-mono text-xs">
                 <div>
-                    <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Display Name / Username</label>
+                    <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Display Name / Telegram Username</label>
                     <input type="text" id="profile-name" value="@CryptoFarmer" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-white outline-none">
                 </div>
                 <div>
                     <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Solana Receiving Address</label>
-                    <input type="text" id="profile-sol-address" placeholder="Enter SOL wallet address..." class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-white outline-none">
+                    <input type="text" id="profile-sol-address" placeholder="Enter your SOL wallet address..." class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-white outline-none">
                 </div>
                 <button onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-solPurple via-purple-600 to-solGreen hover:opacity-90 transition py-3 rounded-xl font-bold text-white shadow-lg uppercase">
                     💾 Save Profile Settings
                 </button>
-                <button id="admin-panel-btn" onclick="openAdminPanel()" class="w-full bg-amber-600 hover:bg-amber-500 transition py-3 rounded-xl font-bold text-slate-950 border border-amber-500/30 flex items-center justify-center space-x-1.5 mt-2">
+                <button id="admin-panel-btn" onclick="openAdminPanel()" class="w-full bg-amber-600 hover:bg-amber-500 transition py-3 rounded-xl font-bold text-slate-950 border border-amber-500/30 hidden items-center justify-center space-x-1.5 mt-2">
                     <span>🔐</span> <span>Open Admin Panel (Management)</span>
                 </button>
             </div>
@@ -351,7 +447,7 @@
                 <button onclick="copyDepositAddress()" class="w-full bg-slate-800 hover:bg-slate-700 py-2 rounded-xl text-xs font-bold text-solGreen">📋 Copy Wallet Address</button>
             </div>
             <input type="text" id="tx-hash-input" placeholder="Paste Tx Hash..." class="w-full bg-slate-900 border border-solGreen/40 rounded-xl p-2.5 text-xs text-white font-mono">
-            <button onclick="verifyAndAutoUpdateDeposit()" class="w-full bg-solGreen text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase shadow-lg">Submit & Auto-Update</button>
+            <button onclick="verifyAndAutoUpdateDeposit()" class="w-full bg-solGreen text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase shadow-lg">Submit & Verify Deposit</button>
         </div>
     </div>
 
@@ -387,24 +483,19 @@
                     <input type="number" id="admin-set-bal" placeholder="New Balance SOL..." class="w-full bg-slate-950 border border-slate-800 p-2 rounded-lg text-white">
                     <button onclick="adminUpdateBalance()" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-2 rounded-lg">Update User Balance</button>
                 </div>
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <span class="text-amber-300 font-bold block">📊 Stats Overview</span>
-                    <p class="text-gray-300">Total System Users: <strong class="text-white">0</strong></p>
-                    <p class="text-gray-300">Total Deposits Processed: <strong class="text-solGreen">0.00 SOL</strong></p>
-                    <p class="text-gray-300">Pending Withdrawals: <strong class="text-amber-400">0.00 SOL</strong></p>
-                </div>
             </div>
             <button onclick="closeModal('adminModal')" class="w-full bg-slate-800 py-2.5 rounded-xl font-bold text-white">Close Admin Panel</button>
         </div>
     </div>
 
-    <!-- JavaScript Application Logic (Fully Expanded) -->
+    <!-- JavaScript Application Logic -->
     <script>
         let minedSolBalance = 0.0000;
         let availableSolBalance = 0.0000;
-        let activePlanTier = 'NONE';
-        let userDepositAmount = 0.0000;
-        let miningSpeedPerSec = 0.0000;
+        let activePlanTier = 'NONE'; // 0 data / no package active by default
+        let userDepositAmount = 0.0000; // 0 deposit by default
+        let miningSpeedPerSec = 0.0000; 
+        let activeDirectsCount = 0;
 
         function updateMiningSpeedForPlan(planName, depositAmount = 0.00) {
             activePlanTier = planName;
@@ -456,11 +547,14 @@
         function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
 
+        let pendingDepositPlan = 'STARTER';
+        let pendingDepositAmount = 0.10;
+
         function openPlanDeposit(planName, minSol) {
             document.getElementById('deposit-modal-title').innerText = `💰 Deposit - ${planName} Package`;
             document.getElementById('deposit-min-condition').innerText = minSol;
-            userDepositAmount = parseFloat(minSol) || 0.10;
-            updateMiningSpeedForPlan(planName, userDepositAmount);
+            pendingDepositPlan = planName;
+            pendingDepositAmount = parseFloat(minSol) || 0.10;
             openModal('depositModal');
         }
 
@@ -479,12 +573,18 @@
             alert("Referral link copied!");
         }
 
+        // Bina deposit verification ke koi ID/package active nahi hoga
         function verifyAndAutoUpdateDeposit() {
             const txHash = document.getElementById('tx-hash-input').value.trim();
-            if (!txHash) { alert("Please enter Tx Hash!"); return; }
-            availableSolBalance += userDepositAmount;
+            if (!txHash) { alert("Please enter valid Tx Hash for activation!"); return; }
+            
+            // Deposit verify hone par hi package aur speed active hogi
+            updateMiningSpeedForPlan(pendingDepositPlan, pendingDepositAmount);
+            availableSolBalance += pendingDepositAmount;
             document.getElementById('balance-display').innerHTML = `<span class="text-white font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
+            
             alert("Deposit verified and package activated successfully!");
+            document.getElementById('tx-hash-input').value = '';
             closeModal('depositModal');
         }
 
@@ -538,7 +638,6 @@
             alert(`Admin updated available balance to ${newBal.toFixed(4)} SOL`);
         }
 
-        // Render 25 Levels Fully Without Shortcuts
         function renderLevels() {
             const container = document.getElementById('levels-container');
             if (!container) return;
@@ -558,14 +657,13 @@
                 {lvl: 25, pct: "15%", req: "25 Directs"}
             ];
             container.innerHTML = levelsData.map(l => `
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex justify-between items-center font-mono text-xs">
                     <span class="text-white font-bold">Level ${l.lvl} Override (Req: ${l.req})</span>
                     <span class="text-solGreen font-bold">${l.pct}</span>
                 </div>
             `).join('');
         }
 
-        // Render All 10 Ranks Fully Without Shortcuts
         function renderAllRanks() {
             const container = document.getElementById('all-ranks-container');
             if (!container) return;
@@ -582,7 +680,7 @@
                 {name: "SUPREME UNIVERSE RANK", symbol: "🏆", target: 1000000, royalty: "0.00 SOL"}
             ];
             container.innerHTML = ranksData.map(r => `
-                <div class="bg-cardBg border border-slate-700/60 rounded-2xl p-4 space-y-2">
+                <div class="bg-cardBg border border-slate-700/60 rounded-2xl p-4 space-y-2 font-mono text-xs">
                     <div class="flex justify-between font-bold text-amber-300 text-sm"><span>${r.symbol} ${r.name}</span><span>${r.royalty} Daily</span></div>
                     <div class="text-xs text-gray-400">Target: ${r.target} SOL (Leg Ratio 40/60 Rule Applied)</div>
                 </div>
@@ -593,6 +691,7 @@
             loadProfileOnStartup();
             renderLevels();
             renderAllRanks();
+            // Start with NONE plan and 0 deposit so no ID is active automatically
             updateMiningSpeedForPlan('NONE', 0.00);
         };
     </script>
