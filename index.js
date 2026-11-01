@@ -1,10 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors'); // Agar CORS error aaye toh ye helpful rahega
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
@@ -15,7 +13,7 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('MongoDB Connected Successfully!'))
   .catch(err => console.error('MongoDB Connection Error:', err));
 
-// --- NEW: User Schema & Model (Balance secure rakhne ke liye) ---
+// User Schema & Model
 const userSchema = new mongoose.Schema({
   telegramId: { type: String, required: true, unique: true },
   username: { type: String },
@@ -27,7 +25,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// --- NEW: Sync API (App khulte hi database se data layega) ---
+// Sync API
 app.post('/api/user/sync', async (req, res) => {
   try {
     const { telegramId, username, firstName } = req.body;
