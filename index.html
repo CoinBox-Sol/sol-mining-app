@@ -1663,17 +1663,8 @@ document.addEventListener('change', function(e) {
             document.getElementById('modal-level-title').innerText = `Level ${level} Downline Members`;
             const list = document.getElementById('level-members-list');
             
-            // Mock sample downline members for demonstration
-            list.innerHTML = `
-                <div class="flex justify-between p-2 bg-slate-900 rounded-xl border border-slate-800">
-                    <span class="text-gray-300">@Trader_${level}_1</span>
-                    <span class="text-solGreen">2.5 SOL</span>
-                </div>
-                <div class="flex justify-between p-2 bg-slate-900 rounded-xl border border-slate-800">
-                    <span class="text-gray-300">@SolanaWhale_${level}</span>
-                    <span class="text-solGreen">5.0 SOL</span>
-                </div>
-            `;
+            list.innerHTML = '<div class="text-center text-gray-400 p-4">No downline members yet</div>';
+
             openModal('levelMembersModal');
         }
 
