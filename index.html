@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Farming Telegram Mini App - Enterprise Edition (Part 1)</title>
+    <title>Solana Farming Telegram Mini App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
@@ -25,10 +25,11 @@
 <body class="bg-darkBg text-white font-sans antialiased pb-24 selection:bg-solPurple selection:text-white">
 
     <!-- Top Navigation Header -->
-    <header class="sticky top-0 z-50 bg-darkBg/90 backdrop-blur-md border-b border-cardBorder px-4 py-3 flex justify-between items-center shadow-lg">
+    <header class="sticky top-0 z-50 bg-darkBg/90 backdrop-blur-md border-b border-cardBorder px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-2">
             <div id="user-avatar-container" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-solPurple to-solGreen flex items-center justify-center font-black text-sm shadow-lg shadow-solPurple/20 overflow-hidden border border-purple-500/30">
                 <span id="user-avatar-initial" class="text-white hidden">S</span>
+                <!-- Solana Coin Logo Fallback when no profile photo -->
                 <svg id="user-sol-logo" class="w-5 h-5 text-white" viewBox="0 0 395 325.2" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h309.5c5.9 0 8.8 7.1 4.7 11.2l-51.4 51.4c-2.4 2.4-5.7 3.8-9.2 3.8H18.9c-5.9 0-8.8-7.1-4.7-11.2l50.4-51.4z" fill="url(#paint0_linear_sol)"/>
                     <path d="M64.6 14.3C67 11.9 70.3 10.5 73.8 10.5h309.5c5.9 0 8.8 7.1 4.7 11.2l-51.4 51.4c-2.4 2.4-5.7 3.8-9.2 3.8H18.9c-5.9 0-8.8-7.1-4.7-11.2L64.6 14.3z" fill="url(#paint1_linear_sol)"/>
@@ -44,7 +45,7 @@
             <div>
                 <h1 id="username" class="text-sm font-bold tracking-wide">@CryptoFarmer</h1>
                 <span class="inline-flex items-center text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span> Active ID: 0000000000
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span> Status: Inactive
                 </span>
             </div>
         </div>
@@ -67,7 +68,7 @@
                 
                 <div class="flex justify-between items-center">
                     <span class="bg-solPurple/10 border border-solPurple/30 text-solPurple text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider">
-                        ⚡ Solana TeleBot Mining Active
+                        ⚡ Solana TeleBot Mining Engine
                     </span>
                     <span class="text-xs font-mono text-solGreen font-bold flex items-center space-x-1">
                         <span class="w-2 h-2 rounded-full bg-solGreen animate-ping"></span>
@@ -75,6 +76,7 @@
                     </span>
                 </div>
 
+                <!-- Animated Running AI Robot Mining Visualizer -->
                 <div class="py-2 flex flex-col items-center justify-center space-y-2 relative">
                     <style>
                         @keyframes robotRun {
@@ -84,9 +86,20 @@
                             75% { transform: translateY(-4px) rotate(3deg); }
                             100% { transform: translateY(0px) rotate(0deg); }
                         }
-                        @keyframes legMove1 { 0% { transform: rotate(15deg); } 50% { transform: rotate(-25deg); } 100% { transform: rotate(15deg); } }
-                        @keyframes legMove2 { 0% { transform: rotate(-25deg); } 50% { transform: rotate(15deg); } 100% { transform: rotate(-25deg); } }
-                        @keyframes fullCircleRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                        @keyframes legMove1 {
+                            0% { transform: rotate(15deg); }
+                            50% { transform: rotate(-25deg); }
+                            100% { transform: rotate(15deg); }
+                        }
+                        @keyframes legMove2 {
+                            0% { transform: rotate(-25deg); }
+                            50% { transform: rotate(15deg); }
+                            100% { transform: rotate(-25deg); }
+                        }
+                        @keyframes fullCircleRotate {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
                         @keyframes circlePulse360 {
                             0%, 100% { opacity: 0.4; transform: scale(1); box-shadow: 0 0 15px rgba(20, 241, 149, 0.4), inset 0 0 15px rgba(20, 241, 149, 0.3); }
                             50% { opacity: 1; transform: scale(1.05); box-shadow: 0 0 35px rgba(20, 241, 149, 0.8), inset 0 0 25px rgba(20, 241, 149, 0.6); }
@@ -123,7 +136,7 @@
 
                                 <div class="absolute bottom-2 z-20 animate-bounce flex items-center space-x-1 bg-slate-950/90 px-2.5 py-0.5 rounded-full border border-solGreen/60 shadow-lg">
                                     <span class="w-2 h-2 rounded-full bg-solGreen animate-ping"></span>
-                                    <span id="home-bot-status-text" class="text-[9px] font-mono text-solGreen font-black uppercase">TeleBot Mining...</span>
+                                    <span id="home-bot-status-text" class="text-[9px] font-mono text-solGreen font-black uppercase">Not Activated</span>
                                 </div>
                             </div>
                         </div>
@@ -142,16 +155,18 @@
             </div>
 
             <!-- Active Package & Self Farming Cards -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-cardBg border border-cardBorder rounded-2xl p-3.5 space-y-1">
+            <div class="grid grid-cols-2 gap-3" id="home-dynamic-cards-grid">
+                <div id="card-active-package" class="bg-cardBg border border-cardBorder rounded-2xl p-3.5 space-y-1 relative overflow-hidden transition-all duration-300">
                     <span class="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Active Package</span>
-                    <h3 id="active-plan-name" class="text-base font-black text-solGreen font-mono">🌱 NONE</h3>
+                    <h3 id="active-plan-name" class="text-base font-black text-solGreen flex items-center space-x-1 font-mono">
+                        <span>🌱</span> <span>NONE</span>
+                    </h3>
                     <p id="active-plan-limit" class="text-[10px] text-gray-400 font-mono">Limit: 0.00 SOL</p>
                 </div>
-                <div class="bg-cardBg border border-cardBorder rounded-2xl p-3.5 space-y-1">
+                <div id="card-self-farming" class="bg-cardBg border border-cardBorder rounded-2xl p-3.5 space-y-1 relative overflow-hidden transition-all duration-300">
                     <span class="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Self Farming</span>
                     <h3 id="self-farming-display" class="text-base font-black text-solGreen font-mono">0.00 SOL</h3>
-                    <p class="text-[10px] text-emerald-400 font-mono font-bold"><span id="self-farming-pct">0.0%</span> Daily Bonus</p>
+                    <p id="self-farming-pct-p" class="text-[10px] text-emerald-400 font-mono font-bold"><span id="self-farming-pct">0.0%</span> Daily Bonus</p>
                 </div>
             </div>
 
@@ -234,18 +249,21 @@
             <div class="space-y-3 font-mono text-xs" id="all-ranks-container"></div>
         </div>
 
-        <!-- TAB: PROFILE -->
+        <!-- TAB: PROFILE (Secured: Admin button hidden from regular users) -->
         <div id="tab-profile" class="tab-pane hidden space-y-4 pb-6">
             <div class="space-y-1"><h2 class="text-xl font-extrabold text-white">👤 User Profile & Wallet Settings</h2><p class="text-xs text-gray-400">Save your withdrawal address and upload avatar photo.</p></div>
             <div class="bg-cardBg border border-purple-500/40 rounded-2xl p-4 space-y-4 shadow-xl font-mono text-xs">
                 <div><label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase">Display Name</label><input type="text" id="profile-name" value="@CryptoFarmer" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-white outline-none"></div>
                 <div><label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase">Solana Receiving Address</label><input type="text" id="profile-sol-address" placeholder="Enter SOL wallet address..." class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-white outline-none"></div>
                 <button onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-solPurple via-purple-600 to-solGreen transition py-3 rounded-xl font-bold text-white uppercase shadow-lg">💾 Save Profile Settings</button>
+                
+                <!-- Hidden by default for regular users. Only shown for Admin Telegram ID -->
                 <button id="admin-panel-btn" onclick="openAdminPanel()" class="w-full bg-amber-600 hover:bg-amber-500 transition py-3 rounded-xl font-bold text-slate-950 border border-amber-500/30 hidden items-center justify-center space-x-1.5 mt-2"><span>🔐</span> <span>Open Admin Panel (Management)</span></button>
             </div>
         </div>
 
     </main>
+
     <!-- Bottom Navigation Bar -->
     <nav class="fixed bottom-0 left-0 right-0 z-50 bg-darkBg/95 backdrop-blur-md border-t border-cardBorder py-2.5 px-4">
         <div class="max-w-md mx-auto flex justify-around items-center">
@@ -271,13 +289,13 @@
         </div>
     </div>
 
-    <!-- WITHDRAW MODAL (With Auto Payout 0.01 - 0.10 SOL Rule) -->
+    <!-- WITHDRAW MODAL -->
     <div id="withdrawModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-cardBorder rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl font-mono text-xs">
             <div class="flex justify-between items-center"><h3 class="text-base font-black text-white">🎁 Withdraw SOL</h3><button onclick="closeModal('withdrawModal')" class="text-gray-400 font-bold">✕</button></div>
             <input type="number" id="withdraw-amount" placeholder="Amount (SOL - Min 0.01)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white">
             <input type="text" id="withdraw-address" placeholder="Solana Address" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white">
-            <p class="text-[10px] text-gray-400">⚡ 0.01 to 0.10 SOL triggers Instant Auto-Payout. Higher amounts require admin approval.</p>
+            <p class="text-[10px] text-gray-400">⚡ 0.01 to 0.10 SOL triggers Instant Auto-Payout.</p>
             <button onclick="submitWithdrawal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl uppercase shadow-lg">Submit Withdrawal</button>
         </div>
     </div>
@@ -291,41 +309,38 @@
         </div>
     </div>
 
-    <!-- ADMIN PANEL MODAL (Full Multi-Tab Management) -->
+    <!-- ADMIN PANEL MODAL (Includes ID Top-Up & Activation Tab) -->
     <div id="adminModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-amber-500/40 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl max-h-[85vh] flex flex-col font-mono text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-base font-black text-amber-400">🔐 Admin Management Panel</h3>
+                <h3 class="text-base font-black text-amber-400">🔐 Admin Control Panel</h3>
                 <button onclick="closeModal('adminModal')" class="text-gray-400 font-bold">✕</button>
             </div>
             
-            <div class="flex space-x-2 border-b border-slate-800 pb-2 font-bold">
-                <button onclick="switchAdminTab('deposits')" id="adm-tab-dep" class="text-amber-400 border-b-2 border-amber-400 pb-1">Pending Deposits</button>
-                <button onclick="switchAdminTab('withdrawals')" id="adm-tab-wit" class="text-gray-400 pb-1">Pending Withdrawals</button>
-                <button onclick="switchAdminTab('users')" id="adm-tab-usr" class="text-gray-400 pb-1">User Manager</button>
+            <div class="flex space-x-2 border-b border-slate-800 pb-2 font-bold text-[11px]">
+                <button onclick="switchAdminTab('topup')" id="adm-tab-top" class="text-amber-400 border-b-2 border-amber-400 pb-1">⚡ ID Top-Up</button>
+                <button onclick="switchAdminTab('deposits')" id="adm-tab-dep" class="text-gray-400 pb-1">Deposits</button>
+                <button onclick="switchAdminTab('withdrawals')" id="adm-tab-wit" class="text-gray-400 pb-1">Withdrawals</button>
             </div>
 
             <div id="admin-content-area" class="overflow-y-auto pr-1 flex-1 space-y-3">
                 <!-- Dynamically populated via JS -->
             </div>
 
-            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                <span class="text-solGreen font-bold block">⚙️ System Balance Override</span>
-                <input type="number" id="admin-set-bal" placeholder="New Balance SOL..." class="w-full bg-slate-950 border border-slate-800 p-2 rounded-lg text-white">
-                <button onclick="adminUpdateBalance()" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-2 rounded-lg">Update User Balance</button>
-            </div>
-
             <button onclick="closeModal('adminModal')" class="w-full bg-slate-800 py-2.5 rounded-xl font-bold text-white">Close Admin Panel</button>
         </div>
     </div>
 
-    <!-- JavaScript Application Logic (Fully Expanded 25 Levels, Ranks & Auto-Verify) -->
+    <!-- JavaScript Application Logic -->
     <script>
         let minedSolBalance = 0.0000;
         let availableSolBalance = 0.0000;
         let activePlanTier = 'NONE';
         let userDepositAmount = 0.0000;
         let miningSpeedPerSec = 0.0000; 
+
+        // OFFICIAL ADMIN TELEGRAM ID (Replace with your actual Telegram User ID)
+        const ADMIN_TELEGRAM_ID = "YOUR_ADMIN_TELEGRAM_ID_HERE"; 
 
         function updateMiningSpeedForPlan(planName, depositAmount = 0.00) {
             activePlanTier = planName;
@@ -345,6 +360,7 @@
             document.getElementById('self-farming-display').innerText = `${userDepositAmount.toFixed(2)} SOL`;
             document.getElementById('self-farming-pct').innerText = percentageText;
             document.getElementById('hashrate-display').innerText = `${percentageText} / 24h`;
+            document.getElementById('home-bot-status-text').innerText = planName !== 'NONE' ? `${planName} Mining Active` : 'Not Activated';
             
             const dailyTotalReward = userDepositAmount * dailyPercentage;
             miningSpeedPerSec = dailyTotalReward / 86400;
@@ -416,7 +432,7 @@
             if (amt >= 0.01 && amt <= 0.10) {
                 alert(`Instant Auto-Payout of ${amt} SOL sent successfully to ${addr}!`);
             } else {
-                alert(`Withdrawal request of ${amt} SOL submitted for admin approval (10% fee applies)!`);
+                alert(`Withdrawal request of ${amt} SOL submitted for admin approval!`);
             }
             closeModal('withdrawModal');
         }
@@ -444,9 +460,13 @@
                             solLogo.classList.add('hidden');
                         }
                     }
-                    if (tgUser.id && tgUser.id.toString() === "YOUR_ADMIN_ID") {
-                        document.getElementById('admin-panel-btn').classList.remove('hidden');
-                        document.getElementById('admin-panel-btn').classList.add('flex');
+                    // STRICT ADMIN SECURITY CHECK: Only show Admin Panel if user ID matches ADMIN_TELEGRAM_ID
+                    if (tgUser.id && tgUser.id.toString() === ADMIN_TELEGRAM_ID) {
+                        const adminBtn = document.getElementById('admin-panel-btn');
+                        if (adminBtn) {
+                            adminBtn.classList.remove('hidden');
+                            adminBtn.classList.add('flex');
+                        }
                     }
                 }
             }
@@ -464,44 +484,60 @@
             const pin = prompt("Enter Admin Security PIN (7777):");
             if (pin === "7777" || pin === "admin") {
                 openModal('adminModal');
-                switchAdminTab('deposits');
+                switchAdminTab('topup');
             } else if (pin !== null) { alert("Incorrect PIN!"); }
         }
 
         function switchAdminTab(tab) {
             const area = document.getElementById('admin-content-area');
+            document.getElementById('adm-tab-top').className = tab === 'topup' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-gray-400 pb-1';
             document.getElementById('adm-tab-dep').className = tab === 'deposits' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-gray-400 pb-1';
             document.getElementById('adm-tab-wit').className = tab === 'withdrawals' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-gray-400 pb-1';
-            document.getElementById('adm-tab-usr').className = tab === 'users' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-gray-400 pb-1';
 
-            if (tab === 'deposits') {
+            if (tab === 'topup') {
+                area.innerHTML = `
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <span class="text-amber-400 font-bold block">⚡ Instant User ID Top-Up & Activation</span>
+                        <div>
+                            <label class="text-[10px] text-gray-400 block">User Telegram ID or Username</label>
+                            <input type="text" id="admin-target-user" placeholder="@username or ID" class="w-full bg-slate-950 border border-slate-800 p-2 rounded-lg text-white mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 block">Select Package Tier</label>
+                            <select id="admin-target-plan" class="w-full bg-slate-950 border border-slate-800 p-2 rounded-lg text-white mt-1">
+                                <option value="STARTER">STARTER BOT (0.5% - 0.50 SOL)</option>
+                                <option value="ADVANCE">ADVANCE BOT (1.0% - 5.00 SOL)</option>
+                                <option value="PREMIUM">PREMIUM BOT (1.5% - 15.00 SOL)</option>
+                                <option value="GALAXY">GALAXY BOT (2.0% - 50.00 SOL)</option>
+                            </select>
+                        </div>
+                        <button onclick="adminExecuteTopUp()" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-2 rounded-lg mt-2">Approve & Top-Up ID</button>
+                    </div>`;
+            } else if (tab === 'deposits') {
                 area.innerHTML = `<div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
                     <div class="flex justify-between"><span class="text-gray-300">User: @CryptoFarmer</span><span class="text-amber-400">0.50 SOL</span></div>
                     <div class="text-[10px] text-gray-400 break-all">TxHash: 5Kj8...9xZ1</div>
-                    <div class="flex space-x-2 pt-1">
-                        <button onclick="alert('Deposit Approved & ID Activated!');" class="flex-1 bg-emerald-600 py-1.5 rounded-lg text-white font-bold">Approve</button>
-                        <button onclick="alert('Deposit Rejected!');" class="flex-1 bg-rose-600 py-1.5 rounded-lg text-white font-bold">Reject</button>
-                    </div></div>`;
+                    <button onclick="alert('Deposit Approved & ID Activated!');" class="w-full bg-emerald-600 py-1.5 rounded-lg text-white font-bold mt-1">Approve Deposit</button></div>`;
             } else if (tab === 'withdrawals') {
                 area.innerHTML = `<div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
                     <div class="flex justify-between"><span class="text-gray-300">User: @CryptoFarmer</span><span class="text-solGreen">0.25 SOL</span></div>
-                    <div class="text-[10px] text-gray-400 break-all">Address: BY3Tzt...KqjnRZ</div>
-                    <div class="flex space-x-2 pt-1">
-                        <button onclick="alert('Payout Sent!');" class="flex-1 bg-emerald-600 py-1.5 rounded-lg text-white font-bold">Pay & Complete</button>
-                    </div></div>`;
-            } else if (tab === 'users') {
-                area.innerHTML = `<div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <div class="flex justify-between"><span class="text-white font-bold">@CryptoFarmer</span><span class="text-purple-400">STAR RANK</span></div>
-                    <div class="text-[10px] text-gray-400">Balance: 0.00 SOL | Directs: 0</div></div>`;
+                    <button onclick="alert('Payout Sent!');" class="w-full bg-emerald-600 py-1.5 rounded-lg text-white font-bold mt-1">Pay & Complete</button></div>`;
             }
         }
 
-        function adminUpdateBalance() {
-            const newBal = parseFloat(document.getElementById('admin-set-bal').value);
-            if (isNaN(newBal)) { alert("Enter valid balance amount!"); return; }
-            availableSolBalance = newBal;
-            document.getElementById('balance-display').innerHTML = `<span class="text-white font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
-            alert(`Admin updated available balance to ${newBal.toFixed(4)} SOL`);
+        function adminExecuteTopUp() {
+            const user = document.getElementById('admin-target-user').value.trim();
+            const plan = document.getElementById('admin-target-plan').value;
+            if (!user) { alert("Please enter target user!"); return; }
+            
+            let amount = 0.50;
+            if (plan === 'ADVANCE') amount = 5.00;
+            if (plan === 'PREMIUM') amount = 15.00;
+            if (plan === 'GALAXY') amount = 50.00;
+
+            updateMiningSpeedForPlan(plan, amount);
+            alert(`Successfully topped up ID for ${user} with ${plan} Package (${amount} SOL)!`);
+            closeModal('adminModal');
         }
 
         function renderLevels() {
