@@ -24,6 +24,11 @@
 </head>
 <body class="bg-darkBg text-white font-sans antialiased pb-24 selection:bg-solPurple selection:text-white">
 
+    <!-- Global Broadcast Popup Notification Overlay -->
+    <div id="global-broadcast-banner" class="hidden bg-gradient-to-r from-amber-600 via-orange-600 to-amber-600 text-slate-950 font-bold px-4 py-2 text-center text-xs sticky top-0 z-50 shadow-md animate-pulse">
+        📢 <span id="broadcast-message-text">Announcement: System running smoothly!</span>
+    </div>
+
     <!-- Top Navigation Header -->
     <header class="sticky top-0 z-45 bg-darkBg/90 backdrop-blur-md border-b border-cardBorder px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-2">
@@ -71,11 +76,11 @@
                         <div class="absolute inset-0 rounded-full border-2 border-solGreen/80 animate-pulse"></div>
                         <div class="relative w-36 h-36 rounded-full bg-gradient-to-tr from-solPurple via-indigo-600 to-solGreen p-1 shadow-2xl shadow-solGreen/40">
                             <div class="w-full h-full bg-darkBg rounded-full flex flex-col items-center justify-center p-2 relative overflow-hidden">
-                                <div id="home-robot-container" class="relative z-10 text-solGreen">
-                                    <svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <div id="home-robot-container" class="relative z-10">
+                                    <svg class="w-16 h-16 text-solGreen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                         <rect x="5" y="4" width="14" height="10" rx="2" fill="#131c2e" />
-                                        <circle cx="9" cy="8" r="1.5" fill="currentColor" />
-                                        <circle cx="15" cy="8" r="1.5" fill="currentColor" />
+                                        <circle cx="9" cy="8" r="1.5" fill="#14F195" />
+                                        <circle cx="15" cy="8" r="1.5" fill="#14F195" />
                                     </svg>
                                 </div>
                                 <div class="absolute bottom-2 z-20 animate-bounce flex items-center space-x-1 bg-slate-950/90 px-2.5 py-0.5 rounded-full border border-solGreen/60">
@@ -89,11 +94,11 @@
                     <div class="pt-1">
                         <span class="text-[10px] text-gray-400 uppercase tracking-widest block font-bold">Mined Balance</span>
                         <h2 class="text-3xl font-black bg-gradient-to-r from-white via-solGreen to-emerald-400 bg-clip-text text-transparent font-mono" id="mined-balance">0.000000 <span class="text-solGreen text-lg">SOL</span></h2>
-                        <span id="mined-rate-label" class="text-[11px] text-gray-400 font-mono">24h Total: ~0.0025 SOL (0.5% / 24h)</span>
+                        <span class="text-[11px] text-gray-400 font-mono">24h Total: ~0.0025 SOL (0.5% / 24h)</span>
                     </div>
                 </div>
 
-                <button onclick="claimMinedRewards()" class="w-full bg-gradient-to-r from-solGreen via-emerald-500 to-teal-500 hover:opacity-95 transition py-3 rounded-2xl font-black text-xs text-slate-950 uppercase tracking-wider cursor-pointer shadow-lg shadow-solGreen/20">
+                <button onclick="claimMinedRewards()" class="w-full bg-gradient-to-r from-solGreen via-emerald-500 to-teal-500 hover:opacity-90 transition py-3 rounded-2xl font-black text-xs text-slate-950 uppercase tracking-wider cursor-pointer">
                     📥 CLAIM MINED REWARDS
                 </button>
             </div>
@@ -102,15 +107,93 @@
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-cardBg border border-emerald-500/30 rounded-2xl p-3.5 space-y-1 shadow-lg">
                     <span class="text-[9px] font-black text-gray-400 uppercase tracking-wider block">ACTIVE PACKAGE</span>
-                    <div id="home-active-package-name" class="text-sm font-black text-solGreen flex items-center space-x-1">
+                    <div class="text-sm font-black text-solGreen flex items-center space-x-1">
                         <span>🌱</span> <span>STARTER</span>
                     </div>
-                    <span id="home-active-package-limit" class="text-[10px] text-gray-400 font-mono block">Limit: 0.10 - 2.0 SOL</span>
+                    <span class="text-[10px] text-gray-400 font-mono block">Limit: 0.10 - 2.0 SOL</span>
                 </div>
                 <div class="bg-cardBg border border-solGreen/30 rounded-2xl p-3.5 space-y-1 shadow-lg">
                     <span class="text-[9px] font-black text-gray-400 uppercase tracking-wider block">SELF FARMING</span>
-                    <div id="home-self-farming-val" class="text-sm font-black text-white font-mono">0.50 SOL</div>
-                    <span id="home-self-farming-rate" class="text-[10px] text-solGreen font-mono block">0.5% Daily Farming Bonus</span>
+                    <div class="text-sm font-black text-white font-mono">0.50 SOL</div>
+                    <span class="text-[10px] text-solGreen font-mono block">0.5% Daily Farming Bonus</span>
+                </div>
+            </div>
+
+            <!-- Active Promo Event & Auto Top-Up Card -->
+            <div class="bg-cardBg border border-amber-500/40 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-xl">
+                <div class="flex justify-between items-center">
+                    <span class="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                        🔥 ACTIVE PROMO EVENT
+                    </span>
+                    <span class="text-xs font-mono font-black text-amber-300">AUTO TOPUP AT 0.10 SOL</span>
+                </div>
+
+                <div class="space-y-1.5 text-xs text-gray-300 font-mono">
+                    <div class="font-bold text-white text-sm">Bot Join & Referral Promo Protocol</div>
+                    <div class="flex items-start space-x-1 text-amber-300">
+                        <span class="text-amber-400 font-bold">•</span>
+                        <span>Join via Referral Link Get <strong>0.01 SOL</strong> Joining Bonus!</span>
+                    </div>
+                    <div class="flex items-start space-x-1 text-amber-300">
+                        <span class="text-amber-400 font-bold">•</span>
+                        <span>Refer Each Friend Get <strong>0.01 SOL</strong> Instantly Accumulated!</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 font-mono text-xs pt-1">
+                    <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-gray-400 block">Promo Bonus Balance</span>
+                        <strong class="text-amber-300 font-black" id="promo-bonus-text">0.0100 / 0.10 SOL</strong>
+                    </div>
+                    <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-gray-400 block">Auto-Topup Target</span>
+                        <strong class="text-solGreen font-black" id="promo-progress-text">10% Reached</strong>
+                    </div>
+                </div>
+
+                <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                    <div id="promo-progress" class="bg-gradient-to-r from-amber-500 to-solGreen h-full w-[10%]"></div>
+                </div>
+
+                <div class="text-[10px] text-gray-400 font-mono flex items-start space-x-1">
+                    <span>⚡</span>
+                    <span>Accelerate your activation: Every successful referral boosts your Promo Balance by <strong>0.01 SOL</strong>. Reaching <strong>0.10 SOL</strong> automatically triggers <strong>**Instant Starter Package Auto-Topup**</strong>!</span>
+                </div>
+
+                <button onclick="triggerReferralShare()" class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:opacity-90 py-3 rounded-xl font-black text-xs text-slate-950 uppercase tracking-wide flex items-center justify-center space-x-2 shadow-lg shadow-orange-500/20 cursor-pointer">
+                    <span>🔗</span> <span>Refer Friends & Increase Balance</span>
+                </button>
+            </div>
+
+            <!-- Earning Breakdown Card -->
+            <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 space-y-3 shadow-xl">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-black text-gray-300 tracking-wider uppercase flex items-center space-x-1.5">
+                        <span>💼</span> <span>EARNING BREAKDOWN</span>
+                    </span>
+                    <button onclick="switchTab('team')" class="text-[10px] font-bold text-solGreen bg-solGreen/10 border border-solGreen/30 px-2 py-0.5 rounded-lg">Wallet Stream</button>
+                </div>
+                <div class="space-y-2 font-mono text-xs">
+                    <div class="flex justify-between items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+                        <span class="text-gray-300">🌱 Self Farming Bonus</span>
+                        <strong class="text-solGreen">0.0000 SOL</strong>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+                        <span class="text-gray-300">🎯 Direct Referral Bonus (L1)</span>
+                        <strong class="text-solGreen">0.0000 SOL</strong>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+                        <span class="text-gray-300">🤝 Team Referral Bonus (L2–L5)</span>
+                        <strong class="text-solGreen">0.0000 SOL</strong>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+                        <span class="text-gray-300">⭐ Team Override Bonus (L1–L25)</span>
+                        <strong class="text-solGreen">0.0000 SOL</strong>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+                        <span class="text-gray-300">👑 Rank & Royalty Bonus</span>
+                        <strong class="text-amber-400">0.0300 SOL</strong>
+                    </div>
                 </div>
             </div>
 
@@ -119,27 +202,63 @@
                 <div class="space-y-1">
                     <span class="text-xs font-black text-emerald-400 tracking-wider uppercase">💳 AVAILABLE BALANCE</span>
                     <h2 class="text-3xl font-black font-mono tracking-tight flex items-baseline space-x-2" id="balance-display">
-                        <span class="text-white font-extrabold">1.5000</span>
+                        <span class="text-white font-extrabold">0.0000</span>
                         <span class="text-xl text-[#14F195] font-bold">SOL</span>
                     </h2>
                 </div>
                 <div class="grid grid-cols-2 gap-3 pt-1">
-                    <button onclick="openDepositModal('STARTER', 0.10)" class="bg-blue-600 hover:bg-blue-500 transition py-2.5 rounded-xl font-bold text-xs text-white">💰 Deposit</button>
+                    <button onclick="openModal('depositModal')" class="bg-blue-600 hover:bg-blue-500 transition py-2.5 rounded-xl font-bold text-xs text-white">💰 Deposit</button>
                     <button onclick="openModal('withdrawModal')" class="bg-emerald-600 hover:bg-emerald-500 transition py-2.5 rounded-xl font-bold text-xs text-white">🎁 Withdraw</button>
                 </div>
             </div>
 
-            <!-- Promo Event Card -->
-            <div class="bg-cardBg border border-amber-500/30 rounded-2xl p-4 space-y-3 shadow-xl">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded font-mono">🔥 ACTIVE PROMO EVENT</span>
-                    <span class="text-[10px] text-gray-400 font-mono">AUTO TOPUP AT: 0.10 SOL</span>
+            <!-- Capping Protocol Card -->
+            <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 space-y-3 shadow-xl">
+                <div class="space-y-0.5">
+                    <span class="text-xs font-black text-amber-400 tracking-wider uppercase">💰 TOTAL EARNED</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black text-gray-300 uppercase flex items-center space-x-1">
+                            <span>⚡</span> <span>CAPPING PROTOCOL</span>
+                        </span>
+                        <strong class="text-lg font-mono text-solGreen font-black">0.0000 SOL</strong>
+                    </div>
+                    <span class="text-[10px] text-gray-400 font-mono block">Track your earnings vs maximum capacity</span>
                 </div>
-                <h3 class="text-sm font-extrabold text-white">Bot Join & Referral Promo Protocol</h3>
-                <p class="text-[11px] text-gray-400">Join via Referral Link Get <strong class="text-solGreen">0.01 SOL</strong> Joining Bonus! Refer Each Friend Get <strong class="text-solGreen">0.01 SOL</strong> Instantly Accumulated!</p>
-                <div class="space-y-1 font-mono">
-                    <div class="flex justify-between text-xs"><span>Promo Bonus Balance</span><span class="text-solGreen font-bold">0.0100 / 0.10 SOL</span></div>
-                    <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800"><div class="bg-gradient-to-r from-solPurple to-solGreen h-full w-[10%]"></div></div>
+                <div class="space-y-2 font-mono text-xs pt-2 border-t border-slate-800">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Cap Protocol (250%):</span>
+                        <span class="text-white font-bold">1.2500 SOL</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Remaining Capacity:</span>
+                        <span class="text-solGreen font-bold">1.2500 SOL</span>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                    <div class="bg-solGreen h-full w-[0%]"></div>
+                </div>
+            </div>
+
+            <!-- Earning Cap Status Card -->
+            <div class="bg-cardBg border border-purple-500/30 rounded-2xl p-4 space-y-2 shadow-xl">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-black text-purple-400 uppercase tracking-wider flex items-center space-x-1">
+                        <span>⚡</span> <span>EARNING CAP STATUS</span>
+                    </span>
+                    <span class="text-[10px] font-mono bg-purple-500/10 border border-purple-500/30 text-purple-300 px-2 py-0.5 rounded font-bold">Active Limit: 250%</span>
+                </div>
+                <div class="space-y-1.5 font-mono text-xs pt-1">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Base Max Cap:</span>
+                        <span class="text-white font-bold">250% (Active)</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Super Max Cap (1 Direct):</span>
+                        <span class="text-gray-500 font-bold">500% (Locked)</span>
+                    </div>
+                </div>
+                <div class="text-[10px] text-amber-300/90 font-mono pt-1">
+                    ⭐ Refer at least 1 active direct user to unlock your Super Cap upgrade from 250% to 500%!
                 </div>
             </div>
         </div>
@@ -151,6 +270,15 @@
                     <span>💎</span> <span>Farming Packages</span>
                 </h2>
                 <p class="text-xs text-gray-400 font-mono">Choose your package tier and start earning daily farming bonus rewards.</p>
+            </div>
+
+            <div class="bg-cardBg border border-amber-500/30 rounded-2xl p-3.5 space-y-1 shadow-lg">
+                <div class="text-xs font-bold text-amber-400 flex items-center space-x-1">
+                    <span>⚡</span> <span>Max Earnings Cap Rule</span>
+                </div>
+                <p class="text-[11px] text-gray-300 font-mono leading-relaxed">
+                    Base maximum cap is <strong>250%</strong>. Referring at least one active user upgrades your max cap to <strong>500%</strong>!
+                </p>
             </div>
 
             <!-- TIER 1 -->
@@ -170,9 +298,12 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                     <div><span class="text-[10px] text-gray-400 block">Deposit Range:</span><strong class="text-white">0.10 - 2.00 SOL</strong></div>
-                    <div><span class="text-[10px] text-gray-400 block">Daily Farming:</span><strong class="text-solGreen">0.5%</strong></div>
+                    <div><span class="text-[10px] text-gray-400 block">Daily Farming Bonus:</span><strong class="text-solGreen">0.5%</strong></div>
                 </div>
-                <button onclick="openDepositModal('STARTER', 0.10)" class="w-full bg-gradient-to-r from-solGreen via-emerald-500 to-teal-500 hover:opacity-95 py-3 rounded-xl font-black text-xs text-slate-950 uppercase tracking-wide cursor-pointer shadow-lg shadow-solGreen/20">
+                <div class="text-[11px] font-mono text-gray-300 flex justify-between bg-slate-900/40 p-2 rounded-lg">
+                    <span>24h Earning on 1 SOL:</span><strong class="text-solGreen">0.005 SOL</strong>
+                </div>
+                <button onclick="openModal('depositModal')" class="w-full bg-gradient-to-r from-solGreen via-emerald-500 to-teal-500 hover:opacity-90 py-3 rounded-xl font-black text-xs text-slate-950 uppercase tracking-wide cursor-pointer shadow-lg shadow-solGreen/20">
                     Deposit Starter (0.10 - 2.00 SOL)
                 </button>
             </div>
@@ -194,9 +325,12 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                     <div><span class="text-[10px] text-gray-400 block">Deposit Range:</span><strong class="text-white">2.10 - 10.00 SOL</strong></div>
-                    <div><span class="text-[10px] text-gray-400 block">Daily Farming:</span><strong class="text-blue-400">1.0%</strong></div>
+                    <div><span class="text-[10px] text-gray-400 block">Daily Farming Bonus:</span><strong class="text-blue-400">1.0%</strong></div>
                 </div>
-                <button onclick="openDepositModal('ADVANCE', 2.10)" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:opacity-95 py-3 rounded-xl font-black text-xs text-white uppercase tracking-wide cursor-pointer shadow-lg shadow-blue-500/20">
+                <div class="text-[11px] font-mono text-gray-300 flex justify-between bg-slate-900/40 p-2 rounded-lg">
+                    <span>24h Earning on 5 SOL:</span><strong class="text-blue-400">0.050 SOL</strong>
+                </div>
+                <button onclick="openModal('depositModal')" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:opacity-90 py-3 rounded-xl font-black text-xs text-white uppercase tracking-wide cursor-pointer shadow-lg shadow-blue-500/20">
                     Deposit Advance (2.10 - 10.00 SOL)
                 </button>
             </div>
@@ -218,9 +352,12 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                     <div><span class="text-[10px] text-gray-400 block">Deposit Range:</span><strong class="text-white">10.10 - 25.00 SOL</strong></div>
-                    <div><span class="text-[10px] text-gray-400 block">Daily Farming:</span><strong class="text-purple-400">1.5%</strong></div>
+                    <div><span class="text-[10px] text-gray-400 block">Daily Farming Bonus:</span><strong class="text-purple-400">1.5%</strong></div>
                 </div>
-                <button onclick="openDepositModal('PREMIUM', 10.10)" class="w-full bg-gradient-to-r from-purple-600 via-indigo-700 to-purple-700 hover:opacity-95 py-3 rounded-xl font-black text-xs text-white uppercase tracking-wide cursor-pointer shadow-lg shadow-purple-500/20">
+                <div class="text-[11px] font-mono text-gray-300 flex justify-between bg-slate-900/40 p-2 rounded-lg">
+                    <span>24h Earning on 15 SOL:</span><strong class="text-purple-400">0.225 SOL</strong>
+                </div>
+                <button onclick="openModal('depositModal')" class="w-full bg-gradient-to-r from-purple-600 via-indigo-700 to-purple-700 hover:opacity-90 py-3 rounded-xl font-black text-xs text-white uppercase tracking-wide cursor-pointer shadow-lg shadow-purple-500/20">
                     Deposit Premium (10.10 - 25.00 SOL)
                 </button>
             </div>
@@ -242,23 +379,27 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                     <div><span class="text-[10px] text-gray-400 block">Deposit Range:</span><strong class="text-white">25.10 - 100.00 SOL</strong></div>
-                    <div><span class="text-[10px] text-gray-400 block">Daily Farming:</span><strong class="text-amber-400">2.0%</strong></div>
+                    <div><span class="text-[10px] text-gray-400 block">Daily Farming Bonus:</span><strong class="text-amber-400">2.0%</strong></div>
                 </div>
-                <button onclick="openDepositModal('GALAXY', 25.10)" class="w-full bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:opacity-95 py-3 rounded-xl font-black text-xs text-slate-950 uppercase tracking-wide cursor-pointer shadow-lg shadow-amber-500/20">
+                <div class="text-[11px] font-mono text-gray-300 flex justify-between bg-slate-900/40 p-2 rounded-lg">
+                    <span>24h Earning on 50 SOL:</span><strong class="text-amber-400">1.00 SOL</strong>
+                </div>
+                <button onclick="openModal('depositModal')" class="w-full bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:opacity-90 py-3 rounded-xl font-black text-xs text-slate-950 uppercase tracking-wide cursor-pointer shadow-lg shadow-amber-500/20">
                     Deposit Galaxy (25.10 - 100.00 SOL)
                 </button>
             </div>
         </div>
 
         <!-- TAB: TEAM -->
-        <div id="tab-team" class="tab-pane hidden space-y-4 pb-4">
+        <div id="tab-team" class="tab-pane hidden space-y-4 pb-6">
             <div class="space-y-1">
                 <h2 class="text-xl font-extrabold text-white flex items-center space-x-2">
                     <span>👥</span> <span>Team & Referral Network</span>
                 </h2>
-                <p class="text-xs text-gray-400 font-mono">Build your downline across levels and unlock commission bonuses.</p>
+                <p class="text-xs text-gray-400 font-mono">Build your downline across 25 levels and unlock commission bonuses.</p>
             </div>
-            
+
+            <!-- Referral Link Card -->
             <div class="bg-cardBg border border-purple-500/40 rounded-2xl p-4 space-y-2.5 shadow-xl">
                 <span class="text-xs font-black text-purple-400 uppercase tracking-wider block">🔗 YOUR REFERRAL LINK</span>
                 <div class="flex items-center space-x-2">
@@ -267,20 +408,50 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-cardBg border border-slate-800 rounded-2xl p-3.5 space-y-1">
-                    <span class="text-[9px] text-gray-400 font-mono uppercase block">Total Team Members</span>
-                    <span class="text-lg font-black text-white">0 Users</span>
+            <!-- Direct Referral Bonus (Level 1) -->
+            <div class="bg-cardBg border border-solGreen/30 rounded-2xl p-4 space-y-2 shadow-xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-black text-white flex items-center space-x-1.5">
+                        <span>🎯</span> <span>Direct Referral Bonus (Level 1)</span>
+                    </h3>
+                    <span class="text-xs font-mono font-bold bg-solGreen/10 border border-solGreen/30 text-solGreen px-2.5 py-0.5 rounded-lg">5%</span>
                 </div>
-                <div class="bg-cardBg border border-slate-800 rounded-2xl p-3.5 space-y-1">
-                    <span class="text-[9px] text-gray-400 font-mono uppercase block">Total Team Commission</span>
-                    <span class="text-lg font-black text-solGreen">0.00 SOL</span>
+                <p class="text-[11px] text-gray-300 font-mono leading-relaxed">
+                    Earn an instant <strong>5% Direct Referral Bonus</strong> on every deposit made by your Level 1 direct referrals.
+                </p>
+            </div>
+
+            <!-- Team Referral Bonus (Levels 2 - 5) -->
+            <div class="bg-cardBg border border-blue-500/30 rounded-2xl p-4 space-y-3 shadow-xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-black text-white flex items-center space-x-1.5">
+                        <span>🤝</span> <span>Team Referral Bonus (Levels 2 - 5)</span>
+                    </h3>
+                    <span class="text-[10px] font-mono bg-blue-500/10 border border-blue-500/30 text-blue-400 px-2 py-0.5 rounded font-bold">Multi-Level</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 space-y-0.5">
+                        <span class="text-solGreen font-bold block">Level 2: 4.0%</span>
+                        <span class="text-[10px] text-gray-400 block">Req: 1 Active Direct</span>
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 space-y-0.5">
+                        <span class="text-solGreen font-bold block">Level 3: 3.0%</span>
+                        <span class="text-[10px] text-gray-400 block">Req: 2 Active Directs</span>
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 space-y-0.5">
+                        <span class="text-solGreen font-bold block">Level 4: 2.0%</span>
+                        <span class="text-[10px] text-gray-400 block">Req: 3 Active Directs</span>
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 space-y-0.5">
+                        <span class="text-solGreen font-bold block">Level 5: 1.0%</span>
+                        <span class="text-[10px] text-gray-400 block">Req: 4 Active Directs</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- TAB: RANKS -->
-        <div id="tab-ranks" class="tab-pane hidden space-y-4 pb-4">
+        <div id="tab-ranks" class="tab-pane hidden space-y-4 pb-6">
             <div class="space-y-1">
                 <h2 class="text-xl font-extrabold text-white flex items-center space-x-2">
                     <span>🏆</span> <span>Ranks & Royalty Program</span>
@@ -288,6 +459,7 @@
                 <p class="text-xs text-gray-400 font-mono">Unlock daily recurring rewards by achieving higher rank volume criteria.</p>
             </div>
 
+            <!-- Highest Achieved Rank Card -->
             <div class="bg-gradient-to-br from-amber-950/40 via-cardBg to-slate-900 border border-amber-500/40 rounded-3xl p-5 space-y-3 shadow-xl text-center relative overflow-hidden">
                 <span class="inline-block text-[10px] font-mono uppercase bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full font-bold">
                     👑 HIGHEST ACHIEVED RANK
@@ -296,43 +468,101 @@
                     <h3 class="text-2xl font-black text-amber-300 tracking-wider">STAR RANK</h3>
                     <p class="text-xs text-gray-300 font-mono pt-1">Daily Royalty Bonus: <strong class="text-amber-400">0.03 SOL</strong> Daily Basis</p>
                 </div>
+                <div class="inline-flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-xl text-xs font-bold">
+                    <span>✓</span> <span>Active Royalty Recipient</span>
+                </div>
             </div>
 
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-widest pt-2">
+                ALL RANKS & ROYALTY &gt; PROGRESS <span class="text-solGreen font-mono font-normal lowercase">(Leg Ratio: 40/60)</span>
+            </div>
+
+            <!-- RANK 1: STAR RANK -->
             <div class="bg-cardBg border border-amber-500/40 rounded-2xl p-4 space-y-3 shadow-xl">
                 <div class="flex justify-between items-center">
-                    <span class="text-sm font-black text-amber-300 flex items-center space-x-1.5"><span>⭐</span> <span>STAR RANK</span></span>
+                    <span class="text-sm font-black text-amber-300 flex items-center space-x-1.5">
+                        <span>⭐</span> <span>STAR RANK</span>
+                    </span>
                     <span class="text-[10px] font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded-lg font-bold">Achieved</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2 font-mono text-center">
-                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800"><span class="text-[9px] text-gray-400 block uppercase">Total Target</span><strong class="text-xs text-white">30 SOL</strong></div>
-                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800"><span class="text-[9px] text-gray-400 block uppercase">Total Done</span><strong class="text-xs text-solGreen font-black">0.0 SOL</strong></div>
-                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800"><span class="text-[9px] text-gray-400 block uppercase">Daily Royalty</span><strong class="text-xs text-amber-400">0.03 SOL</strong></div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[9px] text-gray-400 block uppercase">Total Target</span>
+                        <strong class="text-xs text-white">30 SOL</strong>
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[9px] text-gray-400 block uppercase">Total Done</span>
+                        <strong class="text-xs text-solGreen font-black">0.0 SOL</strong>
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                        <span class="text-[9px] text-gray-400 block uppercase">Daily Royalty</span>
+                        <strong class="text-xs text-amber-400">0.03 SOL</strong>
+                    </div>
+                </div>
+                <div class="space-y-1 font-mono text-xs">
+                    <div class="flex justify-between text-gray-400 text-[11px]">
+                        <span>Progress (100%)</span>
+                        <span class="text-solGreen font-bold">Goal Reached!</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                        <div class="bg-amber-400 h-full w-[100%]"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                    <div class="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                        <span class="text-[9px] text-gray-400 block">Strongest Leg (40%):</span>
+                        <strong class="text-white">0.0 / 12 SOL</strong>
+                    </div>
+                    <div class="bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+                        <span class="text-[9px] text-gray-400 block">Other Legs (60%):</span>
+                        <strong class="text-white">0.0 / 18 SOL</strong>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB: PROFILE -->
-        <div id="tab-profile" class="tab-pane hidden space-y-4 pb-4">
+        <!-- TAB: PROFILE (Updated with File Upload instead of URL) -->
+        <div id="tab-profile" class="tab-pane hidden space-y-4 pb-6">
             <div class="space-y-1">
                 <h2 class="text-xl font-extrabold text-white flex items-center space-x-2">
                     <span>👤</span> <span>User Profile & Wallet Settings</span>
                 </h2>
-                <p class="text-xs text-gray-400 font-mono">Save your withdrawal address and personal details once for instant one-click payouts.</p>
+                <p class="text-xs text-gray-400 font-mono">Save your withdrawal address and personal details once for instant one-click payouts.</p>[span_0](start_span)[span_0](end_span)
             </div>
+
             <div class="bg-cardBg border border-purple-500/40 rounded-2xl p-4 space-y-3 shadow-xl">
                 <div class="space-y-1">
                     <label class="text-[10px] text-gray-400 uppercase font-mono font-bold block">Display Name / Telegram Username</label>
                     <input type="text" id="profile-name" value="@Farming_Master" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-xs text-white font-mono">
                 </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-400 uppercase font-mono font-bold block">Mobile Number</label>
+                    <input type="text" id="profile-mobile" value="+91 9876543210" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-xs text-white font-mono">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-400 uppercase font-mono font-bold block">Email ID</label>
+                    <input type="email" id="profile-email" value="user@gmail.com" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-xs text-white font-mono">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-400 uppercase font-mono font-bold block">Solana Receiving Address (For Withdrawals)</label>
+                    <input type="text" id="profile-wallet" placeholder="Enter your SOL wallet address here..." class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-3 text-xs text-white font-mono">
+                    <span class="text-[10px] text-amber-300 font-mono block pt-1">💡 Once saved here, your withdrawal address will be automatically filled whenever you request a payout!</span>[span_1](start_span)[span_1](end_span)
+                </div>
+
                 <div class="space-y-1">
                     <label class="text-[10px] text-gray-400 uppercase font-mono font-bold block">Upload Profile Photo (Avatar)</label>
                     <input type="file" id="profile-photo-file" accept="image/*" onchange="previewProfilePhoto(event)" class="w-full bg-slate-900 border border-purple-500/30 rounded-xl p-2.5 text-xs text-gray-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-solPurple file:text-white hover:file:bg-purple-600 cursor-pointer font-mono">
                 </div>
-                <button onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-solPurple via-indigo-600 to-solGreen hover:opacity-95 py-3 rounded-xl font-black text-xs text-white uppercase tracking-wide shadow-lg shadow-solPurple/20 cursor-pointer mt-2">
+
+                <button onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-solPurple via-indigo-600 to-solGreen hover:opacity-90 py-3 rounded-xl font-black text-xs text-white uppercase tracking-wide shadow-lg shadow-purple-500/20 cursor-pointer mt-2">
                     💾 Save Profile & Withdrawal Address
                 </button>
-                <!-- ADMIN BUTTON (Secured: Only visible for Telegram ID 5939907983) -->
-                <button id="admin-panel-btn" onclick="openAdminPanel()" class="w-full bg-amber-600 hover:bg-amber-500 transition py-3 rounded-xl font-bold text-xs text-slate-950 flex items-center justify-center space-x-2 mt-2 hidden">
+                
+                <!-- Admin Panel Button -->
+                <button id="admin-panel-btn" onclick="openAdminPanel()" class="w-full bg-amber-600 hover:bg-amber-500 transition py-3 rounded-xl font-bold text-xs text-slate-950 flex items-center justify-center space-x-2 mt-2">
                     <span>🔐</span> <span>Open Advanced Admin Control Panel</span>
                 </button>
             </div>
@@ -351,58 +581,54 @@
         </div>
     </nav>
 
-    <!-- DEPOSIT MODAL -->
-    <div id="depositModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-purple-500/40 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 id="deposit-modal-title" class="text-sm font-black text-amber-400 flex items-center space-x-1.5">
-                    <span>💰</span> <span>Deposit - STARTER Package</span>
+    <!-- SHARE REFERRAL MODAL -->
+    <div id="shareModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-amber-500/40 rounded-3xl p-6 max-w-sm w-full space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-black text-amber-400 flex items-center space-x-1">
+                    <span>🚀</span> <span>Share Referral Link</span>
                 </h3>
-                <button onclick="closeModal('depositModal')" class="text-gray-400 font-bold hover:text-white">✕</button>
+                <button onclick="closeModal('shareModal')" class="text-gray-400 font-bold">✕</button>
             </div>
+            <div class="space-y-2">
+                <span class="text-[11px] text-gray-400 block font-mono">Your Personal Link:</span>
+                <input type="text" id="modal-ref-link" value="https://t.me/SolMiningFarmBot?start=5939907983" readonly class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-solGreen font-mono">
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <a href="https://t.me/share/url?url=https://t.me/SolMiningFarmBot?start=5939907983&text=Join%20Solana%20Farming%20Bot%20and%20Earn%20SOL!" target="_blank" class="bg-blue-600 hover:bg-blue-500 py-2.5 rounded-xl text-center text-xs font-bold text-white flex items-center justify-center space-x-1">
+                    <span>📱</span> <span>Telegram</span>
+                </a>
+                <a href="https://api.whatsapp.com/send?text=Join%20Solana%20Farming%20Bot%20https://t.me/SolMiningFarmBot?start=5939907983" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 py-2.5 rounded-xl text-center text-xs font-bold text-white flex items-center justify-center space-x-1">
+                    <span>💬</span> <span>WhatsApp</span>
+                </a>
+            </div>
+            <button onclick="copyModalRefLink()" class="w-full bg-slate-800 py-2 rounded-xl text-xs font-bold text-white">📋 Copy Link</button>
+        </div>
+    </div>
 
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col items-center space-y-3">
-                <div class="w-36 h-36 bg-white p-2 rounded-xl flex items-center justify-center shadow-inner">
-                    <svg class="w-full h-full text-slate-950" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm12-2h2v2h-2v-2zm4 0h2v2h-2v-2zm-4 4h2v2h-2v-2zm4 0h2v2h-2v-2zm-2 2h2v2h-2v-2z"/>
-                    </svg>
-                </div>
-                <div id="deposit-min-badge" class="w-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold py-2 rounded-xl text-center">
-                    ⚠️ Minimum Required: 0.10 SOL
-                </div>
-                <button onclick="copyDepositAddress()" class="w-full bg-slate-800 hover:bg-slate-700 text-solGreen text-xs font-mono font-bold py-2.5 rounded-xl border border-slate-700 flex items-center justify-center space-x-1.5">
-                    <span>📋</span> <span>Copy Wallet Address</span>
-                </button>
-            </div>
-
-            <div class="space-y-1.5 font-mono">
-                <label class="text-[10px] text-solGreen font-black uppercase block tracking-wider">ENTER TX HASH FOR AUTO-VERIFICATION</label>
-                <input type="text" id="tx-hash-input" placeholder="Paste Solana Transaction Hash here..." class="w-full bg-slate-900 border border-solGreen/40 rounded-xl p-3 text-xs text-white font-mono focus:outline-none focus:border-solGreen">
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
-                <button onclick="closeModal('depositModal')" class="bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-bold text-white uppercase">Cancel</button>
-                <button onclick="submitAutoVerifyDeposit()" class="bg-gradient-to-r from-solGreen via-emerald-500 to-teal-500 hover:opacity-95 py-3 rounded-xl font-black text-slate-950 uppercase tracking-wide shadow-lg shadow-solGreen/20">Submit & Auto-Update</button>
-            </div>
+    <!-- DEPOSIT MODAL -->
+    <div id="depositModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-cardBorder rounded-3xl p-6 max-w-sm w-full space-y-4">
+            <div class="flex justify-between items-center"><h3 class="text-base font-black text-white">💰 Deposit SOL</h3><button onclick="closeModal('depositModal')" class="text-gray-400 font-bold">✕</button></div>
+            <div id="deposit-address-text" class="bg-slate-900 p-3 rounded-xl font-mono text-[11px] text-solGreen break-all text-center">BY3Tzt5cA8FwoPRw3B265jwb8NDU5dupf76SXwKqjnRZ</div>
+            <input type="text" id="tx-hash-input" placeholder="Enter Tx Hash for Verification" class="w-full bg-slate-900 border border-solGreen/40 rounded-xl p-2.5 text-xs text-white">
+            <button onclick="submitDepositTx()" class="w-full bg-solGreen py-2.5 rounded-xl font-bold text-xs text-slate-950">Submit Deposit Request</button>
         </div>
     </div>
 
     <!-- WITHDRAW MODAL -->
     <div id="withdrawModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-cardBorder rounded-3xl p-6 max-w-sm w-full space-y-4 font-mono">
+        <div class="bg-cardBg border border-cardBorder rounded-3xl p-6 max-w-sm w-full space-y-4">
             <div class="flex justify-between items-center"><h3 class="text-base font-black text-white">🎁 Withdraw SOL</h3><button onclick="closeModal('withdrawModal')" class="text-gray-400 font-bold">✕</button></div>
-            <div class="text-[10px] text-amber-300 bg-amber-500/10 p-2 rounded-xl border border-amber-500/30">
-                ⚡ Note: Withdrawals from <strong>0.01 to 0.10 SOL</strong> are <strong>Instant Auto-Withdrawals</strong>. Above 0.10 SOL requires Admin Approval.
-            </div>
-            <input type="number" id="withdraw-amount" placeholder="Amount (SOL, e.g. 0.05)" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white">
-            <input type="text" id="withdraw-address" placeholder="Solana Address" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white">
-            <button onclick="submitSmartWithdrawal()" class="w-full bg-emerald-600 hover:bg-emerald-500 transition py-2.5 rounded-xl font-bold text-xs text-white">Submit Withdrawal</button>
+            <input type="number" id="withdraw-amount" placeholder="Amount (SOL)" class="w-full bg-slate-900 rounded-xl p-3 text-xs text-white">
+            <input type="text" id="withdraw-address" placeholder="Solana Address" class="w-full bg-slate-900 rounded-xl p-3 text-xs text-white">
+            <button onclick="submitWithdrawal()" class="w-full bg-emerald-600 py-2.5 rounded-xl font-bold text-xs text-white">Submit Withdrawal</button>
         </div>
     </div>
 
-    <!-- ADMIN PANEL -->
+    <!-- ADVANCED ADMIN CONTROL PANEL MODAL -->
     <div id="adminModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-amber-500/40 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl max-h-[90vh] flex flex-col font-mono">
+        <div class="bg-cardBg border border-amber-500/40 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="text-base font-black text-amber-400 flex items-center space-x-2">
                     <span>🔐</span> <span>Advanced Admin Control Panel</span>
@@ -410,212 +636,70 @@
                 <button onclick="closeModal('adminModal')" class="text-gray-400 font-bold">✕</button>
             </div>
 
-            <div class="flex space-x-3 border-b border-slate-800 pb-2 text-xs font-bold overflow-x-auto">
-                <button onclick="switchAdminTab('deposits')" id="adm-tab-dep" class="text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap">Verified Deposits & Tx Logs</button>
-                <button onclick="switchAdminTab('withdrawals')" id="adm-tab-wit" class="text-gray-400 pb-1 whitespace-nowrap">Pending Withdrawals (>0.10 SOL)</button>
+            <div class="grid grid-cols-4 gap-2 font-mono text-center">
+                <div class="bg-slate-900 p-2 rounded-xl"><span class="text-[9px] text-gray-400 block">Total Users</span><strong class="text-xs text-purple-400" id="admin-total-users">0</strong></div>
+                <div class="bg-slate-900 p-2 rounded-xl"><span class="text-[9px] text-gray-400 block">Pending Dep.</span><strong class="text-xs text-amber-400" id="admin-pending-dep">0</strong></div>
+                <div class="bg-slate-900 p-2 rounded-xl"><span class="text-[9px] text-gray-400 block">Pending W/D</span><strong class="text-xs text-solGreen" id="admin-pending-wit">0</strong></div>
+                <div class="bg-slate-900 p-2 rounded-xl"><span class="text-[9px] text-gray-400 block">System Mode</span><strong class="text-xs text-emerald-400">Live</strong></div>
             </div>
 
-            <div id="admin-content-area" class="overflow-y-auto pr-1 flex-1 space-y-3 text-xs">
-                <!-- Populated dynamically -->
+            <div class="flex space-x-3 border-b border-slate-800 pb-2 text-xs font-bold overflow-x-auto">
+                <button onclick="switchAdminTab('users')" id="adm-tab-users" class="text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap">User Manager</button>
+                <button onclick="switchAdminTab('deposits')" id="adm-tab-dep" class="text-gray-400 pb-1 whitespace-nowrap">Deposits & Topup</button>
+                <button onclick="switchAdminTab('withdrawals')" id="adm-tab-wit" class="text-gray-400 pb-1 whitespace-nowrap">Withdrawals</button>
+                <button onclick="switchAdminTab('broadcast')" id="adm-tab-bro" class="text-gray-400 pb-1 whitespace-nowrap">Broadcast Popup</button>
+                <button onclick="switchAdminTab('referral')" id="adm-tab-ref" class="text-gray-400 pb-1 whitespace-nowrap">Referral Change</button>
+            </div>
+
+            <div id="admin-content-area" class="overflow-y-auto pr-1 flex-1 space-y-3 font-mono text-xs">
+                <!-- Dynamically populated via JS -->
             </div>
 
             <button onclick="closeModal('adminModal')" class="w-full bg-slate-800 py-2.5 rounded-xl font-bold text-xs text-white">Close Admin Panel</button>
         </div>
     </div>
 
-    <!-- JavaScript Logic -->
+    <!-- JavaScript Core Logic -->
     <script>
-        let currentSelectedPackage = 'STARTER';
-        let currentMinDeposit = 0.10;
-        let availableSolBalance = 1.5000;
-        let userDepositAmount = 0.50;
+        let minedSolBalance = 0.000000;
+        let availableSolBalance = 0.0000;
+        let isPaidId = true; 
+        let isBlocked = false;
 
-        let adminDepositLogs = [];
-        let adminPendingWithdrawals = [];
+        let activePlanTier = 'STARTER';
+        let userDepositAmount = 0.50; 
+        let miningSpeedPerSec = (0.50 * 0.005) / 86400; 
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const tg = window.Telegram?.WebApp;
-            const user = tg?.initDataUnsafe?.user;
-            const adminButton = document.getElementById('admin-panel-btn');
-            const ADMIN_TELEGRAM_ID = 5939907983;
+        let promoBalance = 0.01; 
+        let referralCount = 0;
 
-            if (user && user.id === ADMIN_TELEGRAM_ID) {
-                adminButton.classList.remove('hidden');
-            } else {
-                // Remove comment below if testing locally in browser without Telegram API
-                adminButton.classList.remove('hidden'); // TEMPORARY VISIBLE FOR LOCAL TESTING
-            }
-        });
+        let mockUsersList = [];
+        let pendingWithdrawalsList = [];
+
+        function triggerReferralShare() {
+            openModal('shareModal');
+        }
+
+        function copyTeamRefLink() {
+            const copyText = document.getElementById("team-ref-link-input");
+            navigator.clipboard.writeText(copyText.value);
+            alert("Referral link copied to clipboard!");
+        }
+
+        function copyModalRefLink() {
+            const copyText = document.getElementById("modal-ref-link");
+            navigator.clipboard.writeText(copyText.value);
+            alert("Referral link copied to clipboard!");
+        }
 
         function switchTab(tabId) {
+            if (isBlocked && tabId !== 'profile') { alert('Account is blocked!'); return; }
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
             document.getElementById('tab-' + tabId)?.classList.remove('hidden');
-            window.scrollTo(0, 0);
         }
 
         function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
-
-        function openDepositModal(packageName, minAmount) {
-            currentSelectedPackage = packageName;
-            currentMinDeposit = minAmount;
-            document.getElementById('deposit-modal-title').innerHTML = `<span>💰</span> <span>Deposit - ${packageName} Package</span>`;
-            document.getElementById('deposit-min-badge').innerText = `⚠️ Minimum Required: ${minAmount.toFixed(2)} SOL`;
-            document.getElementById('tx-hash-input').value = '';
-            openModal('depositModal');
-        }
-
-        function copyDepositAddress() {
-            navigator.clipboard.writeText("BY3Tzt5cA8FwoPRw3B265jwb8NDU5dupf76SXwKqjnRZ");
-            alert("Deposit wallet address copied to clipboard!");
-        }
-
-        function copyTeamRefLink() {
-            const input = document.getElementById('team-ref-link-input');
-            input.select();
-            navigator.clipboard.writeText(input.value);
-            alert("Referral link copied to clipboard!");
-        }
-
-        function claimMinedRewards() {
-            alert("Mined rewards claimed successfully to your balance!");
-        }
-
-        function submitAutoVerifyDeposit() {
-            const txHash = document.getElementById('tx-hash-input').value.trim();
-            if (!txHash) { alert("Please paste transaction hash!"); return; }
-
-            userDepositAmount += currentMinDeposit;
-            availableSolBalance += currentMinDeposit;
-
-            adminDepositLogs.unshift({
-                username: document.getElementById('username').innerText,
-                package: currentSelectedPackage,
-                amount: currentMinDeposit,
-                txHash: txHash,
-                time: new Date().toLocaleTimeString()
-            });
-
-            let botName = "STARTER BOT";
-            let hashrateVal = "0.5% / 24h";
-            let botColor = "text-solGreen";
-            let botSvg = `<svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="4" width="14" height="10" rx="2" fill="#131c2e"/><circle cx="9" cy="8" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/></svg>`;
-
-            if (currentSelectedPackage === 'ADVANCE') {
-                botName = "ADVANCE CYBER BOT";
-                hashrateVal = "1.0% / 24h";
-                botColor = "text-blue-400";
-                botSvg = `<svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 2 22 22 22 12 2" fill="#131c2e"/><circle cx="12" cy="14" r="2" fill="currentColor"/></svg>`;
-            } else if (currentSelectedPackage === 'PREMIUM') {
-                botName = "PREMIUM MECHA BOT";
-                hashrateVal = "1.5% / 24h";
-                botColor = "text-purple-400";
-                botSvg = `<svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l10 6v8l-10 6-10-6V8l10-6z" fill="#131c2e"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>`;
-            } else if (currentSelectedPackage === 'GALAXY') {
-                botName = "GALAXY QUANTUM CORE";
-                hashrateVal = "2.0% / 24h";
-                botColor = "text-amber-400";
-                botSvg = `<svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" fill="#131c2e"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>`;
-            }
-
-            document.getElementById('hashrate-display').innerText = hashrateVal;
-            document.getElementById('mined-rate-label').innerText = `24h Total: ~0.0025 SOL (${hashrateVal})`;
-            document.getElementById('home-robot-container').className = `relative z-10 ${botColor}`;
-            document.getElementById('home-robot-container').innerHTML = botSvg;
-            document.getElementById('home-bot-status-text').innerText = `${botName} Mining...`;
-            document.getElementById('home-bot-status-text').className = `text-[9px] font-mono ${botColor} font-black uppercase`;
-
-            document.getElementById('home-active-package-name').innerHTML = `<span>🚀</span> <span class="${botColor}">${currentSelectedPackage}</span>`;
-            document.getElementById('home-active-package-limit').innerText = `Active Deposit: ${userDepositAmount.toFixed(2)} SOL`;
-            document.getElementById('home-self-farming-val').innerText = `${userDepositAmount.toFixed(2)} SOL`;
-            document.getElementById('home-self-farming-rate').innerText = `${hashrateVal.split(' ')[0]} Daily Farming Bonus`;
-            document.getElementById('home-self-farming-rate').className = `text-[10px] ${botColor} font-mono block`;
-
-            document.getElementById('balance-display').innerHTML = `<span class="text-white font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
-
-            alert(`🎉 Success! Transaction verified. Your ${currentSelectedPackage} Package has been successfully auto-topped up with ${currentMinDeposit.toFixed(2)} SOL!`);
-            closeModal('depositModal');
-        }
-
-        function submitSmartWithdrawal() {
-            const amt = parseFloat(document.getElementById('withdraw-amount').value);
-            const addr = document.getElementById('withdraw-address').value.trim();
-
-            if (!amt || !addr) { alert("Please enter amount and address!"); return; }
-            if (amt > availableSolBalance) { alert("Insufficient balance!"); return; }
-
-            availableSolBalance -= amt;
-            document.getElementById('balance-display').innerHTML = `<span class="text-white font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
-
-            if (amt >= 0.01 && amt <= 0.10) {
-                alert(`⚡ Success! Withdrawal of ${amt} SOL processed instantly via Auto-Withdrawal!`);
-            } else if (amt > 0.10) {
-                adminPendingWithdrawals.push({ user: document.getElementById('username').innerText, amount: amt, address: addr, wId: 'W-' + Math.floor(Math.random()*90000+10000) });
-                alert(`📋 Withdrawal of ${amt} SOL is above 0.10 SOL. Submitted to Admin Panel for approval.`);
-            } else {
-                alert("Minimum withdrawal is 0.01 SOL.");
-            }
-            closeModal('withdrawModal');
-        }
-
-        function openAdminPanel() {
-            const pin = prompt("Enter Admin Security PIN (default: 7777):");
-            if (pin === "7777" || pin === "admin") {
-                openModal('adminModal');
-                switchAdminTab('deposits');
-            } else if (pin !== null) { alert("Incorrect PIN!"); }
-        }
-
-        function switchAdminTab(tab) {
-            document.getElementById('adm-tab-dep').className = tab === 'deposits' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap' : 'text-gray-400 pb-1 whitespace-nowrap';
-            document.getElementById('adm-tab-wit').className = tab === 'withdrawals' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap' : 'text-gray-400 pb-1 whitespace-nowrap';
-
-            const area = document.getElementById('admin-content-area');
-
-            if (tab === 'deposits') {
-                if (adminDepositLogs.length === 0) {
-                    area.innerHTML = `<div class="text-center text-gray-500 py-6">No deposit updates or tx hashes received yet.</div>`;
-                } else {
-                    area.innerHTML = adminDepositLogs.map(log => `
-                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1.5">
-                            <div class="flex justify-between items-center font-bold text-white">
-                                <span>👤 ${log.username}</span>
-                                <span class="text-solGreen">+${log.amount} SOL (${log.package})</span>
-                            </div>
-                            <div class="text-[10px] text-gray-400 break-all font-mono">TxHash: <span class="text-amber-300">${log.txHash}</span></div>
-                            <div class="text-[9px] text-gray-500 text-right">Time: ${log.time}</div>
-                        </div>
-                    `).join('');
-                }
-            } else if (tab === 'withdrawals') {
-                if (adminPendingWithdrawals.length === 0) {
-                    area.innerHTML = `<div class="text-center text-gray-500 py-6">No pending manual withdrawals (>0.10 SOL).</div>`;
-                } else {
-                    area.innerHTML = adminPendingWithdrawals.map(w => `
-                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                            <div class="flex justify-between text-white font-bold"><span>${w.user}</span><span class="text-amber-400">${w.amount} SOL</span></div>
-                            <div class="text-[10px] text-gray-400 break-all">To: ${w.address}</div>
-                            <div class="grid grid-cols-2 gap-2 pt-1">
-                                <button onclick="adminApproveW('${w.wId}')" class="bg-emerald-600 py-1 rounded text-white font-bold">Approve</button>
-                                <button onclick="adminRejectW('${w.wId}')" class="bg-rose-600 py-1 rounded text-white font-bold">Reject</button>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-            }
-        }
-
-        function adminApproveW(wId) {
-            alert(`Withdrawal ${wId} approved!`);
-            adminPendingWithdrawals = adminPendingWithdrawals.filter(w => w.wId !== wId);
-            switchAdminTab('withdrawals');
-        }
-
-        function adminRejectW(wId) {
-            alert(`Withdrawal ${wId} rejected and refunded.`);
-            adminPendingWithdrawals = adminPendingWithdrawals.filter(w => w.wId !== wId);
-            switchAdminTab('withdrawals');
-        }
 
         function previewProfilePhoto(event) {
             const file = event.target.files[0];
@@ -623,18 +707,143 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const avatarImg = document.getElementById('user-avatar-img');
+                    const avatarInitial = document.getElementById('user-avatar-initial');
+                    const solLogo = document.getElementById('user-sol-logo');
+                    
                     avatarImg.src = e.target.result;
                     avatarImg.classList.remove('hidden');
-                    document.getElementById('user-avatar-initial').classList.add('hidden');
-                    document.getElementById('user-sol-logo').classList.add('hidden');
+                    if(avatarInitial) avatarInitial.classList.add('hidden');
+                    if(solLogo) solLogo.classList.add('hidden');
                 }
                 reader.readAsDataURL(file);
             }
         }
 
         function saveUserProfile() {
-            document.getElementById('username').innerText = document.getElementById('profile-name').value;
-            alert('Profile saved successfully!');
+            const name = document.getElementById('profile-name').value;
+            document.getElementById('username').innerText = name;
+            alert('Profile and withdrawal address saved successfully!');
+        }
+
+        function openAdminPanel() {
+            const pin = prompt("Enter Admin Security PIN (default: 7777):");
+            if (pin === "7777" || pin === "admin") {
+                openModal('adminModal');
+                switchAdminTab('users');
+            } else if (pin !== null) {
+                alert("Incorrect PIN!");
+            }
+        }
+
+        function switchAdminTab(tab) {
+            document.getElementById('adm-tab-users').className = tab === 'users' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap' : 'text-gray-400 pb-1 whitespace-nowrap';
+            document.getElementById('adm-tab-dep').className = tab === 'deposits' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap' : 'text-gray-400 pb-1 whitespace-nowrap';
+            document.getElementById('adm-tab-wit').className = tab === 'withdrawals' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap' : 'text-gray-400 pb-1 whitespace-nowrap';
+            document.getElementById('adm-tab-bro').className = tab === 'broadcast' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap' : 'text-gray-400 pb-1 whitespace-nowrap';
+            document.getElementById('adm-tab-ref').className = tab === 'referral' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 whitespace-nowrap' : 'text-gray-400 pb-1 whitespace-nowrap';
+
+            const area = document.getElementById('admin-content-area');
+
+            if (tab === 'users') {
+                if (mockUsersList.length === 0) {
+                    area.innerHTML = `<div class="text-center text-gray-500 py-6">No users registered yet (0 Users).</div>`;
+                } else {
+                    area.innerHTML = mockUsersList.map(u => `
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-white font-bold">${u.username} (ID: ${u.id})</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.type === 'Paid ID' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-700 text-gray-300'}">${u.type}</span>
+                            </div>
+                            <div class="text-[10px] text-gray-400">Balance: ${u.balance} SOL | Status: <span class="${u.status === 'Active' ? 'text-solGreen' : 'text-rose-500'}">${u.status}</span> | Upline: ${u.upline}</div>
+                            <div class="grid grid-cols-3 gap-1.5 pt-1">
+                                <button onclick="adminToggleUserType('${u.id}')" class="bg-indigo-600 hover:bg-indigo-500 py-1 rounded text-[10px] font-bold text-white">Toggle Free/Paid</button>
+                                <button onclick="adminToggleBlockUser('${u.id}')" class="py-1 rounded text-[10px] font-bold text-white ${u.status === 'Active' ? 'bg-rose-600' : 'bg-emerald-600'}">${u.status === 'Active' ? 'Block' : 'Unblock'}</button>
+                                <button onclick="adminUpdateUserBalance('${u.id}')" class="bg-blue-600 hover:bg-blue-500 py-1 rounded text-[10px] font-bold text-white">Update Bal</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } else if (tab === 'deposits') {
+                area.innerHTML = `
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div class="text-amber-400 font-bold">Manual Free / Paid ID Topup</div>
+                        <p class="text-[10px] text-gray-400">Admin can assign Free ID (No bonuses) or Paid ID (All bonuses active) to any user.</p>
+                        <input type="text" id="topup-userid" placeholder="Enter Telegram ID or Username" class="w-full bg-slate-950 p-2 rounded border border-slate-800 text-xs text-white">
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button onclick="adminExecuteTopup('Free ID')" class="bg-gray-700 hover:bg-gray-600 py-1.5 rounded text-xs font-bold text-white">Assign Free ID</button>
+                            <button onclick="adminExecuteTopup('Paid ID')" class="bg-solGreen hover:bg-emerald-500 py-1.5 rounded text-xs font-bold text-slate-950">Assign Paid ID</button>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'withdrawals') {
+                if (pendingWithdrawalsList.length === 0) {
+                    area.innerHTML = `<div class="text-center text-gray-500 py-6">No pending withdrawals (0 Requests).</div>`;
+                } else {
+                    area.innerHTML = pendingWithdrawalsList.map(w => `
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between"><span class="text-white">${w.user}</span><span class="text-solGreen font-bold">${w.amount} SOL</span></div>
+                            <div class="text-[10px] text-gray-400 break-all">To: ${w.address}</div>
+                            <div class="grid grid-cols-2 gap-2 pt-1">
+                                <button onclick="adminApproveWithdrawal('${w.wId}')" class="bg-emerald-600 py-1.5 rounded text-[10px] font-bold text-white">Approve Payout</button>
+                                <button onclick="adminRejectWithdrawal('${w.wId}')" class="bg-rose-600 py-1.5 rounded text-[10px] font-bold text-white">Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } else if (tab === 'broadcast') {
+                area.innerHTML = `
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <div class="text-amber-400 font-bold">Send Screen Popup Message to All Users</div>
+                        <textarea id="broadcast-input" placeholder="Type announcement message here..." class="w-full bg-slate-950 p-2.5 rounded border border-slate-800 text-xs text-white h-20"></textarea>
+                        <button onclick="adminSendBroadcast()" class="w-full bg-amber-600 hover:bg-amber-500 py-2 rounded text-xs font-bold text-slate-950">Broadcast Popup Now</button>
+                    </div>
+                `;
+            } else if (tab === 'referral') {
+                area.innerHTML = `
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-3">
+                        <div class="text-amber-400 font-bold">Change User Upline / Referral Structure</div>
+                        <input type="text" id="ref-target-user" placeholder="User Telegram ID" class="w-full bg-slate-950 p-2 rounded border border-slate-800 text-xs text-white">
+                        <input type="text" id="ref-new-upline" placeholder="New Upline ID / Sponsor" class="w-full bg-slate-950 p-2 rounded border border-slate-800 text-xs text-white">
+                        <button onclick="adminUpdateReferral()" class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded text-xs font-bold text-white">Update Referral Upline</button>
+                    </div>
+                `;
+            }
+        }
+
+        function adminToggleUserType(id) {
+            const user = mockUsersList.find(u => u.id === id);
+            if (user) {
+                user.type = user.type === 'Paid ID' ? 'Free ID' : 'Paid ID';
+                alert(`User ${user.username} type updated to ${user.type}!`);
+                switchAdminTab('users');
+            }
+        }
+
+        function adminToggleBlockUser(id) {
+            const user = mockUsersList.find(u => u.id === id);
+            if (user) {
+                user.status = user.status === 'Active' ? 'Blocked' : 'Active';
+                alert(`User ${user.username} status changed to ${user.status}!`);
+                switchAdminTab('users');
+            }
+        }
+
+        function adminUpdateUserBalance(id) {
+            const amt = prompt("Enter new balance or amount to add/deduct:");
+        }
+
+        function submitDepositTx() {
+            const tx = document.getElementById('tx-hash-input').value;
+            if (!tx) { alert("Enter Tx Hash"); return; }
+            alert("Deposit transaction submitted for admin verification!");
+            closeModal('depositModal');
+        }
+
+        function submitWithdrawal() {
+            const amt = document.getElementById('withdraw-amount').value;
+            if (!amt) { alert("Enter amount"); return; }
+            alert("Withdrawal request submitted successfully!");
+            closeModal('withdrawModal');
         }
     </script>
 </body>
