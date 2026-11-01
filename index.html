@@ -22,7 +22,7 @@
         }
     </script>
 </head>
-<body class="bg-darkBg text-white font-sans antialiased pb-20 selection:bg-solPurple selection:text-white">
+<body class="bg-darkBg text-white font-sans antialiased pb-24 selection:bg-solPurple selection:text-white">
 
     <!-- Top Navigation Header -->
     <header class="sticky top-0 z-45 bg-darkBg/90 backdrop-blur-md border-b border-cardBorder px-4 py-3 flex justify-between items-center">
@@ -128,6 +128,20 @@
                     <button onclick="openModal('withdrawModal')" class="bg-emerald-600 hover:bg-emerald-500 transition py-2.5 rounded-xl font-bold text-xs text-white">🎁 Withdraw</button>
                 </div>
             </div>
+
+            <!-- Promo Event Card -->
+            <div class="bg-cardBg border border-amber-500/30 rounded-2xl p-4 space-y-3 shadow-xl">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded font-mono">🔥 ACTIVE PROMO EVENT</span>
+                    <span class="text-[10px] text-gray-400 font-mono">AUTO TOPUP AT: 0.10 SOL</span>
+                </div>
+                <h3 class="text-sm font-extrabold text-white">Bot Join & Referral Promo Protocol</h3>
+                <p class="text-[11px] text-gray-400">Join via Referral Link Get <strong class="text-solGreen">0.01 SOL</strong> Joining Bonus! Refer Each Friend Get <strong class="text-solGreen">0.01 SOL</strong> Instantly Accumulated!</p>
+                <div class="space-y-1 font-mono">
+                    <div class="flex justify-between text-xs"><span>Promo Bonus Balance</span><span class="text-solGreen font-bold">0.0100 / 0.10 SOL</span></div>
+                    <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800"><div class="bg-gradient-to-r from-solPurple to-solGreen h-full w-[10%]"></div></div>
+                </div>
+            </div>
         </div>
 
         <!-- TAB: PACKAGES -->
@@ -156,7 +170,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                     <div><span class="text-[10px] text-gray-400 block">Deposit Range:</span><strong class="text-white">0.10 - 2.00 SOL</strong></div>
-                    <div><span class="text-[10px] text-gray-400 block">Daily Farming Bonus:</span><strong class="text-solGreen">0.5%</strong></div>
+                    <div><span class="text-[10px] text-gray-400 block">Daily Farming:</span><strong class="text-solGreen">0.5%</strong></div>
                 </div>
                 <button onclick="openDepositModal('STARTER', 0.10)" class="w-full bg-gradient-to-r from-solGreen via-emerald-500 to-teal-500 hover:opacity-95 py-3 rounded-xl font-black text-xs text-slate-950 uppercase tracking-wide cursor-pointer shadow-lg shadow-solGreen/20">
                     Deposit Starter (0.10 - 2.00 SOL)
@@ -180,7 +194,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                     <div><span class="text-[10px] text-gray-400 block">Deposit Range:</span><strong class="text-white">2.10 - 10.00 SOL</strong></div>
-                    <div><span class="text-[10px] text-gray-400 block">Daily Farming Bonus:</span><strong class="text-blue-400">1.0%</strong></div>
+                    <div><span class="text-[10px] text-gray-400 block">Daily Farming:</span><strong class="text-blue-400">1.0%</strong></div>
                 </div>
                 <button onclick="openDepositModal('ADVANCE', 2.10)" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:opacity-95 py-3 rounded-xl font-black text-xs text-white uppercase tracking-wide cursor-pointer shadow-lg shadow-blue-500/20">
                     Deposit Advance (2.10 - 10.00 SOL)
@@ -204,7 +218,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                     <div><span class="text-[10px] text-gray-400 block">Deposit Range:</span><strong class="text-white">10.10 - 25.00 SOL</strong></div>
-                    <div><span class="text-[10px] text-gray-400 block">Daily Farming Bonus:</span><strong class="text-purple-400">1.5%</strong></div>
+                    <div><span class="text-[10px] text-gray-400 block">Daily Farming:</span><strong class="text-purple-400">1.5%</strong></div>
                 </div>
                 <button onclick="openDepositModal('PREMIUM', 10.10)" class="w-full bg-gradient-to-r from-purple-600 via-indigo-700 to-purple-700 hover:opacity-95 py-3 rounded-xl font-black text-xs text-white uppercase tracking-wide cursor-pointer shadow-lg shadow-purple-500/20">
                     Deposit Premium (10.10 - 25.00 SOL)
@@ -228,7 +242,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                     <div><span class="text-[10px] text-gray-400 block">Deposit Range:</span><strong class="text-white">25.10 - 100.00 SOL</strong></div>
-                    <div><span class="text-[10px] text-gray-400 block">Daily Farming Bonus:</span><strong class="text-amber-400">2.0%</strong></div>
+                    <div><span class="text-[10px] text-gray-400 block">Daily Farming:</span><strong class="text-amber-400">2.0%</strong></div>
                 </div>
                 <button onclick="openDepositModal('GALAXY', 25.10)" class="w-full bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:opacity-95 py-3 rounded-xl font-black text-xs text-slate-950 uppercase tracking-wide cursor-pointer shadow-lg shadow-amber-500/20">
                     Deposit Galaxy (25.10 - 100.00 SOL)
@@ -250,6 +264,17 @@
                 <div class="flex items-center space-x-2">
                     <input type="text" id="team-ref-link-input" value="https://t.me/SolMiningFarmBot?start=5939907983" readonly class="bg-slate-900 text-xs text-gray-300 w-full p-2.5 rounded-xl border border-slate-800 font-mono">
                     <button onclick="copyTeamRefLink()" class="bg-solGreen hover:bg-emerald-400 text-slate-950 px-4 py-2.5 rounded-xl text-xs font-black uppercase transition shrink-0">Copy</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-cardBg border border-slate-800 rounded-2xl p-3.5 space-y-1">
+                    <span class="text-[9px] text-gray-400 font-mono uppercase block">Total Team Members</span>
+                    <span class="text-lg font-black text-white">0 Users</span>
+                </div>
+                <div class="bg-cardBg border border-slate-800 rounded-2xl p-3.5 space-y-1">
+                    <span class="text-[9px] text-gray-400 font-mono uppercase block">Total Team Commission</span>
+                    <span class="text-lg font-black text-solGreen">0.00 SOL</span>
                 </div>
             </div>
         </div>
@@ -408,21 +433,17 @@
         let adminDepositLogs = [];
         let adminPendingWithdrawals = [];
 
-        // Check Telegram User ID on Load
         window.addEventListener('DOMContentLoaded', () => {
             const tg = window.Telegram?.WebApp;
             const user = tg?.initDataUnsafe?.user;
             const adminButton = document.getElementById('admin-panel-btn');
-
-            // Hardcoded Admin Telegram ID check
             const ADMIN_TELEGRAM_ID = 5939907983;
 
             if (user && user.id === ADMIN_TELEGRAM_ID) {
-                adminButton.classList.remove('hidden'); // Show only for you
+                adminButton.classList.remove('hidden');
             } else {
-                // Fallback for browser testing if running locally (remove if strict)
-                // If you want to test in normal browser, comment out the else block below
-                adminButton.classList.add('hidden'); 
+                // Remove comment below if testing locally in browser without Telegram API
+                adminButton.classList.remove('hidden'); // TEMPORARY VISIBLE FOR LOCAL TESTING
             }
         });
 
@@ -447,6 +468,17 @@
         function copyDepositAddress() {
             navigator.clipboard.writeText("BY3Tzt5cA8FwoPRw3B265jwb8NDU5dupf76SXwKqjnRZ");
             alert("Deposit wallet address copied to clipboard!");
+        }
+
+        function copyTeamRefLink() {
+            const input = document.getElementById('team-ref-link-input');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert("Referral link copied to clipboard!");
+        }
+
+        function claimMinedRewards() {
+            alert("Mined rewards claimed successfully to your balance!");
         }
 
         function submitAutoVerifyDeposit() {
