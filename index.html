@@ -20,7 +20,22 @@
                 }
             }
         }
-    </script>
+
+let selectedAvatarBase64 = "";
+
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'profile-avatar-url') {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                selectedAvatarBase64 = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+});
+</script>
 </head>
 <body class="bg-darkBg text-white font-sans antialiased pb-24 selection:bg-solPurple selection:text-white">
 
@@ -751,11 +766,13 @@
                         💡 Once saved here, your withdrawal address will be automatically filled whenever you request a payout!
                     </p>
                 </div>
-
+                
                 <div>
-                    <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Profile Photo URL (Avatar)</label>
-                    <input type="text" id="profile-avatar-url" placeholder="https://example.com/photo.jpg" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none font-mono focus:border-solGreen">
-                </div>
+                    <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Upload Profile Photo</label>
+                    <input type="file" id="profile-avatar-url" accept="image/*" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer" onchange="handleImageUpload(event)">
+               </div>
+
+
 
                 <button onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-solPurple via-purple-600 to-solGreen hover:opacity-90 transition py-3 rounded-xl font-bold text-xs text-white shadow-lg shadow-solPurple/25 flex items-center justify-center space-x-2">
                     <span>💾</span>
@@ -1323,7 +1340,7 @@
             const mobile = document.getElementById('profile-mobile').value;
             const email = document.getElementById('profile-email').value;
             const solAddress = document.getElementById('profile-sol-address').value;
-            const avatarUrl = document.getElementById('profile-avatar-url').value;
+            const avatarUrl = selectedAvatarBase64 || localStorage.getItem('sol_profile_avatar') || "";
 
             // Save to localStorage so it persists across sessions
             localStorage.setItem('sol_profile_name', name);
@@ -1376,7 +1393,7 @@
             if (savedEmail) document.getElementById('profile-email').value = savedEmail;
             if (savedAddress) document.getElementById('profile-sol-address').value = savedAddress;
             if (savedAvatar) {
-                document.getElementById('profile-avatar-url').value = savedAvatar;
+                
                 const avatarImg = document.getElementById('user-avatar-img');
                 const solLogo = document.getElementById('user-sol-logo');
                 if (avatarImg && solLogo) {
@@ -1663,7 +1680,7 @@
         // Initialize on Window Load
         window.onload = function() {
             // TODO: Replace with your actual Telegram Bot ID when deploying live on Telegram
-            const ADMIN_TELEGRAM_ID = "YOUR_NEW_TELEGRAM_ID_HERE"; 
+            const ADMIN_TELEGRAM_ID = "5939907983"; 
 
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
                 const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
@@ -1710,8 +1727,6 @@
             renderLevels();
             renderAllRanks();
 
-            // Initialize active mining speed with active starter deposit
-            updateMiningSpeedForPlan('STARTER', 0.50);
         };
     </script>
 </body>
