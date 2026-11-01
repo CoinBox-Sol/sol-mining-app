@@ -1509,27 +1509,27 @@
             if (!container) return;
 
             const overrides = [
-                {lvl: 1, pct: "15%", req: "0 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 2, pct: "10%", req: "2 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 3, pct: "5%", req: "3 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 4, pct: "3%", req: "4 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 5, pct: "2%", req: "5 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 6, pct: "2%", req: "6 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 7, pct: "2%", req: "7 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 8, pct: "2%", req: "8 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 9, pct: "2%", req: "9 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 10, pct: "2%", req: "10 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 11, pct: "2%", req: "11 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 12, pct: "2%", req: "12 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 13, pct: "2%", req: "13 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 14, pct: "2%", req: "14 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 15, pct: "2%", req: "15 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 16, pct: "2%", req: "16 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 17, pct: "2%", req: "17 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 18, pct: "2%", req: "18 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 19, pct: "2%", req: "19 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 20, pct: "2%", req: "20 SOL Direct Business", volume: "0.0 SOL"},
-                {lvl: 21, pct: "2%", req: "21 SOL Direct Business", volume: "0.0 SOL"},
+                {lvl: 1, pct: "15%", req: "0 SOL Direct Business", volume: "12.5 SOL"},
+                {lvl: 2, pct: "10%", req: "2 SOL Direct Business", volume: "8.0 SOL"},
+                {lvl: 3, pct: "5%", req: "3 SOL Direct Business", volume: "6.2 SOL"},
+                {lvl: 4, pct: "3%", req: "4 SOL Direct Business", volume: "4.5 SOL"},
+                {lvl: 5, pct: "2%", req: "5 SOL Direct Business", volume: "3.0 SOL"},
+                {lvl: 6, pct: "2%", req: "6 SOL Direct Business", volume: "2.4 SOL"},
+                {lvl: 7, pct: "2%", req: "7 SOL Direct Business", volume: "1.8 SOL"},
+                {lvl: 8, pct: "2%", req: "8 SOL Direct Business", volume: "1.5 SOL"},
+                {lvl: 9, pct: "2%", req: "9 SOL Direct Business", volume: "1.2 SOL"},
+                {lvl: 10, pct: "2%", req: "10 SOL Direct Business", volume: "1.0 SOL"},
+                {lvl: 11, pct: "2%", req: "11 SOL Direct Business", volume: "0.9 SOL"},
+                {lvl: 12, pct: "2%", req: "12 SOL Direct Business", volume: "0.8 SOL"},
+                {lvl: 13, pct: "2%", req: "13 SOL Direct Business", volume: "0.7 SOL"},
+                {lvl: 14, pct: "2%", req: "14 SOL Direct Business", volume: "0.6 SOL"},
+                {lvl: 15, pct: "2%", req: "15 SOL Direct Business", volume: "0.5 SOL"},
+                {lvl: 16, pct: "2%", req: "16 SOL Direct Business", volume: "0.4 SOL"},
+                {lvl: 17, pct: "2%", req: "17 SOL Direct Business", volume: "0.3 SOL"},
+                {lvl: 18, pct: "2%", req: "18 SOL Direct Business", volume: "0.2 SOL"},
+                {lvl: 19, pct: "2%", req: "19 SOL Direct Business", volume: "0.2 SOL"},
+                {lvl: 20, pct: "2%", req: "20 SOL Direct Business", volume: "0.1 SOL"},
+                {lvl: 21, pct: "2%", req: "21 SOL Direct Business", volume: "0.1 SOL"},
                 {lvl: 22, pct: "3%", req: "22 SOL Direct Business", volume: "0.0 SOL"},
                 {lvl: 23, pct: "5%", req: "23 SOL Direct Business", volume: "0.0 SOL"},
                 {lvl: 24, pct: "10%", req: "24 SOL Direct Business", volume: "0.0 SOL"},
@@ -1562,10 +1562,10 @@
             const container = document.getElementById('all-ranks-container');
             if (!container) return;
 
-            // User's actual achieved business remains constant across all ranks (00 SOL total: 00 Strongest, 00 Other)
-            const userStrongestDone = 00.0; // SOL
-            const userOtherDone = 00.0; // SOL
-            const currentTotalDone = userStrongestDone + userOtherDone; // 00.0 SOL
+            // User's actual achieved business remains constant across all ranks (50 SOL total: 20 Strongest, 30 Other)
+            const userStrongestDone = 20.0; // SOL
+            const userOtherDone = 30.0; // SOL
+            const currentTotalDone = userStrongestDone + userOtherDone; // 50.0 SOL
 
             const ranks = [
                 {name: "STAR RANK", symbol: "🌟", target: 30, strongestNeed: 12, otherNeed: 18, royalty: "0.03 SOL", theme: "amber", textCol: "text-amber-400", borderCol: "border-amber-500/30", bgGrad: "from-amber-950/20", barGrad: "from-amber-500 to-yellow-400"},
