@@ -44,7 +44,6 @@ document.addEventListener('change', function(e) {
         <div class="flex items-center space-x-2">
             <div id="user-avatar-container" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-solPurple to-solGreen flex items-center justify-center font-black text-sm shadow-lg shadow-solPurple/20 overflow-hidden border border-purple-500/30">
                 <span id="user-avatar-initial" class="text-white hidden">S</span>
-                <!-- Solana Coin Logo Fallback when no profile photo -->
                 <svg id="user-sol-logo" class="w-5 h-5 text-white" viewBox="0 0 395 325.2" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h309.5c5.9 0 8.8 7.1 4.7 11.2l-51.4 51.4c-2.4 2.4-5.7 3.8-9.2 3.8H18.9c-5.9 0-8.8-7.1-4.7-11.2l50.4-51.4z" fill="url(#paint0_linear_sol)"/>
                     <path d="M64.6 14.3C67 11.9 70.3 10.5 73.8 10.5h309.5c5.9 0 8.8 7.1 4.7 11.2l-51.4 51.4c-2.4 2.4-5.7 3.8-9.2 3.8H18.9c-5.9 0-8.8-7.1-4.7-11.2L64.6 14.3z" fill="url(#paint1_linear_sol)"/>
@@ -344,6 +343,33 @@ document.addEventListener('change', function(e) {
                     <h3 class="text-xl font-black text-emerald-400 flex items-center space-x-2"><span>🌱</span> <span>STARTER BOT</span></h3>
                     <button onclick="openPlanDeposit('STARTER', '0.10 SOL')" class="w-full bg-emerald-600 hover:bg-emerald-500 transition py-2 rounded-xl text-xs font-bold text-white">Deposit Starter (0.10 - 2.00 SOL)</button>
                 </div>
+
+                <div class="bg-gradient-to-br from-cardBg via-sky-950/20 to-cardBg border border-sky-500/30 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-md">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-sky-500/20 text-sky-400 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-sky-500/30">TIER 2</span>
+                        <span class="text-xs font-mono text-sky-400 font-bold">1.0% Daily Farming Bonus</span>
+                    </div>
+                    <h3 class="text-xl font-black text-sky-400 flex items-center space-x-2"><span>🚀</span> <span>ADVANCE BOT</span></h3>
+                    <button onclick="openPlanDeposit('ADVANCE', '2.10 SOL')" class="w-full bg-sky-600 hover:bg-sky-500 transition py-2 rounded-xl text-xs font-bold text-white">Deposit Advance (2.10 - 10.00 SOL)</button>
+                </div>
+
+                <div class="bg-gradient-to-br from-cardBg via-purple-950/20 to-cardBg border border-purple-500/30 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-md">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-purple-500/20 text-purple-400 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-purple-500/30">TIER 3</span>
+                        <span class="text-xs font-mono text-purple-400 font-bold">1.5% Daily Farming Bonus</span>
+                    </div>
+                    <h3 class="text-xl font-black text-purple-400 flex items-center space-x-2"><span>👑</span> <span>PREMIUM BOT</span></h3>
+                    <button onclick="openPlanDeposit('PREMIUM', '10.10 SOL')" class="w-full bg-purple-600 hover:bg-purple-500 transition py-2 rounded-xl text-xs font-bold text-white">Deposit Premium (10.10 - 25.00 SOL)</button>
+                </div>
+
+                <div class="bg-gradient-to-br from-cardBg via-amber-950/20 to-cardBg border border-amber-500/30 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-md">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-amber-500/20 text-amber-400 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-amber-500/30">TIER 4</span>
+                        <span class="text-xs font-mono text-amber-400 font-bold">2.0% Daily Farming Bonus</span>
+                    </div>
+                    <h3 class="text-xl font-black text-amber-400 flex items-center space-x-2"><span>🪐</span> <span>GALAXY BOT</span></h3>
+                    <button onclick="openPlanDeposit('GALAXY', '25.10 SOL')" class="w-full bg-amber-600 hover:bg-amber-500 transition py-2 rounded-xl text-xs font-bold text-white">Deposit Galaxy (25.10 - 100.00 SOL)</button>
+                </div>
             </div>
         </div>
 
@@ -357,9 +383,31 @@ document.addEventListener('change', function(e) {
                 <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">🔗 Your Referral Link</span>
                 <div class="flex items-center space-x-2 bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
                     <input type="text" id="ref-link-input" value="https://t.me/SolMiningFarmBot?start=5939907983" readonly class="bg-transparent text-xs text-gray-300 w-full outline-none font-mono">
-                    <button onclick="copyRefLink()" class="bg-solPurple hover:bg-solPurple/80 transition text-white text-xs font-bold px-3 py-1.5 rounded-lg shrink-0">Copy</button>
+                    <button onclick="copyRefLink()" class="bg-solPurple hover:bg-solPurple/85 transition text-white text-xs font-bold px-3 py-1.5 rounded-lg shrink-0">Copy</button>
                 </div>
             </div>
+
+            <div class="bg-gradient-to-r from-indigo-950/70 via-cardBg to-purple-950/70 border border-indigo-500/40 rounded-2xl p-4 space-y-2 shadow-lg">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-black text-white flex items-center space-x-1.5"><span>🎯</span> <span>Direct Referral Bonus (Level 1)</span></h3>
+                    <span class="bg-indigo-500/20 text-indigo-300 text-sm font-black px-3 py-0.5 rounded-full font-mono border border-indigo-500/30">5%</span>
+                </div>
+                <p class="text-xs text-gray-300">Earn instant <strong class="text-white">5% Direct Referral Bonus</strong> on every deposit made by your L1 direct referrals.</p>
+            </div>
+
+            <div class="bg-gradient-to-r from-blue-950/70 via-cardBg to-cyan-950/70 border border-blue-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-black text-white">🤝 Team Referral Bonus (Levels 2 - 5)</h3>
+                    <span class="bg-cyan-500/20 text-cyan-300 text-xs font-bold px-2.5 py-0.5 rounded-full font-mono border border-cyan-500/30">Multi-Level</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                    <div class="bg-slate-900/80 p-2.5 rounded-xl border border-blue-500/20"><span class="text-gray-300 block text-[10px]">Level 2: <strong class="text-cyan-400 font-bold">4.0%</strong></span></div>
+                    <div class="bg-slate-900/80 p-2.5 rounded-xl border border-blue-500/20"><span class="text-gray-300 block text-[10px]">Level 3: <strong class="text-cyan-400 font-bold">3.0%</strong></span></div>
+                    <div class="bg-slate-900/80 p-2.5 rounded-xl border border-blue-500/20"><span class="text-gray-300 block text-[10px]">Level 4: <strong class="text-cyan-400 font-bold">2.0%</strong></span></div>
+                    <div class="bg-slate-900/80 p-2.5 rounded-xl border border-blue-500/20"><span class="text-gray-300 block text-[10px]">Level 5: <strong class="text-cyan-400 font-bold">1.0%</strong></span></div>
+                </div>
+            </div>
+
             <div id="levels-container" class="space-y-2"></div>
         </div>
 
@@ -398,6 +446,14 @@ document.addEventListener('change', function(e) {
                     <input type="text" id="profile-name" value="@CryptoFarmer" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none font-mono focus:border-solGreen">
                 </div>
                 <div>
+                    <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Mobile Number</label>
+                    <input type="text" id="profile-mobile" placeholder="+91 9876543210" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none font-mono focus:border-solGreen">
+                </div>
+                <div>
+                    <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Email ID</label>
+                    <input type="email" id="profile-email" placeholder="user@gmail.com" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none font-mono focus:border-solGreen">
+                </div>
+                <div>
                     <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Solana Receiving Address (For Withdrawals)</label>
                     <input type="text" id="profile-sol-address" placeholder="Enter your SOL wallet address here..." class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none font-mono focus:border-solGreen">
                 </div>
@@ -406,6 +462,7 @@ document.addEventListener('change', function(e) {
                     <input type="file" id="profile-avatar-url" accept="image/*" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white cursor-pointer">
                 </div>
                 <button onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-solPurple via-purple-600 to-solGreen hover:opacity-90 transition py-3 rounded-xl font-bold text-xs text-white shadow-lg">Save Profile & Withdrawal Address</button>
+                <button id="admin-panel-btn" onclick="openAdminPanel()" class="w-full bg-slate-900 hover:bg-slate-800 transition py-2.5 rounded-xl font-bold text-xs text-amber-400 border border-amber-500/30 hidden items-center justify-center space-x-1.5 mt-2"><span>🔐</span><span>Open Admin Panel (Management)</span></button>
             </div>
         </div>
 
@@ -440,27 +497,42 @@ document.addEventListener('change', function(e) {
     <!-- LEVEL MEMBERS MODAL -->
     <div id="levelMembersModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-cardBorder rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center">
-                <h3 class="text-base font-black text-white" id="modal-level-title">Level Members</h3>
-                <button onclick="closeModal('levelMembersModal')" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
-            </div>
+            <div class="flex justify-between items-center"><h3 class="text-base font-black text-white" id="modal-level-title">Level Members</h3><button onclick="closeModal('levelMembersModal')" class="text-gray-400 hover:text-white text-lg font-bold">✕</button></div>
             <div id="level-members-list" class="space-y-2 overflow-y-auto pr-1 flex-1 font-mono text-xs"></div>
-            <button onclick="closeModal('levelMembersModal')" class="w-full bg-slate-800 hover:bg-slate-700 transition py-2.5 rounded-xl font-bold text-xs text-white">Close</button>
+            <button onclick="closeModal('levelMembersModal')" class="w-full bg-slate-800 py-2.5 rounded-xl font-bold text-xs text-white">Close</button>
         </div>
     </div>
 
     <!-- REFER & EARN SHARE MODAL -->
     <div id="referModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-cardBorder rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center">
-                <h3 class="text-base font-black text-white">🔗 Refer & Earn</h3>
-                <button onclick="closeModal('referModal')" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
-            </div>
+            <div class="flex justify-between items-center"><h3 class="text-base font-black text-white">🔗 Refer & Earn</h3><button onclick="closeModal('referModal')" class="text-gray-400 hover:text-white text-lg font-bold">✕</button></div>
             <div class="flex items-center space-x-2 bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
                 <input type="text" id="modal-ref-link-input" value="" readonly class="bg-transparent text-xs text-gray-300 w-full outline-none font-mono">
-                <button onclick="copyModalRefLink()" class="bg-solPurple hover:bg-solPurple/80 transition text-white text-xs font-bold px-3 py-1.5 rounded-lg shrink-0">Copy</button>
+                <button onclick="copyModalRefLink()" class="bg-solPurple hover:bg-solPurple/85 transition text-white text-xs font-bold px-3 py-1.5 rounded-lg shrink-0">Copy</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <a id="tg-share-btn" href="#" target="_blank" class="bg-sky-600 hover:bg-sky-500 transition py-2.5 px-3 rounded-xl font-bold text-xs text-center text-white flex items-center justify-center space-x-1.5"><span>📱</span> <span>Telegram</span></a>
+                <a id="wa-share-btn" href="#" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 transition py-2.5 px-3 rounded-xl font-bold text-xs text-center text-white flex items-center justify-center space-x-1.5"><span>💬</span> <span>WhatsApp</span></a>
             </div>
             <button onclick="closeModal('referModal')" class="w-full bg-slate-800 py-2 rounded-xl font-bold text-xs text-white">Close</button>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL MODAL -->
+    <div id="adminModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-amber-500/40 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-black text-amber-400 flex items-center space-x-2"><span>🔐</span> <span>Admin Control Panel</span></h3>
+                <button onclick="closeModal('adminModal')" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
+            </div>
+            <div class="flex space-x-2 border-b border-slate-800 pb-2 text-xs font-bold">
+                <button onclick="switchAdminTab('deposits')" id="adm-tab-dep" class="text-amber-400 border-b-2 border-amber-400 pb-1">Pending Deposits</button>
+                <button onclick="switchAdminTab('withdrawals')" id="adm-tab-wit" class="text-gray-400 pb-1">Pending Withdrawals</button>
+                <button onclick="switchAdminTab('users')" id="adm-tab-usr" class="text-gray-400 pb-1">User Manager</button>
+            </div>
+            <div id="admin-content-area" class="overflow-y-auto pr-1 flex-1 space-y-3 font-mono text-xs"></div>
+            <button onclick="closeModal('adminModal')" class="w-full bg-slate-800 py-2.5 rounded-xl font-bold text-xs text-white">Close Admin Panel</button>
         </div>
     </div>
 
@@ -469,9 +541,7 @@ document.addEventListener('change', function(e) {
     try {
         const rawState = localStorage.getItem('sol_bot_state');
         if (rawState) savedState = JSON.parse(rawState);
-    } catch (e) {
-        savedState = null;
-    }
+    } catch (e) { savedState = null; }
 
     let minedSolBalance = savedState?.minedSolBalance ?? 0.0000;
     let availableSolBalance = savedState?.availableSolBalance ?? 0.0000;
@@ -482,7 +552,6 @@ document.addEventListener('change', function(e) {
     let activeDirectsCount = savedState?.activeDirectsCount ?? 0;
     let userStrongestDone = savedState?.userStrongestDone ?? 0.0;
     let userOtherDone = savedState?.userOtherDone ?? 0.0;
-
     let promoBonusBalance = savedState?.promoBonusBalance ?? 0.0100;
     let levelVolumes = savedState?.levelVolumes ?? Array(26).fill(0.0);
     let levelMembersData = savedState?.levelMembersData ?? {
@@ -544,9 +613,7 @@ document.addEventListener('change', function(e) {
         container.innerHTML = overrides.map(o => `
             <div class="bg-gradient-to-r from-purple-950/40 via-cardBg to-indigo-950/40 border border-purple-500/30 rounded-xl p-3 flex justify-between items-center text-xs font-mono shadow-md">
                 <div>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-white font-bold">Level ${o.lvl} Override Bonus</span>
-                    </div>
+                    <div class="flex items-center space-x-2"><span class="text-white font-bold">Level ${o.lvl} Override Bonus</span></div>
                     <div class="flex items-center space-x-2 mt-0.5 font-sans">
                         <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 font-bold">Vol: ${o.volume}</span>
                         <span class="text-[10px] text-gray-400">Members: ${o.count}</span>
@@ -570,10 +637,7 @@ document.addEventListener('change', function(e) {
         } else {
             listContainer.innerHTML = members.map(m => `
                 <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
-                    <div>
-                        <strong class="text-white">${m.name}</strong>
-                        <span class="text-[10px] text-gray-400 block">${m.date}</span>
-                    </div>
+                    <div><strong class="text-white">${m.name}</strong><span class="text-[10px] text-gray-400 block">${m.date}</span></div>
                     <span class="text-solGreen font-bold">${m.deposit}</span>
                 </div>
             `).join('');
@@ -606,9 +670,7 @@ document.addEventListener('change', function(e) {
             return `
             <div class="bg-gradient-to-br from-cardBg via-${r.theme}-950/20 to-cardBg border ${r.borderCol} rounded-2xl p-4 space-y-3">
                 <div class="flex justify-between items-center">
-                    <span class="text-sm font-black ${r.textCol} flex items-center space-x-2 tracking-wide">
-                        <span>${r.symbol}</span> <span>${r.name}</span>
-                    </span>
+                    <span class="text-sm font-black ${r.textCol} flex items-center space-x-2 tracking-wide"><span>${r.symbol}</span> <span>${r.name}</span></span>
                     <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg ${status === 'Achieved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : status === 'In Progress' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-gray-400 border border-slate-700'}">${status}</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-xs font-mono">
@@ -641,15 +703,41 @@ document.addEventListener('change', function(e) {
 
     function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
     function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+    function openPlanDeposit(planName, minSol) { openModal('depositModal'); }
 
-    function copyRefLink() {
-        navigator.clipboard.writeText(document.getElementById('ref-link-input').value);
-        alert('Referral link copied to clipboard!');
+    function saveUserProfile() {
+        localStorage.setItem('sol_profile_name', document.getElementById('profile-name').value);
+        localStorage.setItem('sol_profile_mobile', document.getElementById('profile-mobile').value);
+        localStorage.setItem('sol_profile_email', document.getElementById('profile-email').value);
+        localStorage.setItem('sol_profile_address', document.getElementById('profile-sol-address').value);
+        alert('Profile saved successfully!');
     }
-    function copyModalRefLink() {
-        navigator.clipboard.writeText(document.getElementById('modal-ref-link-input').value);
-        alert('Referral link copied to clipboard!');
+
+    function openAdminPanel() {
+        const pin = prompt("Enter Admin Security PIN (default: 7777):");
+        if (pin === "7777" || pin === "admin") {
+            openModal('adminModal');
+            switchAdminTab('deposits');
+        } else if (pin !== null) { alert("Incorrect Admin PIN!"); }
     }
+
+    function switchAdminTab(tab) {
+        const area = document.getElementById('admin-content-area');
+        document.getElementById('adm-tab-dep').className = tab === 'deposits' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-gray-400 pb-1';
+        document.getElementById('adm-tab-wit').className = tab === 'withdrawals' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-gray-400 pb-1';
+        document.getElementById('adm-tab-usr').className = tab === 'users' ? 'text-amber-400 border-b-2 border-amber-400 pb-1' : 'text-gray-400 pb-1';
+
+        if (tab === 'deposits') {
+            area.innerHTML = `<div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2"><div class="flex justify-between"><span class="text-gray-300">User: @CryptoFarmer</span><span class="text-amber-400">0.50 SOL</span></div><div class="flex space-x-2 pt-1"><button onclick="alert('Approved!')" class="flex-1 bg-emerald-600 py-1.5 rounded-lg text-white font-bold text-[11px]">Approve</button></div></div>`;
+        } else if (tab === 'withdrawals') {
+            area.innerHTML = `<div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2"><div class="flex justify-between"><span class="text-gray-300">User: @CryptoFarmer</span><span class="text-solGreen">0.25 SOL</span></div><div class="flex space-x-2 pt-1"><button onclick="alert('Paid!')" class="flex-1 bg-emerald-600 py-1.5 rounded-lg text-white font-bold text-[11px]">Pay & Complete</button></div></div>`;
+        } else {
+            area.innerHTML = `<div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2"><div class="flex justify-between"><span class="text-white font-bold">@CryptoFarmer</span><span class="text-purple-400">STAR RANK</span></div></div>`;
+        }
+    }
+
+    function copyRefLink() { navigator.clipboard.writeText(document.getElementById('ref-link-input').value); alert('Copied!'); }
+    function copyModalRefLink() { navigator.clipboard.writeText(document.getElementById('modal-ref-link-input').value); alert('Copied!'); }
 
     window.onload = function() {
         checkReferralOnStartup();
@@ -657,6 +745,7 @@ document.addEventListener('change', function(e) {
         renderLevels();
         renderAllRanks();
 
+        const ADMIN_ID = "5939907983";
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
             const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
             if (tgUser) {
@@ -665,6 +754,13 @@ document.addEventListener('change', function(e) {
                 const dynamicLink = `https://t.me/SolMiningFarmBot?start=${tgUser.id || '5939907983'}`;
                 document.getElementById('ref-link-input').value = dynamicLink;
                 document.getElementById('modal-ref-link-input').value = dynamicLink;
+                document.getElementById('tg-share-btn').href = `https://t.me/share/url?url=${encodeURIComponent(dynamicLink)}`;
+                document.getElementById('wa-share-btn').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(dynamicLink)}`;
+
+                if (tgUser.id && tgUser.id.toString() === ADMIN_ID) {
+                    document.getElementById('admin-panel-btn').classList.remove('hidden');
+                    document.getElementById('admin-panel-btn').classList.add('flex');
+                }
             }
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
