@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Farming Telegram Mini App</title>
+    <title>Solana Farming Telegram Mini App - Complete Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
@@ -21,21 +21,21 @@
             }
         }
 
-let selectedAvatarBase64 = "";
+        let selectedAvatarBase64 = "";
 
-document.addEventListener('change', function(e) {
-    if (e.target && e.target.id === 'profile-avatar-url') {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                selectedAvatarBase64 = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-});
-</script>
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.id === 'profile-avatar-url') {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        selectedAvatarBase64 = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+    </script>
 </head>
 <body class="bg-darkBg text-white font-sans antialiased pb-24 selection:bg-solPurple selection:text-white">
 
