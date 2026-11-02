@@ -1691,6 +1691,14 @@ document.addEventListener('change', function(e) {
                     if (profileNameInput && !localStorage.getItem('sol_profile_name')) {
                         profileNameInput.value = nameDisplay;
                     }
+                    const userRefId = tgUser.id || "5939907983";
+                    const dynamicLink = `https://t.me/SolMiningFarmBot?start=${userRefId}`;
+    
+                    const refInput1 = document.getElementById('ref-link-input');
+                    if (refInput1) refInput1.value = dynamicLink;
+
+                    const refInput2 = document.getElementById('modal-ref-link-input');
+                    if (refInput2) refInput2.value = dynamicLink;
 
                     if (tgUser.photo_url) {
                         const avatarImg = document.getElementById('user-avatar-img');
