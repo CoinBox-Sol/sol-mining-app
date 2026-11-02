@@ -936,10 +936,10 @@ document.addEventListener('change', function(e) {
                 </button>
             </div>
             <div class="grid grid-cols-2 gap-2 pt-1">
-                <a href="https://t.me/share/url?url=https://t.me/SolMiningFarmBot?start=5939907983&text=Join%20Solana%20Farming%20and%20earn%20daily%20rewards!" target="_blank" class="bg-sky-600 hover:bg-sky-500 transition py-2.5 px-3 rounded-xl font-bold text-xs text-center text-white flex items-center justify-center space-x-1.5">
+                <a id="tg-share-btn" href="#" target="_blank" class="bg-sky-600 hover:bg-sky-500 transition py-2.5 px-3 rounded-xl font-bold text-xs text-center text-white flex items-center justify-center space-x-1.5">
                     <span>📱</span> <span>Telegram</span>
                 </a>
-                <a href="https://api.whatsapp.com/send?text=Join%20Solana%20Farming%20and%20earn%20daily%20rewards:%20https://t.me/SolMiningFarmBot?start=5939907983" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 transition py-2.5 px-3 rounded-xl font-bold text-xs text-center text-white flex items-center justify-center space-x-1.5">
+                <a id="wa-share-btn" href="#" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 transition py-2.5 px-3 rounded-xl font-bold text-xs text-center text-white flex items-center justify-center space-x-1.5">
                     <span>💬</span> <span>WhatsApp</span>
                 </a>
             </div>
@@ -1699,6 +1699,15 @@ document.addEventListener('change', function(e) {
 
                     const refInput2 = document.getElementById('modal-ref-link-input');
                     if (refInput2) refInput2.value = dynamicLink;
+                    const tgShareBtn = document.getElementById('tg-share-btn');
+                    if (tgShareBtn) {
+                        tgShareBtn.href = `https://t.me/share/url?url=${encodeURIComponent(dynamicLink)}&text=${encodeURIComponent("Join Solana Farming and earn daily rewards!")}`;
+                    }
+
+                    const waShareBtn = document.getElementById('wa-share-btn');
+                    if (waShareBtn) {
+                        waShareBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent("Join Solana Farming and earn daily rewards! " + dynamicLink)}`;
+                    }
 
                     if (tgUser.photo_url) {
                         const avatarImg = document.getElementById('user-avatar-img');
