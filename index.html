@@ -995,15 +995,84 @@ document.addEventListener('change', function(e) {
 
     <!-- JavaScript Application Logic -->
     <script>
-    // Clear old cached state for a fresh start
-    localStorage.removeItem('sol_bot_state');
+    // Load saved state from localStorage including completed withdrawals history
+    let savedState = null;
+    try {
+        savedState = JSON.parse(localStorage.getItem('sol_bot_state'));
+    } catch (e) {
+      savedState = null;
+    }
 
-    // Mining simulation variables reset to 0 for a fresh start
-    let minedSolBalance = 0.0000;
-    let activePlanTier = 'NONE'; // Default NONE tier
-    let userDepositAmount = 0.00; // Default 0.00 SOL deposit
-    let miningSpeedPerSec = 0.0000; 
-    let activeDirectsCount = 0; // Default 0 direct referrals
+    let minedSolBalance = savedState ? (parseFloat(savedState.minedSolBalance) || 0.0000) : 0.0000;
+    let availableSolBalance = savedState ? (parseFloat(savedState.availableSolBalance) || 0.0000) : 0.0000;
+    let totalSelfFarmingClaimed = savedState ? (parseFloat(savedState.totalSelfFarmingClaimed) || 0.0000) : 0.0000;
+    let activePlanTier = savedState ? (savedState.activePlanTier || 'NONE') : 'NONE';
+    let userDepositAmount = savedState ? (parseFloat(savedState.userDepositAmount) || 0.00) : 0.00;
+    let miningSpeedPerSec = savedState ? (parseFloat(savedState.miningSpeedPerSec) || 0.0000) : 0.0000;
+    let activeDirectsCount = savedState ? (parseInt(savedState.activeDirectsCount) || 0) : 0;
+
+    // Promo, Earning Breakdowns & Ranks State
+    let promoBonusBalance = savedState ? (parseFloat(savedState.promoBonusBalance) || 0.0100) : 0.0100;
+    let directReferralBonus = savedState ? (parseFloat(savedState.directReferralBonus) || 0.0000) : 0.0000;
+    let teamReferralBonus = savedState ? (parseFloat(savedState.teamReferralBonus) || 0.0000) : 0.0000;
+    let teamOverrideBonus = savedState ? (parseFloat(savedState.teamOverrideBonus) || 0.0000) : 0.0000;
+    let rankRoyaltyBonus = savedState ? (parseFloat(savedState.rankRoyaltyBonus) || 0.0000) : 0.0000;
+    let highestAchievedRank = savedState ? (savedState.highestAchievedRank || 'NO RANK') : 'NO RANK';
+
+    // Level-wise Team Business Volumes & Members Data (25 Levels)
+    let levelVolumes = savedState && savedState.levelVolumes ? savedState.levelVolumes : Array(26).fill(0.0);
+    let levelMembersData = savedState && savedState.levelMembersData ? savedState.levelMembersData : {};
+
+    // Rank Business Legs Data (Strongest Leg 40% & Other Legs 60%)
+    let userStrongestDone = savedState ? (parseFloat(savedState.userStrongestDone) || 0.0) : 0.0;
+    let userOtherDone = savedState ? (parseFloat(savedState.userOtherDone) || 0.0) : 0.0;
+
+    // Profile Settings State Data
+    let profileName = savedState ? (savedState.profileName || '@Farming_Master') : '@Farming_Master';
+    let profileMobile = savedState ? (savedState.profileMobile || '') : '';
+    let profileEmail = savedState ? (savedState.profileEmail || '') : '';
+    let profileSolAddress = savedState ? (savedState.profileSolAddress || '') : '';
+
+    // Capping Protocol & Total Earned State
+    let totalEarnedAmount = savedState ? (parseFloat(savedState.totalEarnedAmount) || 0.0000) : 0.0000;
+
+    // Admin & Completed Withdrawals Lists State
+    let adminPendingDeposits = savedState && savedState.adminPendingDeposits ? savedState.adminPendingDeposits : [];
+    let adminPendingWithdrawals = savedState && savedState.adminPendingWithdrawals ? savedState.adminPendingWithdrawals : [];
+    let completedWithdrawals = savedState && savedState.completedWithdrawals ? savedState.completedWithdrawals : [];
+
+    // Comprehensive function to save all bot states automatically including completed withdrawals
+    function saveBotState() {
+        const currentState = {
+            minedSolBalance,
+            availableSolBalance,
+            totalSelfFarmingClaimed,
+            activePlanTier,
+            userDepositAmount,
+            miningSpeedPerSec,
+            activeDirectsCount,
+            promoBonusBalance,
+            directReferralBonus,
+            teamReferralBonus,
+            teamOverrideBonus,
+            rankRoyaltyBonus,
+            highestAchievedRank,
+            levelVolumes,
+            levelMembersData,
+            userStrongestDone,
+            userOtherDone,
+            profileName,
+            profileMobile,
+            profileEmail,
+            profileSolAddress,
+            totalEarnedAmount,
+            adminPendingDeposits,
+            adminPendingWithdrawals,
+            completedWithdrawals
+         };
+         localStorage.setItem('sol_bot_state', JSON.stringify(currentState));
+      }
+
 
         // Update mining speed and hashrate based on precise package tier and daily percentage rules
         function updateMiningSpeedForPlan(planName, depositAmount = 0.00) {
