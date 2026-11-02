@@ -1007,43 +1007,43 @@ document.addEventListener('change', function(e) {
         localStorage.removeItem('sol_bot_state');
     }
 
-    let minedSolBalance = savedState && savedState.minedSolBalance !== undefined ? parseFloat(savedState.minedSolBalance) || 0.0000 : 0.0000;
-    let availableSolBalance = savedState && savedState.availableSolBalance !== undefined ? parseFloat(savedState.availableSolBalance) || 0.0000 : 0.0000;
-    let totalSelfFarmingClaimed = savedState && savedState.totalSelfFarmingClaimed !== undefined ? parseFloat(savedState.totalSelfFarmingClaimed) || 0.0000 : 0.0000;
-    let activePlanTier = savedState && savedState.activePlanTier ? savedState.activePlanTier : 'NONE';
-    let userDepositAmount = savedState && savedState.userDepositAmount !== undefined ? parseFloat(savedState.userDepositAmount) || 0.00 : 0.00;
-    let miningSpeedPerSec = savedState && savedState.miningSpeedPerSec !== undefined ? parseFloat(savedState.miningSpeedPerSec) || 0.0000 : 0.0000;
-    let activeDirectsCount = savedState && savedState.activeDirectsCount !== undefined ? parseInt(savedState.activeDirectsCount) || 0 : 0;
+    minedSolBalance = savedState && savedState.minedSolBalance !== undefined ? parseFloat(savedState.minedSolBalance) || 0.0000 : 0.0000;
+    availableSolBalance = savedState && savedState.availableSolBalance !== undefined ? parseFloat(savedState.availableSolBalance) || 0.0000 : 0.0000;
+    totalSelfFarmingClaimed = savedState && savedState.totalSelfFarmingClaimed !== undefined ? parseFloat(savedState.totalSelfFarmingClaimed) || 0.0000 : 0.0000;
+    activePlanTier = savedState && savedState.activePlanTier ? savedState.activePlanTier : 'NONE';
+    userDepositAmount = savedState && savedState.userDepositAmount !== undefined ? parseFloat(savedState.userDepositAmount) || 0.00 : 0.00;
+    miningSpeedPerSec = savedState && savedState.miningSpeedPerSec !== undefined ? parseFloat(savedState.miningSpeedPerSec) || 0.0000 : 0.0000;
+    activeDirectsCount = savedState && savedState.activeDirectsCount !== undefined ? parseInt(savedState.activeDirectsCount) || 0 : 0;
 
     // Promo, Earning Breakdowns & Ranks State
-    let promoBonusBalance = savedState && savedState.promoBonusBalance !== undefined ? parseFloat(savedState.promoBonusBalance) || 0.0100 : 0.0100;
-    let directReferralBonus = savedState && savedState.directReferralBonus !== undefined ? parseFloat(savedState.directReferralBonus) || 0.0000 : 0.0000;
-    let teamReferralBonus = savedState && savedState.teamReferralBonus !== undefined ? parseFloat(savedState.teamReferralBonus) || 0.0000 : 0.0000;
-    let teamOverrideBonus = savedState && savedState.teamOverrideBonus !== undefined ? parseFloat(savedState.teamOverrideBonus) || 0.0000 : 0.0000;
-    let rankRoyaltyBonus = savedState && savedState.rankRoyaltyBonus !== undefined ? parseFloat(savedState.rankRoyaltyBonus) || 0.0000 : 0.0000;
-    let highestAchievedRank = savedState && savedState.highestAchievedRank ? savedState.highestAchievedRank : 'NO RANK';
+    promoBonusBalance = savedState && savedState.promoBonusBalance !== undefined ? parseFloat(savedState.promoBonusBalance) || 0.0100 : 0.0100;
+    directReferralBonus = savedState && savedState.directReferralBonus !== undefined ? parseFloat(savedState.directReferralBonus) || 0.0000 : 0.0000;
+    teamReferralBonus = savedState && savedState.teamReferralBonus !== undefined ? parseFloat(savedState.teamReferralBonus) || 0.0000 : 0.0000;
+    teamOverrideBonus = savedState && savedState.teamOverrideBonus !== undefined ? parseFloat(savedState.teamOverrideBonus) || 0.0000 : 0.0000;
+    rankRoyaltyBonus = savedState && savedState.rankRoyaltyBonus !== undefined ? parseFloat(savedState.rankRoyaltyBonus) || 0.0000 : 0.0000;
+    highestAchievedRank = savedState && savedState.highestAchievedRank ? savedState.highestAchievedRank : 'NO RANK';
 
     // Level-wise Team Business Volumes & Members Data (25 Levels)
-    let levelVolumes = savedState && Array.isArray(savedState.levelVolumes) ? savedState.levelVolumes : Array(26).fill(0.0);
-    let levelMembersData = savedState && savedState.levelMembersData && typeof savedState.levelMembersData === 'object' ? savedState.levelMembersData : {};
+    levelVolumes = savedState && Array.isArray(savedState.levelVolumes) ? savedState.levelVolumes : Array(26).fill(0.0);
+    levelMembersData = savedState && savedState.levelMembersData && typeof savedState.levelMembersData === 'object' ? savedState.levelMembersData : {};
 
     // Rank Business Legs Data (Strongest Leg 40% & Other Legs 60%)
-    let userStrongestDone = savedState && savedState.userStrongestDone !== undefined ? parseFloat(savedState.userStrongestDone) || 0.0 : 0.0;
-    let userOtherDone = savedState && savedState.userOtherDone !== undefined ? parseFloat(savedState.userOtherDone) || 0.0 : 0.0;
+    userStrongestDone = savedState && savedState.userStrongestDone !== undefined ? parseFloat(savedState.userStrongestDone) || 0.0 : 0.0;
+    userOtherDone = savedState && savedState.userOtherDone !== undefined ? parseFloat(savedState.userOtherDone) || 0.0 : 0.0;
 
     // Profile Settings State Data
-    let profileName = savedState && savedState.profileName ? savedState.profileName : '@Farming_Master';
-    let profileMobile = savedState && savedState.profileMobile ? savedState.profileMobile : '';
-    let profileEmail = savedState && savedState.profileEmail ? savedState.profileEmail : '';
-    let profileSolAddress = savedState && savedState.profileSolAddress ? savedState.profileSolAddress : '';
+    profileName = savedState && savedState.profileName ? savedState.profileName : '@Farming_Master';
+    profileMobile = savedState && savedState.profileMobile ? savedState.profileMobile : '';
+    profileEmail = savedState && savedState.profileEmail ? savedState.profileEmail : '';
+    profileSolAddress = savedState && savedState.profileSolAddress ? savedState.profileSolAddress : '';
 
     // Capping Protocol & Total Earned State
-    let totalEarnedAmount = savedState && savedState.totalEarnedAmount !== undefined ? parseFloat(savedState.totalEarnedAmount) || 0.0000 : 0.0000;
+    totalEarnedAmount = savedState && savedState.totalEarnedAmount !== undefined ? parseFloat(savedState.totalEarnedAmount) || 0.0000 : 0.0000;
 
     // Admin & Completed Withdrawals Lists State
-    let adminPendingDeposits = savedState && Array.isArray(savedState.adminPendingDeposits) ? savedState.adminPendingDeposits : [];
-    let adminPendingWithdrawals = savedState && Array.isArray(savedState.adminPendingWithdrawals) ? savedState.adminPendingWithdrawals : [];
-    let completedWithdrawals = savedState && Array.isArray(savedState.completedWithdrawals) ? savedState.completedWithdrawals : [];
+    adminPendingDeposits = savedState && Array.isArray(savedState.adminPendingDeposits) ? savedState.adminPendingDeposits : [];
+    adminPendingWithdrawals = savedState && Array.isArray(savedState.adminPendingWithdrawals) ? savedState.adminPendingWithdrawals : [];
+    completedWithdrawals = savedState && Array.isArray(savedState.completedWithdrawals) ? savedState.completedWithdrawals : [];
 
     // Comprehensive function to save all bot states automatically
     function saveBotState() {
@@ -1075,7 +1075,7 @@ document.addEventListener('change', function(e) {
             completedWithdrawals
          };
          localStorage.setItem('sol_bot_state', JSON.stringify(currentState));
-      }
+    }
 
 
         // Update mining speed and hashrate based on precise package tier and daily percentage rules
