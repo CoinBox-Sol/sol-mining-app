@@ -636,6 +636,18 @@ document.addEventListener('change', function(e) {
                 </div>
             </div>
 
+            <!-- Team Summary Stats Card (Added for Direct Members & Total Volume) -->
+            <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+                    <span class="text-gray-400 text-[10px] block uppercase font-sans">Active Directs (L1)</span>
+                    <strong id="team-directs-count" class="text-solGreen text-base font-black">0</strong>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+                    <span class="text-gray-400 text-[10px] block uppercase font-sans">Total Team Volume</span>
+                    <strong id="team-total-volume" class="text-cyan-400 text-base font-black">0.00 SOL</strong>
+                </div>
+            </div>
+
             <!-- SECTION 1: Direct Referral Bonus (Level 1) -->
             <div class="bg-gradient-to-r from-indigo-950/70 via-cardBg to-purple-950/70 border border-indigo-500/40 rounded-2xl p-4 space-y-2 shadow-lg">
                 <div class="flex justify-between items-center">
