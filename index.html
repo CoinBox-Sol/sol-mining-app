@@ -1817,6 +1817,8 @@ document.addEventListener('change', function(e) {
         renderLevels();
         renderAllRanks();
         updateMiningSpeedForPlan(activePlanTier, userDepositAmount);
+        checkReferralOnStartup();
+        updateDirectMembersUI();
     };
     </script>
 </body>
