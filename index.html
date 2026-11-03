@@ -1493,7 +1493,7 @@ document.addEventListener('change', function(e) {
                 alert('🎉 Congratulations! Your Promo Bonus reached 0.10 SOL. Starter Package Auto-Topup triggered!');
                 updateMiningSpeedForPlan('STARTER', 0.10);
             }
-
+            updateDirectMembersUI();
             saveBotState();
         }
     }
