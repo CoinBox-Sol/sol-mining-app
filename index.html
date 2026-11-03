@@ -1382,7 +1382,6 @@ document.addEventListener('change', function(e) {
         if (minEl) minEl.innerText = `${minSol}`;
 
         const numericDeposit = parseFloat(minSol) || 0.10;
-        updateMiningSpeedForPlan(planName, numericDeposit);
         openModal('depositModal');
     }
 
