@@ -1467,6 +1467,54 @@ document.addEventListener('change', function(e) {
         document.body.removeChild(tempInput);
         alert("Deposit wallet address copied to clipboard!");
     }
+    // Referral & Promo Bonus Logic on Startup
+    function checkReferralOnStartup() {
+        const params = new URLSearchParams(window.location.search);
+        let refId = params.get('start');
+    
+        if (!refId && window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
+            refId = window.Telegram.WebApp.initDataUnsafe.start_param;
+        }
+
+        if (refId && !localStorage.getItem('sol_referred_flag_v3')) {
+            promoBonusBalance = Math.min(0.10, promoBonusBalance + 0.01);
+            activeDirectsCount += 1;
+
+            if (!levelMembersData[1]) levelMembersData[1] = [];
+            levelMembersData[1].push({
+                name: `@Referral_User_${refId.slice(-4)}`,
+                deposit: "0.10 SOL (Promo)",
+                date: new Date().toISOString().split('T')[0]
+            });
+
+            localStorage.setItem('sol_referred_flag_v3', 'true');
+
+            if (promoBonusBalance >= 0.10) {
+                alert('🎉 Congratulations! Your Promo Bonus reached 0.10 SOL. Starter Package Auto-Topup triggered!');
+                updateMiningSpeedForPlan('STARTER', 0.10);
+            }
+
+            saveBotState();
+        }
+    }
+
+    function updateDirectMembersUI() {
+        const directsCountEl = document.getElementById('team-directs-count');
+        if (directsCountEl) {
+            directsCountEl.innerText = activeDirectsCount;
+        }
+
+        const promoBonusText = document.getElementById('promo-bonus-text');
+        if (promoBonusText) {
+            promoBonusText.innerText = `${promoBonusBalance.toFixed(4)} / 0.10 SOL`;
+        }
+
+        const promoProgress = document.getElementById('promo-progress');
+        if (promoProgress) {
+            let pct = Math.min(100, Math.floor((promoBonusBalance / 0.10) * 100));
+            promoProgress.style.width = `${pct}%`;
+        }
+    }
 
     function copyRefLink() {
         const input = document.getElementById('ref-link-input');
