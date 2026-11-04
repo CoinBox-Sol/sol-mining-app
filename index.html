@@ -1479,7 +1479,7 @@ document.addEventListener('change', function(e) {
             // Backend MongoDB Sync Request
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
             if (tgUser && tgUser.id) {
-                fetch('https://YOUR_RENDER_BACKEND_URL/api/user/sync', {
+                fetch('https://sol-mining-app.onrender.com/api/user/sync', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
