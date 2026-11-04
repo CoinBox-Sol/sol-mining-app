@@ -1476,6 +1476,22 @@ document.addEventListener('change', function(e) {
         }
 
         if (refId && !localStorage.getItem('sol_referred_flag_v3')) {
+            // Backend MongoDB Sync Request
+            const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+            if (tgUser && tgUser.id) {
+                fetch('https://YOUR_RENDER_BACKEND_URL/api/user/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramId: tgUser.id.toString(),
+                        username: tgUser.username || '',
+                        firstName: tgUser.first_name || '',
+                        startParam: refId || null
+                    })
+                })
+                .catch(err => console.error("Sync Error:", err));
+            }
+
             promoBonusBalance = Math.min(0.10, promoBonusBalance + 0.01);
             activeDirectsCount += 1;
 
