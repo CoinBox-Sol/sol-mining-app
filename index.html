@@ -1771,7 +1771,7 @@ document.addEventListener('change', function(e) {
     }
 
     // Initialize on Window Load
-    window.onload = function() {
+    window.onload = async function() {
         const ADMIN_TELEGRAM_ID = "5939907983"; 
 
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
@@ -1827,6 +1827,35 @@ document.addEventListener('change', function(e) {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
         }
+            try {
+                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                if (tgUser && tgUser.id) {
+                    const response = await fetch('https://sol-mining-app-1.onrender.com/api/user/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            telegramId: tgUser.id.toString(),
+                            username: tgUser.username || '',
+                            firstName: tgUser.first_name || '',
+                            startParam: new URLSearchParams(window.location.search).get('start') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success && data.user) {
+                        minedSolBalance = data.user.minedSolBalance !== undefined ? data.user.minedSolBalance : minedSolBalance;
+                        availableSolBalance = data.user.availableSolBalance !== undefined ? data.user.availableSolBalance : availableSolBalance;
+                        totalSelfFarmingClaimed = data.user.totalSelfFarmingClaimed !== undefined ? data.user.totalSelfFarmingClaimed : totalSelfFarmingClaimed;
+                        activePlanTier = data.user.activePlanTier || activePlanTier;
+                        userDepositAmount = data.user.userDepositAmount !== undefined ? data.user.userDepositAmount : userDepositAmount;
+                        activeDirectsCount = data.user.activeDirectsCount !== undefined ? data.user.activeDirectsCount : activeDirectsCount;
+                        promoBonusBalance = data.user.promoBonusBalance !== undefined ? data.user.promoBonusBalance : promoBonusBalance;
+                        userStrongestDone = data.user.userStrongestDone !== undefined ? data.user.userStrongestDone : userStrongestDone;
+                        userOtherDone = data.user.userOtherDone !== undefined ? data.user.userOtherDone : userOtherDone;
+                    }
+                }
+            } catch (err) {
+                console.error("Startup Load Error:", err);
+            }
 
         loadProfileOnStartup();
         renderLevels();
