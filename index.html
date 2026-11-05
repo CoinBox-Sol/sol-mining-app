@@ -1777,15 +1777,14 @@ document.addEventListener('change', function(e) {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
             const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
             if (tgUser) {
-                let nameDisplay = `@CryptoFarmer`;
-                if (tgUser.username) {
+                let nameDisplay = '@User';
+                if (tgUser && tgUser.username) {
                     nameDisplay = `@${tgUser.username}`;
-                } else if (tgUser.first_name) {
-                    nameDisplay = tgUser.last_name ? `${tgUser.first_name} ${tgUser.last_name}` : tgUser.first_name;
-                } else if (tgUser.id) {
+                } else if (tgUser && tgUser.first_name) {
+                    nameDisplay = tgUser.first_name;
+                } else if (tgUser && tgUser.id) {
                     nameDisplay = `ID: ${tgUser.id}`;
                 }
-
                 const usernameEl = document.getElementById('username');
                 if (usernameEl) usernameEl.innerText = nameDisplay;
                 const profileNameInput = document.getElementById('profile-name');
