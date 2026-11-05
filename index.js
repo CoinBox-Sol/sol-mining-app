@@ -174,6 +174,7 @@ app.post('/api/user/sync', async (req, res) => {
 app.get('/', (req, res) => {
     res.send('SolMiningBot Server is Running Live!');
 });
+
 // Test route to generate 100 dummy users instantly for testing
 app.get('/api/test/generate-users', async (req, res) => {
     try {
