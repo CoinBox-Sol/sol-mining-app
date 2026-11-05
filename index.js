@@ -9,7 +9,7 @@ console.log('CORS is enabled for all origins');
 
 const PORT = process.env.PORT || 3000;
 
-// MongoDB Connection & Auto-Generate 100 Dummy Users with Proper Referral Mapping
+// MongoDB Connection & Auto-Generate 100 Dummy Users on Startup
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
@@ -17,22 +17,6 @@ mongoose.connect(MONGO_URI)
         console.log('MongoDB Connected Successfully!');
         
         try {
-            let sponsorId = "5939907983"; // Aapki admin ID as sponsor
-            
-            // Pehle ensure karein ki sponsor (admin) database me exist karta ho
-            let sponsor = await User.findOne({ telegramId: sponsorId });
-            if (!sponsor) {
-                sponsor = new User({
-                    telegramId: sponsorId,
-                    username: 'Farming_Master',
-                    firstName: 'Raghunath',
-                    profileName: '@Farming_Master',
-                    activePlanTier: 'STARTER',
-                    userDepositAmount: 0.10
-                });
-                await sponsor.save();
-            }
-
             let generatedCount = 0;
             for (let i = 1; i <= 100; i++) {
                 let dummyId = `test_user_${i}`;
@@ -52,32 +36,7 @@ mongoose.connect(MONGO_URI)
                     generatedCount++;
                 }
             }
-
-            // Sabhi test users ko sponsor ke level 1 directs aur volume me count update karna
-            const allTestUsers = await User.find({ telegramId: /^test_user_/ });
-            sponsor.activeDirectsCount = allTestUsers.length;
-            
-            // Level 1 volume update (maan lijiye har user ne 0.10 ka plan liya hai)
-            let totalVol = allTestUsers.length * 0.10;
-            if (!sponsor.levelVolumes || sponsor.levelVolumes.length === 0) {
-                sponsor.levelVolumes = Array(26).fill(0.0);
-            }
-            sponsor.levelVolumes[1] = totalVol;
-
-            // Level members data map update karna taaki frontend par list show ho
-            if (!sponsor.levelMembersData) {
-                sponsor.levelMembersData = {};
-            }
-            sponsor.levelMembersData['1'] = allTestUsers.map(u => ({
-                telegramId: u.telegramId,
-                username: u.username,
-                firstName: u.firstName,
-                activePlanTier: u.activePlanTier,
-                joinedAt: new Date()
-            }));
-
-            await sponsor.save();
-            console.log(`Startup: ${generatedCount} dummy users generated and mapped to sponsor successfully!`);
+            console.log(`Startup: Checked/Generated 100 dummy users.`);
         } catch (err) {
             console.error("Startup test generation error:", err);
         }
@@ -175,20 +134,6 @@ app.post('/api/user/sync', async (req, res) => {
                 profileName: username ? `@${username}` : (firstName ? firstName : ''),
                 promoBonusBalance: 0.0100
             });
-
-            if (startParam && startParam !== telegramId) {
-                let sponsor = await User.findOne({ telegramId: startParam });
-                if (sponsor) {
-                    sponsor.promoBonusBalance = Math.min(0.10, sponsor.promoBonusBalance + 0.01);
-                    sponsor.activeDirectsCount += 1;
-                    
-                    if (sponsor.promoBonusBalance >= 0.10) {
-                        sponsor.activePlanTier = 'STARTER';
-                        sponsor.userDepositAmount = 0.10;
-                    }
-                    await sponsor.save();
-                }
-            }
         } else {
             if (username) user.username = username;
             if (firstName) user.firstName = firstName;
@@ -231,6 +176,43 @@ app.post('/api/user/sync', async (req, res) => {
     } catch (error) {
         console.error('Sync Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Quick Sync Route to map 100 dummy users directly to admin ID (5939907983)
+app.get('/api/test/sync-team', async (req, res) => {
+    try {
+        let sponsorId = "5939907983";
+        let sponsor = await User.findOne({ telegramId: sponsorId });
+        
+        if (!sponsor) {
+            return res.json({ success: false, message: "Admin/Sponsor not found in DB yet! Open mini app once first." });
+        }
+
+        const allTestUsers = await User.find({ telegramId: /^test_user_/ });
+        
+        sponsor.activeDirectsCount = allTestUsers.length;
+        let totalVol = allTestUsers.length * 0.10;
+        
+        if (!sponsor.levelVolumes || sponsor.levelVolumes.length === 0) {
+            sponsor.levelVolumes = Array(26).fill(0.0);
+        }
+        sponsor.levelVolumes[1] = totalVol;
+
+        sponsor.levelMembersData = {
+            '1': allTestUsers.map(u => ({
+                telegramId: u.telegramId,
+                username: u.username,
+                firstName: u.firstName,
+                activePlanTier: u.activePlanTier,
+                joinedAt: new Date()
+            }))
+        };
+
+        await sponsor.save();
+        res.json({ success: true, message: `Successfully synced ${allTestUsers.length} users to admin team!` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
