@@ -174,6 +174,39 @@ app.post('/api/user/sync', async (req, res) => {
 app.get('/', (req, res) => {
     res.send('SolMiningBot Server is Running Live!');
 });
+// Test route to generate 100 dummy users instantly for testing
+app.get('/api/test/generate-users', async (req, res) => {
+    try {
+        let sponsorId = "5939907983"; // Aapki admin ID as sponsor
+        for (let i = 1; i <= 100; i++) {
+            let dummyId = `test_user_${i}`;
+            let existing = await User.findOne({ telegramId: dummyId });
+            if (!existing) {
+                let newUser = new User({
+                    telegramId: dummyId,
+                    username: `user_${i}`,
+                    firstName: `TestUser ${i}`,
+                    profileName: `User ${i}`,
+                    promoBonusBalance: 0.10,
+                    activePlanTier: 'STARTER'
+                });
+                await newUser.save();
+
+                // Sponsor ke liye direct refs aur promo balance update karna
+                let sponsor = await User.findOne({ telegramId: sponsorId });
+                if (sponsor) {
+                    sponsor.activeDirectsCount += 1;
+                    sponsor.promoBonusBalance += 0.01;
+                    await sponsor.save();
+                }
+            }
+        }
+        res.json({ success: true, message: "100 dummy users generated and linked successfully!" });
+    } catch (err) {
+        console.error("Test generation error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.listen(PORT, () => {
     console.log('Server is running on port ' + PORT);
