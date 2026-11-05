@@ -997,13 +997,13 @@ document.addEventListener('change', function(e) {
     // Safely load saved state from localStorage with robust null/undefined checks
     let savedState = null;
     try {
-        const rawState = localStorage.getItem('sol_bot_state');
+        const rawState = localStorage.getItem('sol_bot_state_v2');
         if (rawState) {
             savedState = JSON.parse(rawState);
         }
     } catch (e) {
         savedState = null;
-        localStorage.removeItem('sol_bot_state');
+        localStorage.removeItem('sol_bot_state_v2');
     }
 
     let minedSolBalance = savedState && savedState.minedSolBalance !== undefined ? parseFloat(savedState.minedSolBalance) || 0.0000 : 0.0000;
@@ -1073,7 +1073,7 @@ document.addEventListener('change', function(e) {
             adminPendingWithdrawals,
             completedWithdrawals
          };
-         localStorage.setItem('sol_bot_state', JSON.stringify(currentState));
+         localStorage.setItem('sol_bot_state_v2', JSON.stringify(currentState));
     }
 
     // Update mining speed and hashrate based on precise package tier and daily percentage rules
