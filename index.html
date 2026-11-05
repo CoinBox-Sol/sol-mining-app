@@ -1772,7 +1772,7 @@ document.addEventListener('change', function(e) {
 
     // Initialize on Window Load
     window.onload = async function() {
-        const ADMIN_TELEGRAM_ID = "5939907983"; 
+        const ADMIN_TELEGRAM_ID = "5939907983";
 
         let tgUser = null;
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
@@ -1805,87 +1805,88 @@ document.addEventListener('change', function(e) {
         const userRefId = (tgUser && tgUser.id) ? tgUser.id : '';
         const dynamicLink = userRefId ? `https://t.me/SolMiningFarmBot?start=${userRefId}` : '';
 
+        const refInput1 = document.getElementById('ref-link-input');
+        if (refInput1) refInput1.value = dynamicLink;
 
-                const refInput1 = document.getElementById('ref-link-input');
-                if (refInput1) refInput1.value = dynamicLink;
+        const refInput2 = document.getElementById('modal-ref-link-input') || document.getElementById('ref-link-input-2');
+        if (refInput2) refInput2.value = dynamicLink;
 
-                const refInput2 = document.getElementById('modal-ref-link-input');
-                if (refInput2) refInput2.value = dynamicLink;
+        const tgShareBtn = document.getElementById('tg-share-btn') || document.getElementById('telegram-share-btn');
+        if (tgShareBtn) {
+            tgShareBtn.href = `https://t.me/share/url?url=${encodeURIComponent(dynamicLink)}&text=${encodeURIComponent("Join Solana Farming and earn daily rewards!")}`;
+        }
 
-                const tgShareBtn = document.getElementById('tg-share-btn');
-                if (tgShareBtn) {
-                    tgShareBtn.href = `https://t.me/share/url?url=${encodeURIComponent(dynamicLink)}&text=${encodeURIComponent("Join Solana Farming and earn daily rewards!")}`;
-                }
-
-                if (tgUser.photo_url) {
-                    const avatarImg = document.getElementById('user-avatar-img');
-                    const solLogo = document.getElementById('user-sol-logo');
-                    if (avatarImg && solLogo) {
-                        avatarImg.src = tgUser.photo_url;
-                        avatarImg.classList.remove('hidden');
-                        solLogo.classList.add('hidden');
-                    }
-                }
-
-                if (tgUser.id && tgUser.id.toString() === ADMIN_TELEGRAM_ID) {
-                    const adminBtn = document.getElementById('admin-panel-btn');
-                    if (adminBtn) {
-                        adminBtn.classList.remove('hidden');
-                        adminBtn.classList.add('flex');
-                    }
-                }
+        if (tgUser && tgUser.photo_url) {
+            const avatarImg = document.getElementById('user-avatar-img');
+            const solLogo = document.getElementById('user-sol-logo') || document.getElementById('sol-logo-icon');
+            if (avatarImg && solLogo) {
+                avatarImg.src = tgUser.photo_url;
+                avatarImg.classList.remove('hidden');
+                solLogo.classList.add('hidden');
             }
+        }
+
+        if (tgUser && tgUser.id && tgUser.id.toString() === ADMIN_TELEGRAM_ID) {
+            const adminBtn = document.getElementById('admin-panel-btn');
+            if (adminBtn) {
+                adminBtn.classList.remove('hidden');
+                adminBtn.classList.add('flex');
+            }
+        }
+
+        if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
         }
-            try {
-                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-                if (tgUser && tgUser.id) {
-                    const response = await fetch('https://sol-mining-app-1.onrender.com/api/user/sync', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            telegramId: tgUser.id.toString(),
-                            username: tgUser.username || '',
-                            firstName: tgUser.first_name || '',
-                            startParam: new URLSearchParams(window.location.search).get('start') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null,
-                            minedSolBalance: typeof minedSolBalance !== 'undefined' ? minedSolBalance : 0,
-                            availableSolBalance: typeof availableSolBalance !== 'undefined' ? availableSolBalance : 0,
-                            totalSelfFarmingClaimed: typeof totalSelfFarmingClaimed !== 'undefined' ? totalSelfFarmingClaimed : 0,
-                            activePlanTier: typeof activePlanTier !== 'undefined' ? activePlanTier : 'NONE',
-                            userDepositAmount: typeof userDepositAmount !== 'undefined' ? userDepositAmount : 0,
-                            miningSpeedPerSec: typeof miningSpeedPerSec !== 'undefined' ? miningSpeedPerSec : 0,
-                            activeDirectsCount: typeof activeDirectsCount !== 'undefined' ? activeDirectsCount : 0,
-                            promoBonusBalance: typeof promoBonusBalance !== 'undefined' ? promoBonusBalance : 0.0100,
-                            userStrongestDone: typeof userStrongestDone !== 'undefined' ? userStrongestDone : 0,
-                            userOtherDone: typeof userOtherDone !== 'undefined' ? userOtherDone : 0,
-                            totalEarnedAmount: typeof totalEarnedAmount !== 'undefined' ? totalEarnedAmount : 0
-                        })
-                    });
-                    const data = await response.json();
-                    if (data.success && data.user) {
-                        minedSolBalance = Math.max(minedSolBalance, data.user.minedSolBalance || 0);
-                        availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
-                        totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
-                        activePlanTier = (data.user.activePlanTier && data.user.activePlanTier !== 'NONE') ? data.user.activePlanTier : activePlanTier;
-                        userDepositAmount = Math.max(userDepositAmount, data.user.userDepositAmount || 0);
-                        activeDirectsCount = Math.max(activeDirectsCount, data.user.activeDirectsCount || 0);
-                        promoBonusBalance = Math.max(promoBonusBalance, data.user.promoBonusBalance || 0.0100);
-                        userStrongestDone = Math.max(userStrongestDone, data.user.userStrongestDone || 0);
-                        userOtherDone = Math.max(userOtherDone, data.user.userOtherDone || 0);
-                    }
-                }
-            } catch (err) {
-                console.error("Startup Load Error:", err);
-            }
 
-        loadProfileOnStartup();
-        renderLevels();
-        renderAllRanks();
-        updateMiningSpeedForPlan(activePlanTier, userDepositAmount);
-        checkReferralOnStartup();
-        updateDirectMembersUI();
+        try {
+            if (tgUser && tgUser.id) {
+                const response = await fetch('https://sol-mining-app-1.onrender.com/api/user/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramId: tgUser.id.toString(),
+                        username: tgUser.username || '',
+                        firstName: tgUser.first_name || '',
+                        startParam: new URLSearchParams(window.location.search).get('start') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null,
+                        minedSolBalance: typeof minedSolBalance !== 'undefined' ? minedSolBalance : 0,
+                        availableSolBalance: typeof availableSolBalance !== 'undefined' ? availableSolBalance : 0,
+                        totalSelfFarmingClaimed: typeof totalSelfFarmingClaimed !== 'undefined' ? totalSelfFarmingClaimed : 0,
+                        activePlanTier: typeof activePlanTier !== 'undefined' ? activePlanTier : 'NONE',
+                        userDepositAmount: typeof userDepositAmount !== 'undefined' ? userDepositAmount : 0,
+                        miningSpeedPerSec: typeof miningSpeedPerSec !== 'undefined' ? miningSpeedPerSec : 0,
+                        activeDirectsCount: typeof activeDirectsCount !== 'undefined' ? activeDirectsCount : 0,
+                        promoBonusBalance: typeof promoBonusBalance !== 'undefined' ? promoBonusBalance : 0.0100,
+                        userStrongestDone: typeof userStrongestDone !== 'undefined' ? userStrongestDone : 0,
+                        userOtherDone: typeof userOtherDone !== 'undefined' ? userOtherDone : 0,
+                        totalEarnedAmount: typeof totalEarnedAmount !== 'undefined' ? totalEarnedAmount : 0
+                    })
+                });
+                const data = await response.json();
+                if (data.success && data.user) {
+                    if (typeof minedSolBalance !== 'undefined') minedSolBalance = Math.max(minedSolBalance, data.user.minedSolBalance || 0);
+                    if (typeof availableSolBalance !== 'undefined') availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
+                    if (typeof totalSelfFarmingClaimed !== 'undefined') totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
+                    if (typeof activePlanTier !== 'undefined') activePlanTier = (data.user.activePlanTier && data.user.activePlanTier !== 'NONE') ? data.user.activePlanTier : activePlanTier;
+                    if (typeof userDepositAmount !== 'undefined') userDepositAmount = Math.max(userDepositAmount, data.user.userDepositAmount || 0);
+                    if (typeof activeDirectsCount !== 'undefined') activeDirectsCount = Math.max(activeDirectsCount, data.user.activeDirectsCount || 0);
+                    if (typeof promoBonusBalance !== 'undefined') promoBonusBalance = Math.max(promoBonusBalance, data.user.promoBonusBalance || 0.0100);
+                    if (typeof userStrongestDone !== 'undefined') userStrongestDone = Math.max(userStrongestDone, data.user.userStrongestDone || 0);
+                    if (typeof userOtherDone !== 'undefined') userOtherDone = Math.max(userOtherDone, data.user.userOtherDone || 0);
+                }
+            }
+        } catch (err) {
+            console.error("Startup Load Error:", err);
+        }
+
+        if (typeof loadProfileOnStartup === 'function') loadProfileOnStartup();
+        if (typeof renderLevels === 'function') renderLevels();
+        if (typeof renderAllRanks === 'function') renderAllRanks();
+        if (typeof updateMiningSpeedForPlan === 'function') updateMiningSpeedForPlan(typeof activePlanTier !== 'undefined' ? activePlanTier : 'NONE', typeof userDepositAmount !== 'undefined' ? userDepositAmount : 0);
+        if (typeof checkReferralOnStartup === 'function') checkReferralOnStartup();
+        if (typeof updateDirectMembersUI === 'function') updateDirectMembersUI();
     };
     </script>
 </body>
 </html>
+
