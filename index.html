@@ -1031,7 +1031,7 @@ document.addEventListener('change', function(e) {
     let userOtherDone = savedState && savedState.userOtherDone !== undefined ? parseFloat(savedState.userOtherDone) || 0.0 : 0.0;
 
     // Profile Settings State Data
-    let profileName = savedState && savedState.profileName ? savedState.profileName : '@User';
+    let profileName = savedState && savedState.profileName ? savedState.profileName : '';
     let profileMobile = savedState && savedState.profileMobile ? savedState.profileMobile : '';
     let profileEmail = savedState && savedState.profileEmail ? savedState.profileEmail : '';
     let profileSolAddress = savedState && savedState.profileSolAddress ? savedState.profileSolAddress : '';
@@ -1436,13 +1436,29 @@ document.addEventListener('change', function(e) {
     }
 
     function loadProfileOnStartup() {
-        if (profileName) {
-            document.getElementById('profile-name').value = profileName;
-            document.getElementById('username').innerText = profileName;
+        const savedName = profileName || localStorage.getItem('sol_profile_name') || '';
+        if (savedName) {
+            const profileNameInput = document.getElementById('profile-name');
+            const usernameEl = document.getElementById('username');
+            if (profileNameInput) profileNameInput.value = savedName;
+            if (usernameEl) usernameEl.innerText = savedName;
+        } else {
+            const usernameEl = document.getElementById('username');
+            if (usernameEl) usernameEl.innerText = '';
         }
-        if (profileMobile) document.getElementById('profile-mobile').value = profileMobile;
-        if (profileEmail) document.getElementById('profile-email').value = profileEmail;
-        if (profileSolAddress) document.getElementById('profile-sol-address').value = profileSolAddress;
+
+        if (profileMobile) {
+            const mobileInput = document.getElementById('profile-mobile');
+            if (mobileInput) mobileInput.value = profileMobile;
+        }
+        if (profileEmail) {
+            const emailInput = document.getElementById('profile-email');
+            if (emailInput) emailInput.value = profileEmail;
+        }
+        if (profileSolAddress) {
+            const solAddrInput = document.getElementById('profile-sol-address');
+            if (solAddrInput) solAddrInput.value = profileSolAddress;
+        }
         
         const savedAvatar = localStorage.getItem('sol_profile_avatar');
         if (savedAvatar) {
