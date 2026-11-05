@@ -9,19 +9,35 @@ console.log('CORS is enabled for all origins');
 
 const PORT = process.env.PORT || 3000;
 
-// MongoDB Connection & Auto-Generate 100 Dummy Users on Startup
+// MongoDB Connection & Auto-Generate 100 Dummy Users with Proper Referral Mapping
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
     .then(async () => {
         console.log('MongoDB Connected Successfully!');
         
-        // Server start hote hi automatic 100 dummy users generate karne ka logic
         try {
             let sponsorId = "5939907983"; // Aapki admin ID as sponsor
+            
+            // Pehle ensure karein ki sponsor (admin) database me exist karta ho
+            let sponsor = await User.findOne({ telegramId: sponsorId });
+            if (!sponsor) {
+                sponsor = new User({
+                    telegramId: sponsorId,
+                    username: 'Farming_Master',
+                    firstName: 'Raghunath',
+                    profileName: '@Farming_Master',
+                    activePlanTier: 'STARTER',
+                    userDepositAmount: 0.10
+                });
+                await sponsor.save();
+            }
+
+            let generatedCount = 0;
             for (let i = 1; i <= 100; i++) {
                 let dummyId = `test_user_${i}`;
                 let existing = await User.findOne({ telegramId: dummyId });
+                
                 if (!existing) {
                     let newUser = new User({
                         telegramId: dummyId,
@@ -29,20 +45,39 @@ mongoose.connect(MONGO_URI)
                         firstName: `TestUser ${i}`,
                         profileName: `User ${i}`,
                         promoBonusBalance: 0.10,
-                        activePlanTier: 'STARTER'
+                        activePlanTier: 'STARTER',
+                        userDepositAmount: 0.10
                     });
                     await newUser.save();
-
-                    // Sponsor ke liye direct refs aur promo balance update karna
-                    let sponsor = await User.findOne({ telegramId: sponsorId });
-                    if (sponsor) {
-                        sponsor.activeDirectsCount += 1;
-                        sponsor.promoBonusBalance += 0.01;
-                        await sponsor.save();
-                    }
+                    generatedCount++;
                 }
             }
-            console.log("Startup: 100 dummy users generated and linked successfully!");
+
+            // Sabhi test users ko sponsor ke level 1 directs aur volume me count update karna
+            const allTestUsers = await User.find({ telegramId: /^test_user_/ });
+            sponsor.activeDirectsCount = allTestUsers.length;
+            
+            // Level 1 volume update (maan lijiye har user ne 0.10 ka plan liya hai)
+            let totalVol = allTestUsers.length * 0.10;
+            if (!sponsor.levelVolumes || sponsor.levelVolumes.length === 0) {
+                sponsor.levelVolumes = Array(26).fill(0.0);
+            }
+            sponsor.levelVolumes[1] = totalVol;
+
+            // Level members data map update karna taaki frontend par list show ho
+            if (!sponsor.levelMembersData) {
+                sponsor.levelMembersData = {};
+            }
+            sponsor.levelMembersData['1'] = allTestUsers.map(u => ({
+                telegramId: u.telegramId,
+                username: u.username,
+                firstName: u.firstName,
+                activePlanTier: u.activePlanTier,
+                joinedAt: new Date()
+            }));
+
+            await sponsor.save();
+            console.log(`Startup: ${generatedCount} dummy users generated and mapped to sponsor successfully!`);
         } catch (err) {
             console.error("Startup test generation error:", err);
         }
@@ -133,7 +168,6 @@ app.post('/api/user/sync', async (req, res) => {
         let user = await User.findOne({ telegramId });
 
         if (!user) {
-            // New user registration
             user = new User({
                 telegramId,
                 username,
@@ -142,7 +176,6 @@ app.post('/api/user/sync', async (req, res) => {
                 promoBonusBalance: 0.0100
             });
 
-            // Handle Sponsor / Referral logic if startParam exists
             if (startParam && startParam !== telegramId) {
                 let sponsor = await User.findOne({ telegramId: startParam });
                 if (sponsor) {
@@ -157,7 +190,6 @@ app.post('/api/user/sync', async (req, res) => {
                 }
             }
         } else {
-            // Persist all incoming live states from frontend safely without resetting
             if (username) user.username = username;
             if (firstName) user.firstName = firstName;
             
@@ -178,11 +210,9 @@ app.post('/api/user/sync', async (req, res) => {
             if (rankRoyaltyBonus !== undefined) user.rankRoyaltyBonus = rankRoyaltyBonus;
             if (highestAchievedRank !== undefined) user.highestAchievedRank = highestAchievedRank;
 
-            // Save Level-wise override volumes and member details securely
             if (levelVolumes !== undefined) user.levelVolumes = levelVolumes;
             if (levelMembersData !== undefined) user.levelMembersData = levelMembersData;
 
-            // Save Rank Strongest Leg (40%) and Other Legs (60%) business data
             if (userStrongestDone !== undefined) user.userStrongestDone = userStrongestDone;
             if (userOtherDone !== undefined) user.userOtherDone = userOtherDone;
 
@@ -199,4 +229,15 @@ app.post('/api/user/sync', async (req, res) => {
 
         res.json({ success: true, user });
     } catch (error) {
-        console.error('Sync
+        console.error('Sync Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.get('/', (req, res) => {
+    res.send('SolMiningBot Server is Running Live!');
+});
+
+app.listen(PORT, () => {
+    console.log('Server is running on port ' + PORT);
+});
