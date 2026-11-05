@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema({
     userOtherDone: { type: Number, default: 0.0 },
 
     // Profile Settings
-    profileName: { type: String, default: '@User' },
+    profileName: { type: String, default: '' },
     profileMobile: { type: String, default: '' },
     profileEmail: { type: String, default: '' },
     profileSolAddress: { type: String, default: '' },
@@ -105,7 +105,7 @@ app.post('/api/user/sync', async (req, res) => {
                 telegramId,
                 username,
                 firstName,
-                profileName: username ? `@${username}` : '@User',
+                profileName: username ? `@${username}` : (firstName ? firstName : ''),
                 promoBonusBalance: 0.0100
             });
 
