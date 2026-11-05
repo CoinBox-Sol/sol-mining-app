@@ -9,7 +9,7 @@ console.log('CORS is enabled for all origins');
 
 const PORT = process.env.PORT || 3000;
 
-// MongoDB Connection & Auto-Generate 100 Dummy Users on Startup
+// MongoDB Connection & Auto-Sync 100 Dummy Users on Startup
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
@@ -36,9 +36,45 @@ mongoose.connect(MONGO_URI)
                     generatedCount++;
                 }
             }
-            console.log(`Startup: Checked/Generated 100 dummy users.`);
+
+            // Automatically map all dummy users to Admin / Sponsor (5939907983)
+            let sponsorId = "5939907983";
+            let sponsor = await User.findOne({ telegramId: sponsorId });
+            
+            if (!sponsor) {
+                sponsor = new User({
+                    telegramId: sponsorId,
+                    username: 'Farming_Master',
+                    firstName: 'Raghunath',
+                    profileName: '@Farming_Master',
+                    activePlanTier: 'STARTER',
+                    userDepositAmount: 0.10
+                });
+            }
+
+            const allTestUsers = await User.find({ telegramId: /^test_user_/ });
+            sponsor.activeDirectsCount = allTestUsers.length;
+            let totalVol = allTestUsers.length * 0.10;
+            
+            if (!sponsor.levelVolumes || sponsor.levelVolumes.length === 0) {
+                sponsor.levelVolumes = Array(26).fill(0.0);
+            }
+            sponsor.levelVolumes[1] = totalVol;
+
+            sponsor.levelMembersData = {
+                '1': allTestUsers.map(u => ({
+                    telegramId: u.telegramId,
+                    username: u.username,
+                    firstName: u.firstName,
+                    activePlanTier: u.activePlanTier,
+                    joinedAt: new Date()
+                }))
+            };
+
+            await sponsor.save();
+            console.log(`Startup Auto-Sync: 100 dummy users mapped successfully to admin!`);
         } catch (err) {
-            console.error("Startup test generation error:", err);
+            console.error("Startup auto-sync error:", err);
         }
     })
     .catch(err => console.error('MongoDB Connection Error:', err));
@@ -176,43 +212,6 @@ app.post('/api/user/sync', async (req, res) => {
     } catch (error) {
         console.error('Sync Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
-// Quick Sync Route to map 100 dummy users directly to admin ID (5939907983)
-app.get('/api/test/sync-team', async (req, res) => {
-    try {
-        let sponsorId = "5939907983";
-        let sponsor = await User.findOne({ telegramId: sponsorId });
-        
-        if (!sponsor) {
-            return res.json({ success: false, message: "Admin/Sponsor not found in DB yet! Open mini app once first." });
-        }
-
-        const allTestUsers = await User.find({ telegramId: /^test_user_/ });
-        
-        sponsor.activeDirectsCount = allTestUsers.length;
-        let totalVol = allTestUsers.length * 0.10;
-        
-        if (!sponsor.levelVolumes || sponsor.levelVolumes.length === 0) {
-            sponsor.levelVolumes = Array(26).fill(0.0);
-        }
-        sponsor.levelVolumes[1] = totalVol;
-
-        sponsor.levelMembersData = {
-            '1': allTestUsers.map(u => ({
-                telegramId: u.telegramId,
-                username: u.username,
-                firstName: u.firstName,
-                activePlanTier: u.activePlanTier,
-                joinedAt: new Date()
-            }))
-        };
-
-        await sponsor.save();
-        res.json({ success: true, message: `Successfully synced ${allTestUsers.length} users to admin team!` });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
     }
 });
 
