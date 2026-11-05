@@ -9,11 +9,44 @@ console.log('CORS is enabled for all origins');
 
 const PORT = process.env.PORT || 3000;
 
-// MongoDB Connection
+// MongoDB Connection & Auto-Generate 100 Dummy Users on Startup
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
-    .then(() => console.log('MongoDB Connected Successfully!'))
+    .then(async () => {
+        console.log('MongoDB Connected Successfully!');
+        
+        // Server start hote hi automatic 100 dummy users generate karne ka logic
+        try {
+            let sponsorId = "5939907983"; // Aapki admin ID as sponsor
+            for (let i = 1; i <= 100; i++) {
+                let dummyId = `test_user_${i}`;
+                let existing = await User.findOne({ telegramId: dummyId });
+                if (!existing) {
+                    let newUser = new User({
+                        telegramId: dummyId,
+                        username: `user_${i}`,
+                        firstName: `TestUser ${i}`,
+                        profileName: `User ${i}`,
+                        promoBonusBalance: 0.10,
+                        activePlanTier: 'STARTER'
+                    });
+                    await newUser.save();
+
+                    // Sponsor ke liye direct refs aur promo balance update karna
+                    let sponsor = await User.findOne({ telegramId: sponsorId });
+                    if (sponsor) {
+                        sponsor.activeDirectsCount += 1;
+                        sponsor.promoBonusBalance += 0.01;
+                        await sponsor.save();
+                    }
+                }
+            }
+            console.log("Startup: 100 dummy users generated and linked successfully!");
+        } catch (err) {
+            console.error("Startup test generation error:", err);
+        }
+    })
     .catch(err => console.error('MongoDB Connection Error:', err));
 
 // Complete User Schema aligned with index.html state variables & multi-level team override / rank legs
@@ -166,49 +199,4 @@ app.post('/api/user/sync', async (req, res) => {
 
         res.json({ success: true, user });
     } catch (error) {
-        console.error('Sync Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
-app.get('/', (req, res) => {
-    res.send('SolMiningBot Server is Running Live!');
-});
-
-// Simple test route to generate 100 dummy users instantly
-app.get('/test', async (req, res) => {
-    try {
-        let sponsorId = "5939907983"; // Aapki admin ID as sponsor
-        for (let i = 1; i <= 100; i++) {
-            let dummyId = `test_user_${i}`;
-            let existing = await User.findOne({ telegramId: dummyId });
-            if (!existing) {
-                let newUser = new User({
-                    telegramId: dummyId,
-                    username: `user_${i}`,
-                    firstName: `TestUser ${i}`,
-                    profileName: `User ${i}`,
-                    promoBonusBalance: 0.10,
-                    activePlanTier: 'STARTER'
-                });
-                await newUser.save();
-
-                // Sponsor ke liye direct refs aur promo balance update karna
-                let sponsor = await User.findOne({ telegramId: sponsorId });
-                if (sponsor) {
-                    sponsor.activeDirectsCount += 1;
-                    sponsor.promoBonusBalance += 0.01;
-                    await sponsor.save();
-                }
-            }
-        }
-        res.json({ success: true, message: "100 dummy users generated successfully!" });
-    } catch (err) {
-        console.error("Test generation error:", err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.listen(PORT, () => {
-    console.log('Server is running on port ' + PORT);
-});
+        console.error('Sync
