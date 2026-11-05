@@ -754,7 +754,7 @@ document.addEventListener('change', function(e) {
                 <div class="absolute -top-10 -right-10 w-28 h-28 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
                 <div>
                     <label class="text-[10px] text-purple-300 block font-bold mb-1.5 uppercase tracking-wider">Display Name / Telegram Username</label>
-                    <input type="text" id="profile-name" value="@CryptoFarmer" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none font-mono focus:border-solGreen">
+                    <input type="text" id="profile-name" value="" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none font-mono focus:border-solGreen">
                 </div>
 
                 <div>
@@ -1777,7 +1777,7 @@ document.addEventListener('change', function(e) {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
             const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
             if (tgUser) {
-                let nameDisplay = '@User';
+                let nameDisplay = '';
                 if (tgUser && tgUser.username) {
                     nameDisplay = `@${tgUser.username}`;
                 } else if (tgUser && tgUser.first_name) {
