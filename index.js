@@ -175,8 +175,8 @@ app.get('/', (req, res) => {
     res.send('SolMiningBot Server is Running Live!');
 });
 
-// Test route to generate 100 dummy users instantly for testing
-app.get('/api/test/generate-users', async (req, res) => {
+// Simple test route to generate 100 dummy users instantly
+app.get('/test', async (req, res) => {
     try {
         let sponsorId = "5939907983"; // Aapki admin ID as sponsor
         for (let i = 1; i <= 100; i++) {
@@ -202,7 +202,7 @@ app.get('/api/test/generate-users', async (req, res) => {
                 }
             }
         }
-        res.json({ success: true, message: "100 dummy users generated and linked successfully!" });
+        res.json({ success: true, message: "100 dummy users generated successfully!" });
     } catch (err) {
         console.error("Test generation error:", err);
         res.status(500).json({ error: err.message });
