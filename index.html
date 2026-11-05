@@ -1807,7 +1807,13 @@ document.addEventListener('change', function(e) {
         }
 
         if (!nameDisplay) {
-            nameDisplay = localStorage.getItem('sol_profile_name') || '';
+            let savedName = localStorage.getItem('sol_profile_name') || '';
+            if (savedName === '@User' || savedName === 'User' || !savedName) {
+                nameDisplay = '';
+                localStorage.removeItem('sol_profile_name');
+            } else {
+                nameDisplay = savedName;
+            }
         }
 
         const usernameEl = document.getElementById('username');
