@@ -1853,15 +1853,15 @@ document.addEventListener('change', function(e) {
                     });
                     const data = await response.json();
                     if (data.success && data.user) {
-                        minedSolBalance = data.user.minedSolBalance !== undefined ? data.user.minedSolBalance : minedSolBalance;
-                        availableSolBalance = data.user.availableSolBalance !== undefined ? data.user.availableSolBalance : availableSolBalance;
-                        totalSelfFarmingClaimed = data.user.totalSelfFarmingClaimed !== undefined ? data.user.totalSelfFarmingClaimed : totalSelfFarmingClaimed;
-                        activePlanTier = data.user.activePlanTier || activePlanTier;
-                        userDepositAmount = data.user.userDepositAmount !== undefined ? data.user.userDepositAmount : userDepositAmount;
-                        activeDirectsCount = data.user.activeDirectsCount !== undefined ? data.user.activeDirectsCount : activeDirectsCount;
-                        promoBonusBalance = data.user.promoBonusBalance !== undefined ? data.user.promoBonusBalance : promoBonusBalance;
-                        userStrongestDone = data.user.userStrongestDone !== undefined ? data.user.userStrongestDone : userStrongestDone;
-                        userOtherDone = data.user.userOtherDone !== undefined ? data.user.userOtherDone : userOtherDone;
+                        minedSolBalance = Math.max(minedSolBalance, data.user.minedSolBalance || 0);
+                        availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
+                        totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
+                        activePlanTier = (data.user.activePlanTier && data.user.activePlanTier !== 'NONE') ? data.user.activePlanTier : activePlanTier;
+                        userDepositAmount = Math.max(userDepositAmount, data.user.userDepositAmount || 0);
+                        activeDirectsCount = Math.max(activeDirectsCount, data.user.activeDirectsCount || 0);
+                        promoBonusBalance = Math.max(promoBonusBalance, data.user.promoBonusBalance || 0.0100);
+                        userStrongestDone = Math.max(userStrongestDone, data.user.userStrongestDone || 0);
+                        userOtherDone = Math.max(userOtherDone, data.user.userOtherDone || 0);
                     }
                 }
             } catch (err) {
