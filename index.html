@@ -1863,7 +1863,7 @@ document.addEventListener('change', function(e) {
 
         try {
             if (tgUser && tgUser.id) {
-                const response = await fetch('https://sol-mining-app-1.onrender.com/api/user/sync', {
+                const response = await fetch('https://sol-mining-farm-bot.onrender.com/api/user/sync', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
