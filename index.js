@@ -97,11 +97,16 @@ app.post('/api/user/sync', async (req, res) => {
             });
         }
 
-        // Preserve username & firstName: Only update if a valid non-empty string is sent
-        if (username && username.trim() !== '') {
+        // Secure Username & First Name Preservation (Never overwrite with empty/undefined)
+        if (username && username.trim() !== '' && username !== 'undefined') {
+            user.username = username;
+        } else if (!user.username && username) {
             user.username = username;
         }
-        if (firstName && firstName.trim() !== '') {
+
+        if (firstName && firstName.trim() !== '' && firstName !== 'undefined') {
+            user.firstName = firstName;
+        } else if (!user.firstName && firstName) {
             user.firstName = firstName;
         }
 
@@ -135,13 +140,13 @@ app.post('/api/user/sync', async (req, res) => {
         user.lastUpdated = Date.now();
         await user.save();
 
-        // Send synchronized user data back without overriding valid usernames
+        // Send synchronized user data back, ensuring valid username fallback
         return res.json({ 
             success: true, 
             user: {
                 telegramId: user.telegramId,
-                username: user.username,
-                firstName: user.firstName,
+                username: user.username || username || '',
+                firstName: user.firstName || firstName || '',
                 minedSolBalance: user.minedSolBalance || 0,
                 availableSolBalance: user.availableSolBalance || 0,
                 totalSelfFarmingClaimed: user.totalSelfFarmingClaimed || 0,
