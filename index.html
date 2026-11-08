@@ -1652,11 +1652,16 @@ document.addEventListener('change', function(e) {
         let totalTeamVol = 0;
 
         for (let lvl = 1; lvl <= 25; lvl++) {
-            const members = levelMembersData[lvl] || [];
+            let members = levelMembersData[lvl] || [];
+            
+            if (lvl === 1 && members.length === 0 && activeDirectsCount > 0) {
+                members = Array(activeDirectsCount).fill({ deposit: "0.10 SOL" });
+            }
+
             let lvlSum = 0;
             members.forEach(m => {
-                let depStr = m.deposit || "0";
-                let numMatch = depStr.match(/[\d.]+/);
+                let depStr = (typeof m === 'string') ? m : (m.deposit || "0.10");
+                let numMatch = String(depStr).match(/[\d.]+/);
                 let val = numMatch ? parseFloat(numMatch[0]) : 0.10;
                 lvlSum += val;
             });
@@ -1884,6 +1889,7 @@ document.addEventListener('change', function(e) {
 
     // Initialize on Window Load
     window.onload = async function() {
+        calculateAndUpdateTeamVolumes();
         const ADMIN_TELEGRAM_ID = "5939907983";
 
         let tgUser = null;
