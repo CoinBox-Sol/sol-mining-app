@@ -97,16 +97,12 @@ app.post('/api/user/sync', async (req, res) => {
             });
         }
 
-        // Secure Username & First Name Preservation (Never overwrite with empty/undefined)
-        if (username && username.trim() !== '' && username !== 'undefined') {
-            user.username = username;
-        } else if (!user.username && username) {
+        // Username preservation: Agar request me valid username hai to update karein, warna purana database wala retain rakhen
+        if (username && typeof username === 'string' && username.trim() !== '' && username !== 'undefined') {
             user.username = username;
         }
 
-        if (firstName && firstName.trim() !== '' && firstName !== 'undefined') {
-            user.firstName = firstName;
-        } else if (!user.firstName && firstName) {
+        if (firstName && typeof firstName === 'string' && firstName.trim() !== '' && firstName !== 'undefined') {
             user.firstName = firstName;
         }
 
@@ -140,12 +136,14 @@ app.post('/api/user/sync', async (req, res) => {
         user.lastUpdated = Date.now();
         await user.save();
 
-        // Send synchronized user data back, ensuring valid username fallback
+        // Response me user object ke sath username ko ensure karein ki wo kabhi blank na jaye
+        const finalUsername = user.username || username || '';
+
         return res.json({ 
             success: true, 
             user: {
                 telegramId: user.telegramId,
-                username: user.username || username || '',
+                username: finalUsername,
                 firstName: user.firstName || firstName || '',
                 minedSolBalance: user.minedSolBalance || 0,
                 availableSolBalance: user.availableSolBalance || 0,
