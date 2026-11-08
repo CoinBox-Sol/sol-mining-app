@@ -1701,12 +1701,33 @@ document.addEventListener('change', function(e) {
         `).join('');
     }
 
-    // Render All 10 Ranks
+    // Render All 10 Ranks with Dynamic 40/60 Leg Capping Logic
     function renderAllRanks() {
         const container = document.getElementById('all-ranks-container');
         if (!container) return;
 
-        const currentTotalDone = userStrongestDone + userOtherDone;
+        // Retrieve Level 1 downline members data to calculate leg volumes dynamically
+        const l1Members = (typeof levelMembersData !== 'undefined' && levelMembersData[1]) ? levelMembersData[1] : [];
+        
+        let legVolumes = [];
+        if (l1Members.length > 0) {
+            legVolumes = l1Members.map(m => {
+                let dep = m.deposit || "0";
+                return parseFloat(dep) || 0.10;
+            });
+        }
+
+        let rawStrongest = 0;
+        let rawOther = 0;
+
+        if (legVolumes.length > 0) {
+            rawStrongest = Math.max(...legVolumes);
+            const totalRaw = legVolumes.reduce((sum, v) => sum + v, 0);
+            rawOther = totalRaw - rawStrongest;
+        } else {
+            rawStrongest = userStrongestDone || 0;
+            rawOther = userOtherDone || 0;
+        }
 
         const ranks = [
             {name: "STAR RANK", symbol: "🌟", target: 30, strongestNeed: 12, otherNeed: 18, royalty: "0.03 SOL", theme: "amber", textCol: "text-amber-400", borderCol: "border-amber-500/30", bgGrad: "from-amber-950/20", barGrad: "from-amber-500 to-yellow-400"},
@@ -1721,12 +1742,21 @@ document.addEventListener('change', function(e) {
             {name: "SUPREME UNIVERSE RANK", symbol: "🏆", target: 1000000, strongestNeed: 400000, otherNeed: 600000, royalty: "1000.00 SOL", theme: "fuchsia", textCol: "text-fuchsia-400", borderCol: "border-fuchsia-500/30", bgGrad: "from-fuchsia-950/20", barGrad: "from-fuchsia-500 to-pink-400"}
         ];
 
+        let highestAchieved = "NO RANK";
+        let highestRoyalty = "0.00 SOL Daily Basis";
+
         container.innerHTML = ranks.map((r) => {
+            const countedStrongest = Math.min(rawStrongest, r.strongestNeed);
+            const countedOther = Math.min(rawOther, r.otherNeed);
+
+            const currentTotalDone = countedStrongest + countedOther;
             const progress = Math.min(100, Math.floor((currentTotalDone / r.target) * 100));
             
             let status = "Locked";
-            if (currentTotalDone >= r.target) {
+            if (countedStrongest >= r.strongestNeed && countedOther >= r.otherNeed) {
                 status = "Achieved";
+                highestAchieved = r.name;
+                highestRoyalty = `${r.royalty} Daily Basis`;
             } else if (progress > 0) {
                 status = "In Progress";
             }
@@ -1767,16 +1797,24 @@ document.addEventListener('change', function(e) {
                 <div class="grid grid-cols-2 gap-2 text-[11px] font-mono pt-1">
                     <div class="bg-slate-900/40 p-2 rounded-lg border border-slate-800/80">
                         <span class="text-gray-400 block text-[10px]">Strongest Leg (40%):</span>
-                        <span class="text-white font-bold">${userStrongestDone.toFixed(1)} / ${r.strongestNeed} SOL</span>
+                        <span class="text-white font-bold">${rawStrongest.toFixed(1)} / ${r.strongestNeed} SOL</span>
                     </div>
                     <div class="bg-slate-900/40 p-2 rounded-lg border border-slate-800/80">
                         <span class="text-gray-400 block text-[10px]">Other Legs (60%):</span>
-                        <span class="text-white font-bold">${userOtherDone.toFixed(1)} / ${r.otherNeed} SOL</span>
+                        <span class="text-white font-bold">${countedOther.toFixed(1)} / ${r.otherNeed} SOL</span>
                     </div>
                 </div>
             </div>
         `;
         }).join('');
+
+        const titleEl = document.getElementById('highest-rank-title');
+        const bonusEl = document.getElementById('highest-rank-bonus');
+        const topUserRankEl = document.getElementById('user-rank');
+
+        if (titleEl) titleEl.innerText = highestAchieved;
+        if (bonusEl) bonusEl.innerText = highestRoyalty;
+        if (topUserRankEl) topUserRankEl.innerText = highestAchieved;
     }
 
     function viewLevelMembers(level) {
