@@ -1666,6 +1666,9 @@ document.addEventListener('change', function(e) {
     // Calculate and update Team Volumes dynamically from levelMembersData
     function calculateAndUpdateTeamVolumes() {
         let totalTeamVol = 0;
+        let totalTeamMembers = 0;
+        let directVol = 0;
+        let directMembersCount = activeDirectsCount;
 
         for (let lvl = 1; lvl <= 25; lvl++) {
             let members = levelMembersData[lvl] || [];
@@ -1681,14 +1684,28 @@ document.addEventListener('change', function(e) {
                 let val = numMatch ? parseFloat(numMatch[0]) : 0.10;
                 lvlSum += val;
             });
+
             levelVolumes[lvl] = lvlSum;
             totalTeamVol += lvlSum;
+            totalTeamMembers += members.length;
+
+            if (lvl === 1) {
+                directVol = lvlSum;
+                directMembersCount = members.length;
+            }
         }
 
+        const activeDirectsEl = document.getElementById('active-directs-count');
+        if (activeDirectsEl) activeDirectsEl.innerText = directMembersCount;
+
+        const directVolEl = document.getElementById('direct-team-volume');
+        if (directVolEl) directVolEl.innerText = `${directVol.toFixed(2)} SOL`;
+
+        const totalMembersEl = document.getElementById('total-team-members');
+        if (totalMembersEl) totalMembersEl.innerText = totalTeamMembers;
+
         const totalVolEl = document.getElementById('team-total-volume');
-        if (totalVolEl) {
-            totalVolEl.innerText = `${totalTeamVol.toFixed(2)} SOL`;
-        }
+        if (totalVolEl) totalVolEl.innerText = `${totalTeamVol.toFixed(2)} SOL`;
 
         if (typeof renderLevels === 'function') renderLevels();
         if (typeof renderAllRanks === 'function') renderAllRanks();
