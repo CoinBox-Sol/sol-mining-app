@@ -97,7 +97,7 @@ app.post('/api/user/sync', async (req, res) => {
             });
         }
 
-        // Username preservation: Agar request me valid username hai to update karein, warna purana database wala retain rakhen
+        // Username preservation
         if (username && typeof username === 'string' && username.trim() !== '' && username !== 'undefined') {
             user.username = username;
         }
@@ -111,7 +111,6 @@ app.post('/api/user/sync', async (req, res) => {
         if (availableSolBalance !== undefined) user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
         if (totalSelfFarmingClaimed !== undefined) user.totalSelfFarmingClaimed = Math.max(user.totalSelfFarmingClaimed || 0, totalSelfFarmingClaimed);
         
-        // Retain or update plan tier
         if (activePlanTier && activePlanTier !== 'NONE') {
             user.activePlanTier = activePlanTier;
         }
@@ -119,7 +118,7 @@ app.post('/api/user/sync', async (req, res) => {
         if (userDepositAmount !== undefined) user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
         if (promoBonusBalance !== undefined) user.promoBonusBalance = Math.max(user.promoBonusBalance || 0.0100, promoBonusBalance);
 
-        // Auto-Topup Trigger: 0.10 SOL Promo Balance converts user to STARTER package
+        // Auto-Topup Trigger
         if (user.promoBonusBalance >= 0.10 && (!user.activePlanTier || user.activePlanTier === 'NONE')) {
             user.activePlanTier = 'STARTER';
             user.userDepositAmount = 0.10;
@@ -132,11 +131,40 @@ app.post('/api/user/sync', async (req, res) => {
             date: new Date().toISOString().split('T')[0]
         }));
 
-        user.levelMembersData = { '1': dummyMembersList };
+        if (!user.levelMembersData || Object.keys(user.levelMembersData).length === 0) {
+            user.levelMembersData = { '1': dummyMembersList };
+        } else if (!user.levelMembersData['1'] || user.levelMembersData['1'].length === 0) {
+            user.levelMembersData['1'] = dummyMembersList;
+        }
+
+        // Calculate Level Volumes and Total Team Members Dynamically
+        let calculatedLevelVolumes = Array(26).fill(0.0);
+        let totalTeamMembersCount = 0;
+        let directTeamVol = 0;
+        let overallTeamVol = 0;
+
+        for (let lvl = 1; lvl <= 25; lvl++) {
+            let members = (user.levelMembersData && user.levelMembersData[lvl]) || [];
+            let lvlSum = 0;
+
+            members.forEach(m => {
+                let depStr = (typeof m === 'string') ? m : (m.deposit || "0.10");
+                let numMatch = String(depStr).match(/[\d.]+/);
+                let val = numMatch ? parseFloat(numMatch[0]) : 0.10;
+                lvlSum += val;
+            });
+
+            calculatedLevelVolumes[lvl] = lvlSum;
+            totalTeamMembersCount += members.length;
+            overallTeamVol += lvlSum;
+            if (lvl === 1) directTeamVol = lvlSum;
+        }
+
+        user.levelVolumes = calculatedLevelVolumes;
+        user.activeDirectsCount = (user.levelMembersData && user.levelMembersData['1']) ? user.levelMembersData['1'].length : 0;
         user.lastUpdated = Date.now();
         await user.save();
 
-        // Response me user object ke sath username ko ensure karein ki wo kabhi blank na jaye
         const finalUsername = user.username || username || '';
 
         return res.json({ 
@@ -152,6 +180,9 @@ app.post('/api/user/sync', async (req, res) => {
                 userDepositAmount: user.userDepositAmount || 0,
                 miningSpeedPerSec: user.miningSpeedPerSec || 0,
                 activeDirectsCount: user.activeDirectsCount || 0,
+                directTeamVolume: directTeamVol,
+                totalTeamMembersCount: totalTeamMembersCount,
+                totalTeamVolume: overallTeamVol,
                 promoBonusBalance: user.promoBonusBalance || 0.0100,
                 userStrongestDone: user.userStrongestDone || 0,
                 userOtherDone: user.userOtherDone || 0,
