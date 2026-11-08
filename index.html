@@ -1701,12 +1701,11 @@ document.addEventListener('change', function(e) {
         `).join('');
     }
 
-    // Render All 10 Ranks with Dynamic 40/60 Leg Capping Logic
+    // Render All 10 Ranks with Dynamic 40/60 Leg Capping and Achieved Icons Logic
     function renderAllRanks() {
         const container = document.getElementById('all-ranks-container');
         if (!container) return;
 
-        // Retrieve Level 1 downline members data to calculate leg volumes dynamically
         const l1Members = (typeof levelMembersData !== 'undefined' && levelMembersData[1]) ? levelMembersData[1] : [];
         
         let legVolumes = [];
@@ -1749,11 +1748,15 @@ document.addEventListener('change', function(e) {
             const countedStrongest = Math.min(rawStrongest, r.strongestNeed);
             const countedOther = Math.min(rawOther, r.otherNeed);
 
+            // Check if individual leg requirements are met
+            const isStrongestAchieved = rawStrongest >= r.strongestNeed;
+            const isOtherAchieved = rawOther >= r.otherNeed;
+
             const currentTotalDone = countedStrongest + countedOther;
             const progress = Math.min(100, Math.floor((currentTotalDone / r.target) * 100));
             
             let status = "Locked";
-            if (countedStrongest >= r.strongestNeed && countedOther >= r.otherNeed) {
+            if (isStrongestAchieved && isOtherAchieved) {
                 status = "Achieved";
                 highestAchieved = r.name;
                 highestRoyalty = `${r.royalty} Daily Basis`;
@@ -1795,13 +1798,19 @@ document.addEventListener('change', function(e) {
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-[11px] font-mono pt-1">
-                    <div class="bg-slate-900/40 p-2 rounded-lg border border-slate-800/80">
-                        <span class="text-gray-400 block text-[10px]">Strongest Leg (40%):</span>
-                        <span class="text-white font-bold">${rawStrongest.toFixed(1)} / ${r.strongestNeed} SOL</span>
+                    <div class="p-2 rounded-lg border ${isStrongestAchieved ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-400' : 'bg-rose-950/30 border-rose-500/40 text-rose-400'}">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300 block text-[10px]">Strongest Leg (40%):</span>
+                            <span>${isStrongestAchieved ? '✅' : '❌'}</span>
+                        </div>
+                        <strong class="font-bold text-white mt-0.5 block">${rawStrongest.toFixed(1)} / ${r.strongestNeed} SOL</strong>
                     </div>
-                    <div class="bg-slate-900/40 p-2 rounded-lg border border-slate-800/80">
-                        <span class="text-gray-400 block text-[10px]">Other Legs (60%):</span>
-                        <span class="text-white font-bold">${countedOther.toFixed(1)} / ${r.otherNeed} SOL</span>
+                    <div class="p-2 rounded-lg border ${isOtherAchieved ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-400' : 'bg-rose-950/30 border-rose-500/40 text-rose-400'}">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300 block text-[10px]">Other Legs (60%):</span>
+                            <span>${isOtherAchieved ? '✅' : '❌'}</span>
+                        </div>
+                        <strong class="font-bold text-white mt-0.5 block">${countedOther.toFixed(1)} / ${r.otherNeed} SOL</strong>
                     </div>
                 </div>
             </div>
