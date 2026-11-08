@@ -1782,7 +1782,23 @@ document.addEventListener('change', function(e) {
     function viewLevelMembers(level) {
         document.getElementById('modal-level-title').innerText = `Level ${level} Downline Members`;
         const list = document.getElementById('level-members-list');
-        list.innerHTML = '<div class="text-center text-gray-400 p-4">No downline members yet</div>';
+    
+        const members = (typeof levelMembersData !== 'undefined' && levelMembersData[level]) ? levelMembersData[level] : [];
+
+        if (members.length === 0) {
+            list.innerHTML = '<div class="text-center text-gray-400 p-4">No downline members yet</div>';
+        } else {
+            list.innerHTML = members.map(m => `
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex justify-between items-center mb-2">
+                    <div>
+                        <span class="text-solGreen font-bold block">${m.name}</span>
+                        <span class="text-[10px] text-gray-400">Joined: ${m.date}</span>
+                    </div>
+                    <span class="text-amber-400 font-mono text-xs bg-amber-500/10 px-2 py-1 rounded border border-amber-500/30">${m.deposit}</span>
+                </div>
+            `).join('');
+        }
+
         openModal('levelMembersModal');
     }
 
