@@ -261,8 +261,8 @@ document.addEventListener('change', function(e) {
                         <strong class="text-xs text-amber-300 font-black" id="promo-bonus-text">0.0100 / 0.10 SOL</strong>
                     </div>
                     <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                        <span class="text-[10px] text-gray-400 block font-sans">Auto-Topup Target</span>
-                        <strong class="text-xs text-solGreen font-black">10% Reached</strong>
+                        <span class="text-[10px] text-gray-400 block font-sans">Total Promo Topups</span>
+                        <strong class="text-xs text-emerald-400 font-black" id="total-promo-topups-text">0 (0.00 SOL)</strong>
                     </div>
                 </div>
 
@@ -1524,7 +1524,6 @@ document.addEventListener('change', function(e) {
                 .catch(err => console.error("Sync Error:", err));
             }
 
-            promoBonusBalance += 0.01;
             activeDirectsCount += 1;
 
             if (!levelMembersData[1]) levelMembersData[1] = [];
@@ -1537,14 +1536,22 @@ document.addEventListener('change', function(e) {
             localStorage.setItem('sol_referred_flag_v3', 'true');
         }
 
-        if (promoBonusBalance >= 0.10) {
-            totalPromoTopups += 1;
-            userDepositAmount += 0.10;
-            promoBonusBalance = 0.00;
+        let totalExpectedTopups = Math.floor(activeDirectsCount / 10);
+        let currentCycleDirects = activeDirectsCount % 10;
 
-            alert(`Congratulations! Promo Bonus reached 0.10 SOL. Re-Topup triggered successfully! Total Investment Volume: ${userDepositAmount.toFixed(2)} SOL`);
+        if (totalExpectedTopups > totalPromoTopups) {
+            let diff = totalExpectedTopups - totalPromoTopups;
+            totalPromoTopups = totalExpectedTopups;
+            userDepositAmount += (diff * 0.10);
             
+            alert(`Congratulations! Promo Bonus reached 0.10 SOL target. Re-Topup triggered successfully! Total Investment Volume: ${userDepositAmount.toFixed(2)} SOL`);
             updateMiningSpeedForPlan(activePlanTier === 'NONE' ? 'STARTER' : activePlanTier, userDepositAmount);
+        }
+
+        promoBonusBalance = currentCycleDirects * 0.01;
+
+        if (userDepositAmount > 0 && activePlanTier === 'NONE') {
+            activePlanTier = 'STARTER';
         }
 
         updateDirectMembersUI();
@@ -1563,9 +1570,17 @@ document.addEventListener('change', function(e) {
             promoBonusText.innerText = `${promoBonusBalance.toFixed(4)} / 0.10 SOL`;
         }
 
+        const totalPromoTopupsText = document.getElementById('total-promo-topups-text');
+        if (totalPromoTopupsText) {
+            let totalPromoVol = (totalPromoTopups * 0.10).toFixed(2);
+            totalPromoTopupsText.innerText = `${totalPromoTopups} (${totalPromoVol} SOL)`;
+        }
+
+        let rawPct = Math.round((promoBonusBalance / 0.10) * 100);
+        let pct = Math.min(100, Math.max(0, rawPct));
+
         const promoProgress = document.getElementById('promo-progress');
         if (promoProgress) {
-            let pct = Math.min(100, Math.floor((promoBonusBalance / 0.10) * 100));
             promoProgress.style.width = `${pct}%`;
         }
     }
