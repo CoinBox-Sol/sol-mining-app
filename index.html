@@ -1911,6 +1911,9 @@ document.addEventListener('change', function(e) {
                     if (typeof promoBonusBalance !== 'undefined') promoBonusBalance = Math.max(promoBonusBalance, data.user.promoBonusBalance || 0.0100);
                     if (typeof userStrongestDone !== 'undefined') userStrongestDone = Math.max(userStrongestDone, data.user.userStrongestDone || 0);
                     if (typeof userOtherDone !== 'undefined') userOtherDone = Math.max(userOtherDone, data.user.userOtherDone || 0);
+                    if (data.user.levelMembersData) {
+                        levelMembersData = data.user.levelMembersData;
+                    }
                 }
             }
         } catch (err) {
