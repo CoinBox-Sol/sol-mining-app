@@ -1033,6 +1033,7 @@ document.addEventListener('change', function(e) {
     // Promo, Earning Breakdowns & Ranks State
     let promoBonusBalance = savedState && savedState.promoBonusBalance !== undefined ? parseFloat(savedState.promoBonusBalance) || 0.0100 : 0.0100;
     let totalPromoTopups = savedState && savedState.totalPromoTopups !== undefined ? parseInt(savedState.totalPromoTopups) || 0 : 0;
+    let lastProcessedPromoTopups = savedState && savedState.lastProcessedPromoTopups !== undefined ? parseInt(savedState.lastProcessedPromoTopups) || 0 : 0;
     let directReferralBonus = savedState && savedState.directReferralBonus !== undefined ? parseFloat(savedState.directReferralBonus) || 0.0000 : 0.0000;
     let teamReferralBonus = savedState && savedState.teamReferralBonus !== undefined ? parseFloat(savedState.teamReferralBonus) || 0.0000 : 0.0000;
     let teamOverrideBonus = savedState && savedState.teamOverrideBonus !== undefined ? parseFloat(savedState.teamOverrideBonus) || 0.0000 : 0.0000;
@@ -1072,6 +1073,8 @@ document.addEventListener('change', function(e) {
             miningSpeedPerSec,
             activeDirectsCount,
             promoBonusBalance,
+            totalPromoTopups,
+            lastProcessedPromoTopups,
             directReferralBonus,
             teamReferralBonus,
             teamOverrideBonus,
@@ -1536,19 +1539,25 @@ document.addEventListener('change', function(e) {
             localStorage.setItem('sol_referred_flag_v3', 'true');
         }
 
-        let totalExpectedTopups = Math.floor(activeDirectsCount / 10);
-        let currentCycleDirects = activeDirectsCount % 10;
+        let directCount = (levelMembersData[1] && levelMembersData[1].length > 0) ? levelMembersData[1].length : activeDirectsCount;
 
-        if (totalExpectedTopups > totalPromoTopups) {
-            let diff = totalExpectedTopups - totalPromoTopups;
-            totalPromoTopups = totalExpectedTopups;
-            userDepositAmount += (diff * 0.10);
-            
-            alert(`Congratulations! Promo Bonus reached 0.10 SOL target. Re-Topup triggered successfully! Total Investment Volume: ${userDepositAmount.toFixed(2)} SOL`);
-            updateMiningSpeedForPlan(activePlanTier === 'NONE' ? 'STARTER' : activePlanTier, userDepositAmount);
+        totalPromoTopups = Math.floor(directCount / 10);
+        promoBonusBalance = (directCount % 10) * 0.01;
+
+        if (typeof lastProcessedPromoTopups === 'undefined') {
+            lastProcessedPromoTopups = 0;
         }
 
-        promoBonusBalance = currentCycleDirects * 0.01;
+        if (totalPromoTopups > lastProcessedPromoTopups) {
+            let newlyUnlockedTopups = totalPromoTopups - lastProcessedPromoTopups;
+            let addedVolume = newlyUnlockedTopups * 0.10;
+            
+            userDepositAmount += addedVolume;
+            lastProcessedPromoTopups = totalPromoTopups;
+
+            alert(`Congratulations! ${newlyUnlockedTopups} new Promo Auto-Topup(s) triggered! Added ${addedVolume.toFixed(2)} SOL to Investment Volume.`);
+            updateMiningSpeedForPlan(activePlanTier === 'NONE' ? 'STARTER' : activePlanTier, userDepositAmount);
+        }
 
         if (userDepositAmount > 0 && activePlanTier === 'NONE') {
             activePlanTier = 'STARTER';
