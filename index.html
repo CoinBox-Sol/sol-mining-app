@@ -1799,21 +1799,18 @@ document.addEventListener('change', function(e) {
         if (tgUser) {
             if (tgUser.username) {
                 nameDisplay = `@${tgUser.username}`;
+                localStorage.setItem('persistent_tg_username', nameDisplay);
             } else if (tgUser.first_name) {
                 nameDisplay = tgUser.first_name;
+                localStorage.setItem('persistent_tg_username', nameDisplay);
             } else if (tgUser.id) {
                 nameDisplay = `ID: ${tgUser.id}`;
+                localStorage.setItem('persistent_tg_username', nameDisplay);
             }
         }
 
         if (!nameDisplay) {
-            let savedName = localStorage.getItem('sol_profile_name') || '';
-            if (savedName === '@User' || savedName === 'User' || !savedName) {
-                nameDisplay = '';
-                localStorage.removeItem('sol_profile_name');
-            } else {
-                nameDisplay = savedName;
-            }
+            nameDisplay = localStorage.getItem('persistent_tg_username') || '';
         }
 
         const usernameEl = document.getElementById('username');
