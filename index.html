@@ -1962,6 +1962,20 @@ document.addEventListener('change', function(e) {
     // Initialize on Window Load
     window.onload = async function() {
         calculateAndUpdateTeamVolumes();
+        // Auto-select package tier based on userDepositAmount
+        if (userDepositAmount >= 25.10) {
+            activePlanTier = 'GALAXY';
+        } else if (userDepositAmount >= 10.10) {
+            activePlanTier = 'PREMIUM';
+        } else if (userDepositAmount >= 2.10) {
+            activePlanTier = 'ADVANCE';
+        } else if (userDepositAmount >= 0.10) {
+            activePlanTier = 'STARTER';
+        } else {
+            activePlanTier = 'NONE';
+        }
+        updateMiningSpeedForPlan(activePlanTier, userDepositAmount);
+
         const ADMIN_TELEGRAM_ID = "5939907983";
 
         let tgUser = null;
