@@ -1883,6 +1883,13 @@ document.addEventListener('change', function(e) {
                 });
                 const data = await response.json();
                 if (data.success && data.user) {
+                    let finalName = data.user.username ? `@${data.user.username}` : (localStorage.getItem('persistent_tg_username') || '');
+                    if (finalName) {
+                        const usernameEl = document.getElementById('username');
+                        if (usernameEl) usernameEl.innerText = finalName;
+                        localStorage.setItem('persistent_tg_username', finalName);
+                    }
+
                     if (typeof minedSolBalance !== 'undefined') minedSolBalance = Math.max(minedSolBalance, data.user.minedSolBalance || 0);
                     if (typeof availableSolBalance !== 'undefined') availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
                     if (typeof totalSelfFarmingClaimed !== 'undefined') totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
@@ -1893,19 +1900,18 @@ document.addEventListener('change', function(e) {
                     if (typeof userStrongestDone !== 'undefined') userStrongestDone = Math.max(userStrongestDone, data.user.userStrongestDone || 0);
                     if (typeof userOtherDone !== 'undefined') userOtherDone = Math.max(userOtherDone, data.user.userOtherDone || 0);
                 }
+            } catch (err) {
+                console.error("Startup Load Error:", err);
             }
-        } catch (err) {
-            console.error("Startup Load Error:", err);
-        }
 
-        if (typeof loadProfileOnStartup === 'function') loadProfileOnStartup();
-        if (typeof renderLevels === 'function') renderLevels();
-        if (typeof renderAllRanks === 'function') renderAllRanks();
-        if (typeof updateMiningSpeedForPlan === 'function') updateMiningSpeedForPlan(typeof activePlanTier !== 'undefined' ? activePlanTier : 'NONE', typeof userDepositAmount !== 'undefined' ? userDepositAmount : 0);
-        if (typeof checkReferralOnStartup === 'function') checkReferralOnStartup();
-        if (typeof updateDirectMembersUI === 'function') updateDirectMembersUI();
-    };
-    </script>
-</body>
-</html>
+            if (typeof loadProfileOnStartup === 'function') loadProfileOnStartup();
+            if (typeof renderLevels === 'function') renderLevels();
+            if (typeof renderAllRanks === 'function') renderAllRanks();
+            if (typeof updateMiningSpeedForPlan === 'function') updateMiningSpeedForPlan(typeof activePlanTier !== 'undefined' ? activePlanTier : 'NONE', typeof userDepositAmount !== 'undefined' ? userDepositAmount : 0);
+            if (typeof checkReferralOnStartup === 'function') checkReferralOnStartup();
+            if (typeof updateDirectMembersUI === 'function') updateDirectMembersUI();
+        };
+        </script>
+    </body>
+    </html>
 
