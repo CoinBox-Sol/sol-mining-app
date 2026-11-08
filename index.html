@@ -1032,6 +1032,7 @@ document.addEventListener('change', function(e) {
 
     // Promo, Earning Breakdowns & Ranks State
     let promoBonusBalance = savedState && savedState.promoBonusBalance !== undefined ? parseFloat(savedState.promoBonusBalance) || 0.0100 : 0.0100;
+    let totalPromoTopups = savedState && savedState.totalPromoTopups !== undefined ? parseInt(savedState.totalPromoTopups) || 0 : 0;
     let directReferralBonus = savedState && savedState.directReferralBonus !== undefined ? parseFloat(savedState.directReferralBonus) || 0.0000 : 0.0000;
     let teamReferralBonus = savedState && savedState.teamReferralBonus !== undefined ? parseFloat(savedState.teamReferralBonus) || 0.0000 : 0.0000;
     let teamOverrideBonus = savedState && savedState.teamOverrideBonus !== undefined ? parseFloat(savedState.teamOverrideBonus) || 0.0000 : 0.0000;
@@ -1508,7 +1509,6 @@ document.addEventListener('change', function(e) {
         }
 
         if (refId && !localStorage.getItem('sol_referred_flag_v3')) {
-            // Backend MongoDB Sync Request
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
             if (tgUser && tgUser.id) {
                 fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/user/sync', {
@@ -1524,7 +1524,7 @@ document.addEventListener('change', function(e) {
                 .catch(err => console.error("Sync Error:", err));
             }
 
-            promoBonusBalance = Math.min(0.10, promoBonusBalance + 0.01);
+            promoBonusBalance += 0.01;
             activeDirectsCount += 1;
 
             if (!levelMembersData[1]) levelMembersData[1] = [];
@@ -1535,14 +1535,21 @@ document.addEventListener('change', function(e) {
             });
 
             localStorage.setItem('sol_referred_flag_v3', 'true');
-
-            if (promoBonusBalance >= 0.10) {
-                alert('🎉 Congratulations! Your Promo Bonus reached 0.10 SOL. Starter Package Auto-Topup triggered!');
-                updateMiningSpeedForPlan('STARTER', 0.10);
-            }
-            updateDirectMembersUI();
-            saveBotState();
         }
+
+        if (promoBonusBalance >= 0.10) {
+            totalPromoTopups += 1;
+            userDepositAmount += 0.10;
+            promoBonusBalance = 0.00;
+
+            alert(`Congratulations! Promo Bonus reached 0.10 SOL. Re-Topup triggered successfully! Total Investment Volume: ${userDepositAmount.toFixed(2)} SOL`);
+            
+            updateMiningSpeedForPlan(activePlanTier === 'NONE' ? 'STARTER' : activePlanTier, userDepositAmount);
+        }
+
+        updateDirectMembersUI();
+        calculateAndUpdateTeamVolumes();
+        saveBotState();
     }
 
     function updateDirectMembersUI() {
