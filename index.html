@@ -1717,7 +1717,7 @@ document.addEventListener('change', function(e) {
 
         container.innerHTML = overrides.map(o => {
             const vol = (levelVolumes && levelVolumes[o.lvl]) ? levelVolumes[o.lvl] : 0.0;
-            const isAchieved = directBusinessVol >= o.reqSol;
+            const isAchieved = directBusinessVol >= (o.reqSol - 0.0001);
 
             return `
             <div class="bg-gradient-to-r ${isAchieved ? 'from-emerald-950/40 via-cardBg to-emerald-950/20 border-emerald-500/40' : 'from-rose-950/40 via-cardBg to-rose-950/20 border-rose-500/40'} border rounded-xl p-3 flex justify-between items-center text-xs font-mono shadow-md">
