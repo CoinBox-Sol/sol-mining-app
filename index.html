@@ -1647,48 +1647,80 @@ document.addEventListener('change', function(e) {
         }
     }
 
-    // Render 25 Levels for Team Override Bonus
+    // Calculate and update Team Volumes dynamically from levelMembersData
+    function calculateAndUpdateTeamVolumes() {
+        let totalTeamVol = 0;
+
+        for (let lvl = 1; lvl <= 25; lvl++) {
+            const members = levelMembersData[lvl] || [];
+            let lvlSum = 0;
+            members.forEach(m => {
+                let depStr = m.deposit || "0";
+                let numMatch = depStr.match(/[\d.]+/);
+                let val = numMatch ? parseFloat(numMatch[0]) : 0.10;
+                lvlSum += val;
+            });
+            levelVolumes[lvl] = lvlSum;
+            totalTeamVol += lvlSum;
+        }
+
+        const totalVolEl = document.getElementById('team-total-volume');
+        if (totalVolEl) {
+            totalVolEl.innerText = `${totalTeamVol.toFixed(2)} SOL`;
+        }
+
+        if (typeof renderLevels === 'function') renderLevels();
+        if (typeof renderAllRanks === 'function') renderAllRanks();
+        saveBotState();
+    }
+
+    // Render 25 Levels for Team Override Bonus with Dynamic Achievement Icons (`✅` / `❌`)
     function renderLevels() {
         const container = document.getElementById('levels-container');
         if (!container) return;
 
         const overrides = [
-            {lvl: 1, pct: "15%", req: "0 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 2, pct: "10%", req: "2 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 3, pct: "5%", req: "3 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 4, pct: "3%", req: "4 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 5, pct: "2%", req: "5 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 6, pct: "2%", req: "6 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 7, pct: "2%", req: "7 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 8, pct: "2%", req: "8 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 9, pct: "2%", req: "9 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 10, pct: "2%", req: "10 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 11, pct: "2%", req: "11 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 12, pct: "2%", req: "12 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 13, pct: "2%", req: "13 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 14, pct: "2%", req: "14 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 15, pct: "2%", req: "15 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 16, pct: "2%", req: "16 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 17, pct: "2%", req: "17 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 18, pct: "2%", req: "18 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 19, pct: "2%", req: "19 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 20, pct: "2%", req: "20 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 21, pct: "2%", req: "21 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 22, pct: "3%", req: "22 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 23, pct: "5%", req: "23 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 24, pct: "10%", req: "24 SOL Direct Business", volume: "0.0 SOL"},
-            {lvl: 25, pct: "15%", req: "25 SOL Direct Business", volume: "0.0 SOL"}
+            {lvl: 1, pct: "15%", reqSol: 0, reqText: "0 SOL Direct Business"},
+            {lvl: 2, pct: "10%", reqSol: 2, reqText: "2 SOL Direct Business"},
+            {lvl: 3, pct: "5%", reqSol: 3, reqText: "3 SOL Direct Business"},
+            {lvl: 4, pct: "3%", reqSol: 4, reqText: "4 SOL Direct Business"},
+            {lvl: 5, pct: "2%", reqSol: 5, reqText: "5 SOL Direct Business"},
+            {lvl: 6, pct: "2%", reqSol: 6, reqText: "6 SOL Direct Business"},
+            {lvl: 7, pct: "2%", reqSol: 7, reqText: "7 SOL Direct Business"},
+            {lvl: 8, pct: "2%", reqSol: 8, reqText: "8 SOL Direct Business"},
+            {lvl: 9, pct: "2%", reqSol: 9, reqText: "9 SOL Direct Business"},
+            {lvl: 10, pct: "2%", reqSol: 10, reqText: "10 SOL Direct Business"},
+            {lvl: 11, pct: "2%", reqSol: 11, reqText: "11 SOL Direct Business"},
+            {lvl: 12, pct: "2%", reqSol: 12, reqText: "12 SOL Direct Business"},
+            {lvl: 13, pct: "2%", reqSol: 13, reqText: "13 SOL Direct Business"},
+            {lvl: 14, pct: "2%", reqSol: 14, reqText: "14 SOL Direct Business"},
+            {lvl: 15, pct: "2%", reqSol: 15, reqText: "15 SOL Direct Business"},
+            {lvl: 16, pct: "2%", reqSol: 16, reqText: "16 SOL Direct Business"},
+            {lvl: 17, pct: "2%", reqSol: 17, reqText: "17 SOL Direct Business"},
+            {lvl: 18, pct: "2%", reqSol: 18, reqText: "18 SOL Direct Business"},
+            {lvl: 19, pct: "2%", reqSol: 19, reqText: "19 SOL Direct Business"},
+            {lvl: 20, pct: "2%", reqSol: 20, reqText: "20 SOL Direct Business"},
+            {lvl: 21, pct: "2%", reqSol: 21, reqText: "21 SOL Direct Business"},
+            {lvl: 22, pct: "3%", reqSol: 22, reqText: "22 SOL Direct Business"},
+            {lvl: 23, pct: "5%", reqSol: 23, reqText: "23 SOL Direct Business"},
+            {lvl: 24, pct: "10%", reqSol: 24, reqText: "24 SOL Direct Business"},
+            {lvl: 25, pct: "15%", reqSol: 25, reqText: "25 SOL Direct Business"}
         ];
 
-        container.innerHTML = overrides.map(o => `
-            <div class="bg-gradient-to-r from-purple-950/40 via-cardBg to-indigo-950/40 border border-purple-500/30 rounded-xl p-3 flex justify-between items-center text-xs font-mono shadow-md">
+        container.innerHTML = overrides.map(o => {
+            const vol = (levelVolumes && levelVolumes[o.lvl]) ? levelVolumes[o.lvl] : 0.0;
+            const isAchieved = vol >= o.reqSol;
+
+            return `
+            <div class="bg-gradient-to-r ${isAchieved ? 'from-emerald-950/40 via-cardBg to-emerald-950/20 border-emerald-500/40' : 'from-rose-950/40 via-cardBg to-rose-950/20 border-rose-500/40'} border rounded-xl p-3 flex justify-between items-center text-xs font-mono shadow-md">
                 <div>
                     <div class="flex items-center space-x-2">
                         <span class="text-white font-bold">Level ${o.lvl} Override Bonus</span>
+                        <span>${isAchieved ? '✅' : '❌'}</span>
                     </div>
                     <div class="flex items-center space-x-2 mt-0.5 font-sans">
-                        <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 font-bold">Vol: ${o.volume}</span>
-                        <span class="text-[10px] text-gray-400">Requirement: ${o.req}</span>
+                        <span class="text-[10px] ${isAchieved ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20'} px-2 py-0.5 rounded border font-bold">Vol: ${vol.toFixed(1)} SOL</span>
+                        <span class="text-[10px] text-gray-400">Req: ${o.reqText}</span>
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
@@ -1698,7 +1730,8 @@ document.addEventListener('change', function(e) {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     // Render All 10 Ranks with Dynamic 40/60 Leg Capping and Achieved Icons Logic
