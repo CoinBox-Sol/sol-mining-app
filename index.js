@@ -8,7 +8,6 @@ app.use(cors());
 console.log('CORS is enabled for all origins');
 
 const PORT = process.env.PORT || 3000;
-
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
@@ -23,23 +22,23 @@ const userSchema = new mongoose.Schema({
     minedSolBalance: { type: Number, default: 0.0000 },
     availableSolBalance: { type: Number, default: 0.0000 },
     totalSelfFarmingClaimed: { type: Number, default: 0.0000 },
-    activePlanTier: { type: String, default: 'STARTER' },
-    userDepositAmount: { type: Number, default: 0.10 },
+    activePlanTier: { type: String, default: 'NONE' },
+    userDepositAmount: { type: Number, default: 0.00 },
     miningSpeedPerSec: { type: Number, default: 0.0000 },
-    activeDirectsCount: { type: Number, default: 100 },
+    activeDirectsCount: { type: Number, default: 0 },
 
-    promoBonusBalance: { type: Number, default: 0.1000 },
-    directReferralBonus: { type: Number, default: 0.5000 },
+    promoBonusBalance: { type: Number, default: 0.0100 },
+    directReferralBonus: { type: Number, default: 0.0000 },
     teamReferralBonus: { type: Number, default: 0.0000 },
     teamOverrideBonus: { type: Number, default: 0.0000 },
     rankRoyaltyBonus: { type: Number, default: 0.0000 },
-    highestAchievedRank: { type: String, default: 'STAR RANK' },
+    highestAchievedRank: { type: String, default: 'NO RANK' },
 
     levelVolumes: { type: [Number], default: Array(26).fill(0.0) },
     levelMembersData: { type: mongoose.Schema.Types.Mixed, default: {} },
 
-    userStrongestDone: { type: Number, default: 4.0 },
-    userOtherDone: { type: Number, default: 6.0 },
+    userStrongestDone: { type: Number, default: 0.0 },
+    userOtherDone: { type: Number, default: 0.0 },
 
     profileName: { type: String, default: '' },
     profileMobile: { type: String, default: '' },
@@ -54,13 +53,23 @@ const User = mongoose.model('User', userSchema);
 
 app.post('/api/user/sync', async (req, res) => {
     try {
-        const { telegramId, username, firstName } = req.body;
+        const { 
+            telegramId, 
+            username, 
+            firstName, 
+            minedSolBalance, 
+            availableSolBalance, 
+            totalSelfFarmingClaimed, 
+            activePlanTier, 
+            userDepositAmount, 
+            promoBonusBalance 
+        } = req.body;
 
         if (!telegramId) {
             return res.status(400).json({ error: 'Telegram ID is required' });
         }
 
-        // Generate 100 dummy users
+        // Generate dummy test users if not existing
         for (let i = 1; i <= 100; i++) {
             let dummyId = `test_user_${i}`;
             let existing = await User.findOne({ telegramId: dummyId });
@@ -78,7 +87,41 @@ app.post('/api/user/sync', async (req, res) => {
 
         let user = await User.findOne({ telegramId });
         if (!user) {
-            user = new User({ telegramId, username, firstName });
+            user = new User({ 
+                telegramId, 
+                username: username || '', 
+                firstName: firstName || '',
+                activePlanTier: 'NONE',
+                userDepositAmount: 0.00,
+                promoBonusBalance: 0.0100
+            });
+        }
+
+        // Preserve username & firstName: Only update if a valid non-empty string is sent
+        if (username && username.trim() !== '') {
+            user.username = username;
+        }
+        if (firstName && firstName.trim() !== '') {
+            user.firstName = firstName;
+        }
+
+        // Safe numeric assignments
+        if (minedSolBalance !== undefined) user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance);
+        if (availableSolBalance !== undefined) user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
+        if (totalSelfFarmingClaimed !== undefined) user.totalSelfFarmingClaimed = Math.max(user.totalSelfFarmingClaimed || 0, totalSelfFarmingClaimed);
+        
+        // Retain or update plan tier
+        if (activePlanTier && activePlanTier !== 'NONE') {
+            user.activePlanTier = activePlanTier;
+        }
+
+        if (userDepositAmount !== undefined) user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
+        if (promoBonusBalance !== undefined) user.promoBonusBalance = Math.max(user.promoBonusBalance || 0.0100, promoBonusBalance);
+
+        // Auto-Topup Trigger: 0.10 SOL Promo Balance converts user to STARTER package
+        if (user.promoBonusBalance >= 0.10 && (!user.activePlanTier || user.activePlanTier === 'NONE')) {
+            user.activePlanTier = 'STARTER';
+            user.userDepositAmount = 0.10;
         }
 
         const allTestUsers = await User.find({ telegramId: /^test_user_/ });
@@ -88,21 +131,11 @@ app.post('/api/user/sync', async (req, res) => {
             date: new Date().toISOString().split('T')[0]
         }));
 
-        user.activeDirectsCount = 100;
-        user.activePlanTier = 'STARTER';
-        user.userDepositAmount = 0.10;
-        user.promoBonusBalance = 0.10;
-        
-        let lVolumes = Array(26).fill(0.0);
-        lVolumes[1] = 10.0;
-        user.levelVolumes = lVolumes;
-
         user.levelMembersData = { '1': dummyMembersList };
-        if (username) user.username = username;
-        if (firstName) user.firstName = firstName;
+        user.lastUpdated = Date.now();
         await user.save();
 
-        // Send direct forced response so frontend renders it instantly
+        // Send synchronized user data back without overriding valid usernames
         return res.json({ 
             success: true, 
             user: {
@@ -112,15 +145,15 @@ app.post('/api/user/sync', async (req, res) => {
                 minedSolBalance: user.minedSolBalance || 0,
                 availableSolBalance: user.availableSolBalance || 0,
                 totalSelfFarmingClaimed: user.totalSelfFarmingClaimed || 0,
-                activePlanTier: 'STARTER',
-                userDepositAmount: 0.10,
+                activePlanTier: user.activePlanTier || 'NONE',
+                userDepositAmount: user.userDepositAmount || 0,
                 miningSpeedPerSec: user.miningSpeedPerSec || 0,
-                activeDirectsCount: 100,
-                promoBonusBalance: 0.1000,
-                userStrongestDone: 4.0,
-                userOtherDone: 6.0,
+                activeDirectsCount: user.activeDirectsCount || 0,
+                promoBonusBalance: user.promoBonusBalance || 0.0100,
+                userStrongestDone: user.userStrongestDone || 0,
+                userOtherDone: user.userOtherDone || 0,
                 totalEarnedAmount: user.totalEarnedAmount || 0,
-                levelVolumes: lVolumes,
+                levelVolumes: user.levelVolumes,
                 levelMembersData: user.levelMembersData
             } 
         });
