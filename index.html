@@ -637,14 +637,30 @@ document.addEventListener('change', function(e) {
             </div>
 
             <!-- Team Summary Stats Card (Added for Direct Members & Total Volume) -->
-            <div class="grid grid-cols-2 gap-2 font-mono text-xs">
-                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
-                    <span class="text-gray-400 text-[10px] block uppercase font-sans">Active Directs (L1)</span>
-                    <strong id="team-directs-count" class="text-solGreen text-base font-black">0</strong>
+                <!-- Stats Grid 2x2 Layout -->
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Box 1: Active Directs L1 -->
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-3 text-center shadow-md">
+                    <div class="text-[10px] text-gray-400 font-mono uppercase tracking-wider font-bold">Active Directs (L1)</div>
+                    <div id="active-directs-count" class="text-base font-bold text-solGreen font-mono mt-1">0</div>
                 </div>
-                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
-                    <span class="text-gray-400 text-[10px] block uppercase font-sans">Total Team Volume</span>
-                    <strong id="team-total-volume" class="text-cyan-400 text-base font-black">0.00 SOL</strong>
+                
+                <!-- Box 2: Direct Team Volume -->
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-3 text-center shadow-md">
+                    <div class="text-[10px] text-gray-400 font-mono uppercase tracking-wider font-bold">Direct Team Volume</div>
+                    <div id="direct-team-volume" class="text-base font-bold text-cyan-400 font-mono mt-1">0.00 SOL</div>
+                </div>
+
+                <!-- Box 3: Total Team L1-L25 -->
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-3 text-center shadow-md">
+                    <div class="text-[10px] text-gray-400 font-mono uppercase tracking-wider font-bold">Total Team (L1-L25)</div>
+                    <div id="total-team-members" class="text-base font-bold text-purple-400 font-mono mt-1">0</div>
+                </div>
+
+                <!-- Box 4: Total Team Volume -->
+                <div class="bg-cardBg border border-cardBorder rounded-xl p-3 text-center shadow-md">
+                    <div class="text-[10px] text-gray-400 font-mono uppercase tracking-wider font-bold">Total Team Volume</div>
+                    <div id="team-total-volume" class="text-base font-bold text-solGreen font-mono mt-1">0.00 SOL</div>
                 </div>
             </div>
 
