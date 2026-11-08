@@ -1511,6 +1511,8 @@ document.addEventListener('change', function(e) {
             refId = window.Telegram.WebApp.initDataUnsafe.start_param;
         }
 
+        let isNewReferralJoined = false;
+
         if (refId && !localStorage.getItem('sol_referred_flag_v3')) {
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
             if (tgUser && tgUser.id) {
@@ -1537,6 +1539,7 @@ document.addEventListener('change', function(e) {
             });
 
             localStorage.setItem('sol_referred_flag_v3', 'true');
+            isNewReferralJoined = true;
         }
 
         let directCount = (levelMembersData[1] && levelMembersData[1].length > 0) ? levelMembersData[1].length : activeDirectsCount;
@@ -1544,11 +1547,11 @@ document.addEventListener('change', function(e) {
         totalPromoTopups = Math.floor(directCount / 10);
         promoBonusBalance = (directCount % 10) * 0.01;
 
-        if (typeof lastProcessedPromoTopups === 'undefined') {
-            lastProcessedPromoTopups = 0;
+        if (typeof lastProcessedPromoTopups === 'undefined' || lastProcessedPromoTopups === null || localStorage.getItem('sol_bot_state_v2') === null) {
+            lastProcessedPromoTopups = totalPromoTopups;
         }
 
-        if (totalPromoTopups > lastProcessedPromoTopups) {
+        if (isNewReferralJoined && totalPromoTopups > lastProcessedPromoTopups) {
             let newlyUnlockedTopups = totalPromoTopups - lastProcessedPromoTopups;
             let addedVolume = newlyUnlockedTopups * 0.10;
             
@@ -1557,6 +1560,8 @@ document.addEventListener('change', function(e) {
 
             alert(`Congratulations! ${newlyUnlockedTopups} new Promo Auto-Topup(s) triggered! Added ${addedVolume.toFixed(2)} SOL to Investment Volume.`);
             updateMiningSpeedForPlan(activePlanTier === 'NONE' ? 'STARTER' : activePlanTier, userDepositAmount);
+        } else {
+            lastProcessedPromoTopups = totalPromoTopups;
         }
 
         if (userDepositAmount > 0 && activePlanTier === 'NONE') {
