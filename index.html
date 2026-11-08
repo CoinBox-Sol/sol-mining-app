@@ -1821,23 +1821,14 @@ document.addEventListener('change', function(e) {
             profileNameInput.value = nameDisplay;
         }
 
-        const userRefId = (tgUser && tgUser.id) ? tgUser.id : '';
-        const dynamicLink = userRefId ? `https://t.me/SolMiningFarmBot?start=${userRefId}` : '';
-
-        const refInput1 = document.getElementById('ref-link-input');
-        if (refInput1) refInput1.value = dynamicLink;
-
-        const refInput2 = document.getElementById('modal-ref-link-input') || document.getElementById('ref-link-input-2');
-        if (refInput2) refInput2.value = dynamicLink;
-
-        const tgShareBtn = document.getElementById('tg-share-btn') || document.getElementById('telegram-share-btn');
+        const tgShareBtn = document.getElementById('tgShareBtn');
         if (tgShareBtn) {
-            tgShareBtn.href = `https://t.me/share/url?url=${encodeURIComponent(dynamicLink)}&text=${encodeURIComponent("Join Solana Farming and earn daily rewards!")}`;
+            tgShareBtn.href = `https://t.me/share/url?url=https://t.me/SolMiningFarmBot/app?startapp=${tgUser ? tgUser.id : ''}`;
         }
 
         if (tgUser && tgUser.photo_url) {
-            const avatarImg = document.getElementById('user-avatar-img');
-            const solLogo = document.getElementById('user-sol-logo') || document.getElementById('sol-logo-icon');
+            const avatarImg = document.getElementById('avatarImg');
+            const solLogo = document.getElementById('solLogo');
             if (avatarImg && solLogo) {
                 avatarImg.src = tgUser.photo_url;
                 avatarImg.classList.remove('hidden');
@@ -1845,8 +1836,8 @@ document.addEventListener('change', function(e) {
             }
         }
 
-        if (tgUser && tgUser.id && tgUser.id.toString() === ADMIN_TELEGRAM_ID) {
-            const adminBtn = document.getElementById('admin-panel-btn');
+        if (tgUser && tgUser.id && String(tgUser.id) === ADMIN_TELEGRAM_ID) {
+            const adminBtn = document.getElementById('adminBtn');
             if (adminBtn) {
                 adminBtn.classList.remove('hidden');
                 adminBtn.classList.add('flex');
@@ -1864,29 +1855,18 @@ document.addEventListener('change', function(e) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        telegramId: tgUser.id.toString(),
+                        telegramId: tgUser.id,
                         username: tgUser.username || '',
                         firstName: tgUser.first_name || '',
-                        startParam: new URLSearchParams(window.location.search).get('start') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null,
-                        minedSolBalance: typeof minedSolBalance !== 'undefined' ? minedSolBalance : 0,
-                        availableSolBalance: typeof availableSolBalance !== 'undefined' ? availableSolBalance : 0,
-                        totalSelfFarmingClaimed: typeof totalSelfFarmingClaimed !== 'undefined' ? totalSelfFarmingClaimed : 0,
-                        activePlanTier: typeof activePlanTier !== 'undefined' ? activePlanTier : 'NONE',
-                        userDepositAmount: typeof userDepositAmount !== 'undefined' ? userDepositAmount : 0,
-                        miningSpeedPerSec: typeof miningSpeedPerSec !== 'undefined' ? miningSpeedPerSec : 0,
-                        activeDirectsCount: typeof activeDirectsCount !== 'undefined' ? activeDirectsCount : 0,
-                        promoBonusBalance: typeof promoBonusBalance !== 'undefined' ? promoBonusBalance : 0.0100,
-                        userStrongestDone: typeof userStrongestDone !== 'undefined' ? userStrongestDone : 0,
-                        userOtherDone: typeof userOtherDone !== 'undefined' ? userOtherDone : 0,
-                        totalEarnedAmount: typeof totalEarnedAmount !== 'undefined' ? totalEarnedAmount : 0
+                        startParam: new URLSearchParams(window.location.search).get('startapp') || ''
                     })
                 });
                 const data = await response.json();
                 if (data.success && data.user) {
                     let finalName = data.user.username ? `@${data.user.username}` : (localStorage.getItem('persistent_tg_username') || '');
                     if (finalName) {
-                        const usernameEl = document.getElementById('username');
-                        if (usernameEl) usernameEl.innerText = finalName;
+                        const el = document.getElementById('username');
+                        if (el) el.innerText = finalName;
                         localStorage.setItem('persistent_tg_username', finalName);
                     }
 
@@ -1900,18 +1880,20 @@ document.addEventListener('change', function(e) {
                     if (typeof userStrongestDone !== 'undefined') userStrongestDone = Math.max(userStrongestDone, data.user.userStrongestDone || 0);
                     if (typeof userOtherDone !== 'undefined') userOtherDone = Math.max(userOtherDone, data.user.userOtherDone || 0);
                 }
-            } catch (err) {
-                console.error("Startup Load Error:", err);
             }
+        } catch (err) {
+            console.error("Startup Load Error:", err);
+        }
 
-            if (typeof loadProfileOnStartup === 'function') loadProfileOnStartup();
-            if (typeof renderLevels === 'function') renderLevels();
-            if (typeof renderAllRanks === 'function') renderAllRanks();
-            if (typeof updateMiningSpeedForPlan === 'function') updateMiningSpeedForPlan(typeof activePlanTier !== 'undefined' ? activePlanTier : 'NONE', typeof userDepositAmount !== 'undefined' ? userDepositAmount : 0);
-            if (typeof checkReferralOnStartup === 'function') checkReferralOnStartup();
-            if (typeof updateDirectMembersUI === 'function') updateDirectMembersUI();
-        };
-        </script>
-    </body>
-    </html>
+        if (typeof loadProfileOnStartup === 'function') loadProfileOnStartup();
+        if (typeof renderLevels === 'function') renderLevels();
+        if (typeof renderAllRanks === 'function') renderAllRanks();
+        if (typeof updateMiningSpeedForPlan === 'function') updateMiningSpeedForPlan();
+        if (typeof checkReferralOnStartup === 'function') checkReferralOnStartup();
+        if (typeof updateDirectMembersUI === 'function') updateDirectMembersUI();
+    };
+</script>
+</body>
+</html>
+
 
