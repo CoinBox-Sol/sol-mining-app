@@ -1983,7 +1983,7 @@ document.addEventListener('change', function(e) {
     // Initialize on Window Load
     window.onload = async function() {
         calculateAndUpdateTeamVolumes();
-        // Auto-select package tier based on userDepositAmount
+        
         if (userDepositAmount >= 25.10) {
             activePlanTier = 'GALAXY';
         } else if (userDepositAmount >= 10.10) {
@@ -2096,12 +2096,19 @@ document.addEventListener('change', function(e) {
                 const data = await response.json();
                 if (data.success && data.user) {
                     if (typeof minedSolBalance !== 'undefined') minedSolBalance = Math.max(minedSolBalance, data.user.minedSolBalance || 0);
+                    
                     if (typeof availableSolBalance !== 'undefined') {
                         availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
                     } else {
                         availableSolBalance = data.user.availableSolBalance || 0;
                     }
+
                     if (typeof totalSelfFarmingClaimed !== 'undefined') totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
+                    if (typeof directReferralBonus !== 'undefined') directReferralBonus = Math.max(directReferralBonus, data.user.directReferralBonus || 0);
+                    if (typeof teamReferralBonus !== 'undefined') teamReferralBonus = Math.max(teamReferralBonus, data.user.teamReferralBonus || 0);
+                    if (typeof teamOverrideBonus !== 'undefined') teamOverrideBonus = Math.max(teamOverrideBonus, data.user.teamOverrideBonus || 0);
+                    if (typeof rankRoyaltyBonus !== 'undefined') rankRoyaltyBonus = Math.max(rankRoyaltyBonus, data.user.rankRoyaltyBonus || 0);
+
                     if (typeof activePlanTier !== 'undefined') activePlanTier = (data.user.activePlanTier && data.user.activePlanTier !== 'NONE') ? data.user.activePlanTier : activePlanTier;
                     if (typeof userDepositAmount !== 'undefined') userDepositAmount = Math.max(userDepositAmount, data.user.userDepositAmount || 0);
                     if (typeof activeDirectsCount !== 'undefined') activeDirectsCount = Math.max(activeDirectsCount, data.user.activeDirectsCount || 0);
@@ -2116,6 +2123,14 @@ document.addEventListener('change', function(e) {
         } catch (err) {
             console.error("Startup Load Error:", err);
         }
+
+        const balanceEl = document.getElementById('balance-display');
+        if (balanceEl) {
+            balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
+        }
+
+        const statSelfBonusEl = document.getElementById('stat-self-bonus');
+        if (statSelfBonusEl) statSelfBonusEl.innerText = `${totalSelfFarmingClaimed.toFixed(4)} SOL`;
 
         if (typeof loadProfileOnStartup === 'function') loadProfileOnStartup();
         if (typeof renderLevels === 'function') renderLevels();
