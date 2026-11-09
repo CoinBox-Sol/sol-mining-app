@@ -2104,10 +2104,57 @@ document.addEventListener('change', function(e) {
                     }
 
                     if (typeof totalSelfFarmingClaimed !== 'undefined') totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
-                    if (typeof directReferralBonus !== 'undefined') directReferralBonus = Math.max(directReferralBonus, data.user.directReferralBonus || 0);
-                    if (typeof teamReferralBonus !== 'undefined') teamReferralBonus = Math.max(teamReferralBonus, data.user.teamReferralBonus || 0);
-                    if (typeof teamOverrideBonus !== 'undefined') teamOverrideBonus = Math.max(teamOverrideBonus, data.user.teamOverrideBonus || 0);
-                    if (typeof rankRoyaltyBonus !== 'undefined') rankRoyaltyBonus = Math.max(rankRoyaltyBonus, data.user.rankRoyaltyBonus || 0);
+                    
+                    if (data.user.directReferralBonus && data.user.directReferralBonus > 0) {
+                        directReferralBonus = data.user.directReferralBonus;
+                    } else if (levelMembersData[1] && levelMembersData[1].length > 0) {
+                        let l1Sum = levelMembersData[1].reduce((sum, m) => {
+                            let match = String(m.deposit || "0.10").match(/[\d.]+/);
+                            return sum + (match ? parseFloat(match[0]) : 0.10);
+                        }, 0);
+                        directReferralBonus = l1Sum * 0.05;
+                    }
+
+                    if (data.user.teamReferralBonus && data.user.teamReferralBonus > 0) {
+                        teamReferralBonus = data.user.teamReferralBonus;
+                    } else {
+                        let l2To5Sum = 0;
+                        for (let l = 2; l <= 5; l++) {
+                            if (levelMembersData[l]) {
+                                l2To5Sum += levelMembersData[l].reduce((sum, m) => {
+                                    let match = String(m.deposit || "0.10").match(/[\d.]+/);
+                                    return sum + (match ? parseFloat(match[0]) : 0.10);
+                                }, 0);
+                            }
+                        }
+                        teamReferralBonus = l2To5Sum > 0 ? l2To5Sum * 0.03 : teamReferralBonus;
+                    }
+
+                    if (data.user.teamOverrideBonus && data.user.teamOverrideBonus > 0) {
+                        teamOverrideBonus = data.user.teamOverrideBonus;
+                    } else {
+                        let totalVol = 0;
+                        for (let l = 1; l <= 25; l++) {
+                            if (levelMembersData[l]) {
+                                totalVol += levelMembersData[l].reduce((sum, m) => {
+                                    let match = String(m.deposit || "0.10").match(/[\d.]+/);
+                                    return sum + (match ? parseFloat(match[0]) : 0.10);
+                                }, 0);
+                            }
+                        }
+                        teamOverrideBonus = totalVol > 0 ? totalVol * 0.02 : teamOverrideBonus;
+                    }
+
+                    if (data.user.rankRoyaltyBonus && data.user.rankRoyaltyBonus > 0) {
+                        rankRoyaltyBonus = data.user.rankRoyaltyBonus;
+                    } else if (highestAchievedRank !== 'NO RANK') {
+                        if (highestAchievedRank.includes('STAR')) rankRoyaltyBonus = 0.03;
+                        else if (highestAchievedRank.includes('ORBIT')) rankRoyaltyBonus = 0.10;
+                        else if (highestAchievedRank.includes('SOLAR')) rankRoyaltyBonus = 0.30;
+                        else if (highestAchievedRank.includes('SUPERNOVA')) rankRoyaltyBonus = 1.00;
+                        else if (highestAchievedRank.includes('GALAXY')) rankRoyaltyBonus = 3.00;
+                        else if (highestAchievedRank.includes('CROWN')) rankRoyaltyBonus = 30.00;
+                    }
 
                     if (typeof activePlanTier !== 'undefined') activePlanTier = (data.user.activePlanTier && data.user.activePlanTier !== 'NONE') ? data.user.activePlanTier : activePlanTier;
                     if (typeof userDepositAmount !== 'undefined') userDepositAmount = Math.max(userDepositAmount, data.user.userDepositAmount || 0);
