@@ -1330,7 +1330,7 @@ document.addEventListener('change', function(e) {
         }
     }, 1000);
 
-    function claimMinedRewards() {
+    async function claimMinedRewards() {
         if (minedSolBalance <= 0) {
             alert('No mined rewards available to claim yet! Please wait a few seconds while the bot mines SOL.');
             return;
