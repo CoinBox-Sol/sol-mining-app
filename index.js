@@ -107,10 +107,11 @@ app.post('/api/user/sync', async (req, res) => {
         }
 
         // Safe numeric assignments
-        if (minedSolBalance !== undefined) user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance);
-        if (availableSolBalance !== undefined) user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
+                // Safe numeric assignments (Direct update to properly persist claimed rewards & available balance)
+        if (minedSolBalance !== undefined) user.minedSolBalance = minedSolBalance;
+        if (availableSolBalance !== undefined) user.availableSolBalance = availableSolBalance;
         if (totalSelfFarmingClaimed !== undefined) user.totalSelfFarmingClaimed = Math.max(user.totalSelfFarmingClaimed || 0, totalSelfFarmingClaimed);
-        
+
         if (activePlanTier && activePlanTier !== 'NONE') {
             user.activePlanTier = activePlanTier;
         }
