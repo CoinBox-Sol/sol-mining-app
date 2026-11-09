@@ -2132,6 +2132,18 @@ document.addEventListener('change', function(e) {
         const statSelfBonusEl = document.getElementById('stat-self-bonus');
         if (statSelfBonusEl) statSelfBonusEl.innerText = `${totalSelfFarmingClaimed.toFixed(4)} SOL`;
 
+        const statDirectBonusEl = document.getElementById('stat-direct-bonus');
+        if (statDirectBonusEl) statDirectBonusEl.innerText = `${directReferralBonus.toFixed(4)} SOL`;
+
+        const statTeamBonusEl = document.getElementById('stat-team-bonus');
+        if (statTeamBonusEl) statTeamBonusEl.innerText = `${teamReferralBonus.toFixed(4)} SOL`;
+
+        const statOverrideBonusEl = document.getElementById('stat-override-bonus');
+        if (statOverrideBonusEl) statOverrideBonusEl.innerText = `${teamOverrideBonus.toFixed(4)} SOL`;
+
+        const statRankBonusEl = document.getElementById('stat-rank-bonus');
+        if (statRankBonusEl) statRankBonusEl.innerText = `${rankRoyaltyBonus.toFixed(4)} SOL`;
+
         if (typeof loadProfileOnStartup === 'function') loadProfileOnStartup();
         if (typeof renderLevels === 'function') renderLevels();
         if (typeof renderAllRanks === 'function') renderAllRanks();
