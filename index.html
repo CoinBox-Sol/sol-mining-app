@@ -2096,7 +2096,11 @@ document.addEventListener('change', function(e) {
                 const data = await response.json();
                 if (data.success && data.user) {
                     if (typeof minedSolBalance !== 'undefined') minedSolBalance = Math.max(minedSolBalance, data.user.minedSolBalance || 0);
-                    if (typeof availableSolBalance !== 'undefined') availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
+                    if (typeof availableSolBalance !== 'undefined') {
+                        availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
+                    } else {
+                        availableSolBalance = data.user.availableSolBalance || 0;
+                    }
                     if (typeof totalSelfFarmingClaimed !== 'undefined') totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
                     if (typeof activePlanTier !== 'undefined') activePlanTier = (data.user.activePlanTier && data.user.activePlanTier !== 'NONE') ? data.user.activePlanTier : activePlanTier;
                     if (typeof userDepositAmount !== 'undefined') userDepositAmount = Math.max(userDepositAmount, data.user.userDepositAmount || 0);
