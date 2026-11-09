@@ -2080,17 +2080,17 @@ document.addEventListener('change', function(e) {
                         username: tgUser.username || '',
                         firstName: tgUser.first_name || '',
                         startParam: new URLSearchParams(window.location.search).get('start') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null,
-                        minedSolBalance: typeof minedSolBalance !== 'undefined' ? minedSolBalance : 0,
-                        availableSolBalance: typeof availableSolBalance !== 'undefined' ? availableSolBalance : 0,
-                        totalSelfFarmingClaimed: typeof totalSelfFarmingClaimed !== 'undefined' ? totalSelfFarmingClaimed : 0,
-                        activePlanTier: typeof activePlanTier !== 'undefined' ? activePlanTier : 'NONE',
-                        userDepositAmount: typeof userDepositAmount !== 'undefined' ? userDepositAmount : 0,
-                        miningSpeedPerSec: typeof miningSpeedPerSec !== 'undefined' ? miningSpeedPerSec : 0,
-                        activeDirectsCount: typeof activeDirectsCount !== 'undefined' ? activeDirectsCount : 0,
-                        promoBonusBalance: typeof promoBonusBalance !== 'undefined' ? promoBonusBalance : 0.0100,
-                        userStrongestDone: typeof userStrongestDone !== 'undefined' ? userStrongestDone : 0,
-                        userOtherDone: typeof userOtherDone !== 'undefined' ? userOtherDone : 0,
-                        totalEarnedAmount: typeof totalEarnedAmount !== 'undefined' ? totalEarnedAmount : 0
+                        minedSolBalance: minedSolBalance,
+                        availableSolBalance: availableSolBalance,
+                        totalSelfFarmingClaimed: totalSelfFarmingClaimed,
+                        activePlanTier: activePlanTier,
+                        userDepositAmount: userDepositAmount,
+                        miningSpeedPerSec: miningSpeedPerSec,
+                        activeDirectsCount: activeDirectsCount,
+                        promoBonusBalance: promoBonusBalance,
+                        userStrongestDone: userStrongestDone,
+                        userOtherDone: userOtherDone,
+                        totalEarnedAmount: totalEarnedAmount
                     })
                 });
                 const data = await response.json();
