@@ -1320,15 +1320,23 @@ document.addEventListener('change', function(e) {
     }
         
     // Live Smooth Mining Loop (Updates every 100ms for fluid visual effect)
+    let tickCounter = 0;
     setInterval(() => {
         if (userDepositAmount > 0) {
              minedSolBalance += (miningSpeedPerSec / 10);
              const minedEl = document.getElementById('mined-balance');
              if (minedEl) {
                  minedEl.innerHTML = `${minedSolBalance.toFixed(6)} <span class="text-solGreen text-lg">SOL</span>`;
-              }
-          }
-      }, 100);
+             }
+
+             // Save to localStorage automatically every 1 second (10 ticks)
+             tickCounter++;
+             if (tickCounter >= 10) {
+                 tickCounter = 0;
+                 saveBotState();
+             }
+         }
+     }, 100);
 
      async function claimMinedRewards() {
         if (minedSolBalance <= 0) {
