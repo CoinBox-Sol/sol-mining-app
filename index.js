@@ -62,6 +62,7 @@ app.post('/api/user/sync', async (req, res) => {
             totalSelfFarmingClaimed, 
             activePlanTier, 
             userDepositAmount, 
+            miningSpeedPerSec, // Added here
             promoBonusBalance 
         } = req.body;
 
@@ -121,6 +122,7 @@ app.post('/api/user/sync', async (req, res) => {
         if (minedSolBalance !== undefined) user.minedSolBalance = minedSolBalance;
         if (availableSolBalance !== undefined) user.availableSolBalance = availableSolBalance;
         if (totalSelfFarmingClaimed !== undefined) user.totalSelfFarmingClaimed = Math.max(user.totalSelfFarmingClaimed || 0, totalSelfFarmingClaimed);
+        if (miningSpeedPerSec !== undefined) user.miningSpeedPerSec = miningSpeedPerSec; // Added here
 
         if (activePlanTier && activePlanTier !== 'NONE') {
             user.activePlanTier = activePlanTier;
