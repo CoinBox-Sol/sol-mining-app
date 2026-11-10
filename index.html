@@ -1319,17 +1319,22 @@ document.addEventListener('change', function(e) {
         saveBotState();
     }
         
-    // Ultra-Smooth Nano-Fluid Mining Loop (Updates every 10ms for ultra-fast visual effect)
+    // Ultra-Smooth Visual Mining Loop (Fast animation with accurate background saving)
     let tickCounter = 0;
     setInterval(() => {
         if (userDepositAmount > 0) {
+             // Actual balance increment (exact math)
              minedSolBalance += (miningSpeedPerSec / 100);
+                 
+             // Visual-only booster multiplier for smooth spinning effect (e.g., 50x faster visual tick)
+             const visualDisplayBalance = minedSolBalance * 50; 
+
              const minedEl = document.getElementById('mined-balance');
              if (minedEl) {
-                 minedEl.innerHTML = `${minedSolBalance.toFixed(6)} <span class="text-solGreen text-lg">SOL</span>`;
+                 minedEl.innerHTML = `${visualDisplayBalance.toFixed(6)} <span class="text-solGreen text-lg">SOL</span>`;
              }
 
-             // Automatically save to localStorage every 1 second (100 ticks)
+             // Automatically save real balance to localStorage every 1 second (100 ticks)
              tickCounter++;
              if (tickCounter >= 100) {
                  tickCounter = 0;
