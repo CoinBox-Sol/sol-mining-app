@@ -95,6 +95,17 @@ app.post('/api/user/sync', async (req, res) => {
                 userDepositAmount: 0.00,
                 promoBonusBalance: 0.0100
             });
+        } else {
+            // --- OFFLINE AUTO-MINING / TIME-BASED CALCULATION ---
+            if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE') {
+                const now = Date.now();
+                const diffSeconds = (now - new Date(user.lastUpdated).getTime()) / 1000;
+                
+                if (diffSeconds > 0 && user.miningSpeedPerSec > 0) {
+                    const offlineMined = diffSeconds * user.miningSpeedPerSec;
+                    user.minedSolBalance = (user.minedSolBalance || 0) + offlineMined;
+                }
+            }
         }
 
         // Username preservation
@@ -107,7 +118,6 @@ app.post('/api/user/sync', async (req, res) => {
         }
 
         // Safe numeric assignments
-                // Safe numeric assignments (Direct update to properly persist claimed rewards & available balance)
         if (minedSolBalance !== undefined) user.minedSolBalance = minedSolBalance;
         if (availableSolBalance !== undefined) user.availableSolBalance = availableSolBalance;
         if (totalSelfFarmingClaimed !== undefined) user.totalSelfFarmingClaimed = Math.max(user.totalSelfFarmingClaimed || 0, totalSelfFarmingClaimed);
