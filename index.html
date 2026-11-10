@@ -1319,24 +1319,24 @@ document.addEventListener('change', function(e) {
         saveBotState();
     }
         
-    // Live Smooth Mining Loop (Updates every 100ms for fluid visual effect)
+    // Ultra-Smooth Nano-Fluid Mining Loop (Updates every 10ms for ultra-fast visual effect)
     let tickCounter = 0;
     setInterval(() => {
         if (userDepositAmount > 0) {
-             minedSolBalance += (miningSpeedPerSec / 10);
+             minedSolBalance += (miningSpeedPerSec / 100);
              const minedEl = document.getElementById('mined-balance');
              if (minedEl) {
                  minedEl.innerHTML = `${minedSolBalance.toFixed(6)} <span class="text-solGreen text-lg">SOL</span>`;
              }
 
-             // Save to localStorage automatically every 1 second (10 ticks)
+             // Automatically save to localStorage every 1 second (100 ticks)
              tickCounter++;
-             if (tickCounter >= 10) {
+             if (tickCounter >= 100) {
                  tickCounter = 0;
                  saveBotState();
              }
          }
-     }, 100);
+     }, 10);
 
      async function claimMinedRewards() {
         if (minedSolBalance <= 0) {
