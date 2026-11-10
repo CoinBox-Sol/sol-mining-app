@@ -62,7 +62,7 @@ app.post('/api/user/sync', async (req, res) => {
             totalSelfFarmingClaimed, 
             activePlanTier, 
             userDepositAmount, 
-            miningSpeedPerSec, // Added here
+            miningSpeedPerSec, 
             promoBonusBalance 
         } = req.body;
 
@@ -81,7 +81,8 @@ app.post('/api/user/sync', async (req, res) => {
                     firstName: `TestUser ${i}`,
                     profileName: `User ${i}`,
                     activePlanTier: 'STARTER',
-                    userDepositAmount: 0.10
+                    userDepositAmount: 0.10,
+                    miningSpeedPerSec: 0.00000115
                 }).save();
             }
         }
@@ -94,6 +95,7 @@ app.post('/api/user/sync', async (req, res) => {
                 firstName: firstName || '',
                 activePlanTier: 'NONE',
                 userDepositAmount: 0.00,
+                miningSpeedPerSec: miningSpeedPerSec || 0,
                 promoBonusBalance: 0.0100
             });
         } else {
@@ -102,8 +104,10 @@ app.post('/api/user/sync', async (req, res) => {
                 const now = Date.now();
                 const diffSeconds = (now - new Date(user.lastUpdated).getTime()) / 1000;
                 
-                if (diffSeconds > 0 && user.miningSpeedPerSec > 0) {
-                    const offlineMined = diffSeconds * user.miningSpeedPerSec;
+                let activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : (miningSpeedPerSec || 0);
+
+                if (diffSeconds > 0 && activeSpeed > 0) {
+                    const offlineMined = diffSeconds * activeSpeed;
                     user.minedSolBalance = (user.minedSolBalance || 0) + offlineMined;
                 }
             }
@@ -118,11 +122,20 @@ app.post('/api/user/sync', async (req, res) => {
             user.firstName = firstName;
         }
 
-        // Safe numeric assignments
-        if (minedSolBalance !== undefined) user.minedSolBalance = minedSolBalance;
-        if (availableSolBalance !== undefined) user.availableSolBalance = availableSolBalance;
-        if (totalSelfFarmingClaimed !== undefined) user.totalSelfFarmingClaimed = Math.max(user.totalSelfFarmingClaimed || 0, totalSelfFarmingClaimed);
-        if (miningSpeedPerSec !== undefined) user.miningSpeedPerSec = miningSpeedPerSec; // Added here
+        // Safe numeric assignments (Prevent balance dropping)
+        if (minedSolBalance !== undefined) {
+            user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance);
+        }
+        if (availableSolBalance !== undefined) {
+            user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
+        }
+        if (totalSelfFarmingClaimed !== undefined) {
+            user.totalSelfFarmingClaimed = Math.max(user.totalSelfFarmingClaimed || 0, totalSelfFarmingClaimed);
+        }
+        
+        if (miningSpeedPerSec !== undefined && miningSpeedPerSec > 0) {
+            user.miningSpeedPerSec = miningSpeedPerSec;
+        }
 
         if (activePlanTier && activePlanTier !== 'NONE') {
             user.activePlanTier = activePlanTier;
