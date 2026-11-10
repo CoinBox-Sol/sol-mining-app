@@ -2170,6 +2170,11 @@ document.addEventListener('change', function(e) {
         } catch (err) {
             console.error("Startup Load Error:", err);
         }
+        
+        let totalCalculatedIncomes = directReferralBonus + teamReferralBonus + teamOverrideBonus + rankRoyaltyBonus;
+        if (availableSolBalance < (totalCalculatedIncomes + totalSelfFarmingClaimed)) {
+            availableSolBalance = totalCalculatedIncomes + totalSelfFarmingClaimed;
+        }
 
         const balanceEl = document.getElementById('balance-display');
         if (balanceEl) {
