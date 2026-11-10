@@ -1369,7 +1369,7 @@ document.addEventListener('change', function(e) {
 
         const minedEl = document.getElementById('mined-balance');
         if (minedEl) {
-            minedEl.innerHTML = `0.0000 <span class="text-solGreen text-lg">SOL</span>`;
+            minedEl.innerHTML = `0.00000000 <span class="text-solGreen text-lg">SOL</span>`;
         }
 
         saveBotState();
@@ -1395,7 +1395,7 @@ document.addEventListener('change', function(e) {
             console.error("Claim Sync Error:", err);
         }
 
-        alert(`Successfully claimed ${claimedAmount.toFixed(6)} SOL into your Available Balance!`);
+        alert(`Successfully claimed ${claimedAmount.toFixed(8)} SOL into your Available Balance!`);
     }
 
     function switchTab(tabId) {
