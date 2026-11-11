@@ -2111,12 +2111,14 @@ document.addEventListener('change', function(e) {
                         if (typeof data.user.minedSolBalance !== 'undefined') {
                             minedSolBalance = parseFloat(data.user.minedSolBalance) || 0;
                         }
-                        if (typeof availableSolBalance !== 'undefined') {
-                            availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
-                        } else {
-                            availableSolBalance = data.user.availableSolBalance || 0;
+                        
+                        if (typeof data.user.availableSolBalance !== 'undefined') {
+                            availableSolBalance = parseFloat(data.user.availableSolBalance) || 0;
                         }
-                        if (typeof totalSelfFarmingClaimed !== 'undefined') totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
+
+                        if (typeof totalSelfFarmingClaimed !== 'undefined') {
+                            totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
+                        }
                         
                         const minedEl = document.getElementById('mined-balance');
                         if (minedEl) {
