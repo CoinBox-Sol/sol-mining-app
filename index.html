@@ -1091,7 +1091,8 @@ document.addEventListener('change', function(e) {
             totalEarnedAmount,
             adminPendingDeposits,
             adminPendingWithdrawals,
-            completedWithdrawals
+            completedWithdrawals,
+            lastSavedTimestamp: Date.now()
          };
          localStorage.setItem('sol_bot_state_v2', JSON.stringify(currentState));
     }
@@ -1993,8 +1994,14 @@ document.addEventListener('change', function(e) {
 
     // Initialize on Window Load - Instant Rendering
     window.onload = function() {
+        if (savedState && savedState.lastSavedTimestamp && userDepositAmount > 0) {
+            const elapsedSeconds = (Date.now() - savedState.lastSavedTimestamp) / 1000;
+            if (elapsedSeconds > 0) {
+                minedSolBalance += elapsedSeconds * miningSpeedPerSec;
+            }
+        }
         calculateAndUpdateTeamVolumes();
-        
+
         if (userDepositAmount >= 25.10) {
             activePlanTier = 'GALAXY';
         } else if (userDepositAmount >= 10.10) {
