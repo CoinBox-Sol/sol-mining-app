@@ -1340,7 +1340,7 @@ document.addEventListener('change', function(e) {
          }
      }, 10);
 
-     async function claimMinedRewards() {
+    async function claimMinedRewards() {
         if (minedSolBalance <= 0) {
             alert('No mined rewards available to claim yet! Please wait a few seconds while the bot mines SOL.');
              return;
@@ -1373,7 +1373,7 @@ document.addEventListener('change', function(e) {
         }
 
         saveBotState();
-        // Sync claimed balances with backend immediately
+
         try {
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
             if (tgUser && tgUser.id) {
@@ -1382,7 +1382,7 @@ document.addEventListener('change', function(e) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         telegramId: tgUser.id.toString(),
-                        minedSolBalance: minedSolBalance,
+                        minedSolBalance: 0.0,
                         availableSolBalance: availableSolBalance,
                         totalSelfFarmingClaimed: totalSelfFarmingClaimed,
                         activePlanTier: activePlanTier,
@@ -2108,8 +2108,8 @@ document.addEventListener('change', function(e) {
                     });
                     const data = await response.json();
                     if (data.success && data.user) {
-                        if (typeof data.user.minedSolBalance !== 'undefined') {
-                            minedSolBalance = parseFloat(data.user.minedSolBalance) || 0;
+                        if (typeof data.user.minedSolBalance !== 'undefined' && minedSolBalance > 0) {
+                            minedSolBalance = Math.min(minedSolBalance, parseFloat(data.user.minedSolBalance) || 0);
                         }
                         
                         if (typeof data.user.availableSolBalance !== 'undefined') {
@@ -2121,7 +2121,7 @@ document.addEventListener('change', function(e) {
                         }
                         
                         const minedEl = document.getElementById('mined-balance');
-                        if (minedEl) {
+                        if (minedEl && minedSolBalance > 0) {
                             minedEl.innerHTML = `${minedSolBalance.toFixed(8)} <span class="text-solGreen text-lg">SOL</span>`;
                         }
 
