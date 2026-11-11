@@ -1998,6 +1998,10 @@ document.addEventListener('change', function(e) {
             const elapsedSeconds = (Date.now() - savedState.lastSavedTimestamp) / 1000;
             if (elapsedSeconds > 0) {
                 minedSolBalance += elapsedSeconds * miningSpeedPerSec;
+                const minedEl = document.getElementById('mined-balance');
+                if (minedEl) {
+                    minedEl.innerHTML = `${minedSolBalance.toFixed(8)} <span class="text-solGreen text-lg">SOL</span>`;
+                }
             }
         }
         calculateAndUpdateTeamVolumes();
@@ -2115,8 +2119,10 @@ document.addEventListener('change', function(e) {
                     });
                     const data = await response.json();
                     if (data.success && data.user) {
-                        if (typeof data.user.minedSolBalance !== 'undefined' && minedSolBalance > 0) {
-                            minedSolBalance = Math.max(minedSolBalance, parseFloat(data.user.minedSolBalance) || 0);
+                        if (typeof data.user.minedSolBalance !== 'undefined') {
+                            if (minedSolBalance <= 0 && data.user.minedSolBalance > 0) {
+                                minedSolBalance = parseFloat(data.user.minedSolBalance) || 0;
+                            }
                         }
                         
                         if (typeof data.user.availableSolBalance !== 'undefined') {
