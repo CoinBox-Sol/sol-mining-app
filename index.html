@@ -2116,7 +2116,7 @@ document.addEventListener('change', function(e) {
                     const data = await response.json();
                     if (data.success && data.user) {
                         if (typeof data.user.minedSolBalance !== 'undefined' && minedSolBalance > 0) {
-                            minedSolBalance = Math.min(minedSolBalance, parseFloat(data.user.minedSolBalance) || 0);
+                            minedSolBalance = Math.max(minedSolBalance, parseFloat(data.user.minedSolBalance) || 0);
                         }
                         
                         if (typeof data.user.availableSolBalance !== 'undefined') {
@@ -2174,6 +2174,12 @@ document.addEventListener('change', function(e) {
         if (typeof checkReferralOnStartup === 'function') checkReferralOnStartup();
         if (typeof updateDirectMembersUI === 'function') updateDirectMembersUI();
     };
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            saveBotState();
+        }
+    });
+        
     window.addEventListener('beforeunload', function () {
         saveBotState();
     });
