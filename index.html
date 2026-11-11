@@ -2108,7 +2108,10 @@ document.addEventListener('change', function(e) {
                     });
                     const data = await response.json();
                     if (data.success && data.user) {
-                        if (typeof minedSolBalance !== 'undefined') minedSolBalance = Math.max(minedSolBalance, data.user.minedSolBalance || 0);
+                        // Sync server balance only if local balance is not already reset by claim
+                        if (typeof data.user.minedSolBalance !== 'undefined' && minedSolBalance === 0) {
+                            minedSolBalance = parseFloat(data.user.minedSolBalance) || 0;
+                        }
                         if (typeof availableSolBalance !== 'undefined') {
                             availableSolBalance = Math.max(availableSolBalance, data.user.availableSolBalance || 0);
                         } else {
@@ -2128,10 +2131,7 @@ document.addEventListener('change', function(e) {
             }
         }, 100);
 
-        let totalCalculatedIncomes = directReferralBonus + teamReferralBonus + teamOverrideBonus + rankRoyaltyBonus;
-        if (availableSolBalance < (totalCalculatedIncomes + totalSelfFarmingClaimed)) {
-            availableSolBalance = totalCalculatedIncomes + totalSelfFarmingClaimed;
-        }
+        availableSolBalance = savedState && savedState.availableSolBalance !== undefined ? parseFloat(savedState.availableSolBalance) : availableSolBalance;
 
         const balanceEl = document.getElementById('balance-delay') || document.getElementById('balance-display');
         if (balanceEl) {
