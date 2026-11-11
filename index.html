@@ -2108,8 +2108,7 @@ document.addEventListener('change', function(e) {
                     });
                     const data = await response.json();
                     if (data.success && data.user) {
-                        // Sync server balance only if local balance is not already reset by claim
-                        if (typeof data.user.minedSolBalance !== 'undefined' && minedSolBalance === 0) {
+                        if (typeof data.user.minedSolBalance !== 'undefined') {
                             minedSolBalance = parseFloat(data.user.minedSolBalance) || 0;
                         }
                         if (typeof availableSolBalance !== 'undefined') {
@@ -2119,11 +2118,17 @@ document.addEventListener('change', function(e) {
                         }
                         if (typeof totalSelfFarmingClaimed !== 'undefined') totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
                         
-                        // Update UI smoothly in background
+                        const minedEl = document.getElementById('mined-balance');
+                        if (minedEl) {
+                            minedEl.innerHTML = `${minedSolBalance.toFixed(8)} <span class="text-solGreen text-lg">SOL</span>`;
+                        }
+
                         const balanceEl = document.getElementById('balance-display');
                         if (balanceEl) {
                             balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
                         }
+                        
+                        saveBotState();
                     }
                 }
             } catch (err) {
@@ -2160,6 +2165,10 @@ document.addEventListener('change', function(e) {
         if (typeof checkReferralOnStartup === 'function') checkReferralOnStartup();
         if (typeof updateDirectMembersUI === 'function') updateDirectMembersUI();
     };
+    window.addEventListener('beforeunload', function () {
+        saveBotState();
+    });
+   
     </script>
 </body>
 </html>
