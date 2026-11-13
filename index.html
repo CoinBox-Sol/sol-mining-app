@@ -1829,6 +1829,32 @@ document.addEventListener('change', function(e) {
             `;
         }
     }
+    
+    function processWithdrawal(index, action) {
+        let wList = JSON.parse(localStorage.getItem('bot_withdrawals') || '[]');
+        let historyList = JSON.parse(localStorage.getItem('bot_withdrawals_history') || '[]');
+        
+        let item = wList[index];
+        if (!item) return;
+        
+        if (action === 'approve') {
+            historyList.unshift({
+                username: item.username,
+                amount: item.amount,
+                address: item.address,
+                status: 'Approved'
+            });
+            localStorage.setItem('bot_withdrawals_history', JSON.stringify(historyList));
+            alert(`Withdrawal of ${item.amount} SOL for ${item.username} Approved Successfully!`);
+        } else {
+            alert(`Withdrawal for ${item.username} Rejected & Refunded!`);
+        }
+        
+        wList.splice(index, 1);
+        localStorage.setItem('bot_withdrawals', JSON.stringify(wList));
+        
+        switchAdminTab('withdrawals');
+    }
 
     // Helper admin action handler functions
     function adminSearchUser() {
