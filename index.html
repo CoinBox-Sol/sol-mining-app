@@ -983,6 +983,7 @@ document.addEventListener('change', function(e) {
             <div class="grid grid-cols-2 gap-2 text-[11px] font-bold">
                 <button onclick="switchAdminTab('stats')" id="adm-btn-stats" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 p-2 rounded-xl text-center cursor-pointer transition">📊 View Stats</button>
                 <button onclick="switchAdminTab('users')" id="adm-btn-users" class="bg-slate-900 text-gray-300 border border-slate-800 p-2 rounded-xl text-center cursor-pointer transition">👥 Manage User</button>
+                <button onclick="switchAdminTab('listusers')" id="adm-btn-list" class="bg-slate-900 text-gray-300 border border-slate-800 p-2 rounded-xl text-center cursor-pointer transition">📋 List All Users</button>
                 <button onclick="switchAdminTab('withdrawals')" id="adm-btn-w/d" class="bg-slate-900 text-gray-300 border border-slate-800 p-2 rounded-xl text-center cursor-pointer transition">🎁 Withdrawals</button>
                 <button onclick="switchAdminTab('broadcast')" id="adm-btn-bc" class="bg-slate-900 text-gray-300 border border-slate-800 p-2 rounded-xl text-center cursor-pointer transition">📢 Broadcast</button>
             </div>
@@ -1681,7 +1682,7 @@ document.addEventListener('change', function(e) {
 
     function switchAdminTab(tab) {
         // Update button styles
-        ['stats', 'users', 'withdrawals', 'broadcast'].forEach(t => {
+        ['stats', 'users', 'listusers', 'withdrawals', 'broadcast'].forEach(t => {
             const btn = document.getElementById(`adm-btn-${t}`);
             if (btn) {
                 if (t === tab) {
@@ -1741,6 +1742,27 @@ document.addEventListener('change', function(e) {
                     </div>
                 </div>
             `;
+        } else if (tab === 'listusers') {
+            area.innerHTML = `
+                <div class="space-y-2">
+                    <div class="text-xs font-bold text-amber-400 mb-1">📋 Registered Users Directory</div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div>
+                            <span class="text-white font-bold block">@CryptoFarmer</span>
+                            <span class="text-[10px] text-gray-400">ID: 5939907983 | Plan: STARTER</span>
+                        </div>
+                        <span class="text-solGreen font-mono font-bold">0.10 SOL</span>
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div>
+                            <span class="text-white font-bold block">@SolanaWhale</span>
+                            <span class="text-[10px] text-gray-400">ID: 8492019382 | Plan: GALAXY</span>
+                        </div>
+                        <span class="text-amber-400 font-mono font-bold">50.00 SOL</span>
+                    </div>
+                </div>
+            `;
+
         } else if (tab === 'withdrawals') {
             area.innerHTML = `
                 <div class="space-y-2">
