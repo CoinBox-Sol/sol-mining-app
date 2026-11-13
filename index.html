@@ -1696,7 +1696,7 @@ document.addEventListener('change', function(e) {
 
             showBotAlert(
                 "✅ Withdrawal Successful!", 
-                `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• Net Sent: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br><span class="text-gray-400">🔗 TxID:</span><br><span class="text-[10px] font-mono break-all text-solGreen">${fakeTxId}</span>`
+                `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• You Will Receive: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br><span class="text-gray-400">🔗 TxID:</span><br><span class="text-[10px] font-mono break-all text-solGreen">${fakeTxId}</span>`
             );
         } else {
             wList.push({
@@ -1712,7 +1712,7 @@ document.addEventListener('change', function(e) {
 
             showBotAlert(
                 "⏳ Pending Admin Approval", 
-                `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• Net Payout: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br>Sent for admin approval.`
+                `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• You Will Receive: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br>Sent for admin approval.`
             );
         }
 
