@@ -967,43 +967,33 @@ document.addEventListener('change', function(e) {
         </div>
     </div>
 
-    <!-- ADMIN PANEL MODAL -->
+    <!-- ADVANCED ADMIN PANEL MODAL -->
     <div id="adminModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-amber-500/40 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+        <div class="bg-cardBg border border-amber-500/40 rounded-3xl p-5 max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] flex flex-col font-mono">
+            
+            <!-- Header -->
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-base font-black text-amber-400 flex items-center space-x-2">
-                    <span>🔐</span> <span>Admin Control Panel</span>
+                <h3 class="text-sm font-black text-amber-400 flex items-center space-x-2">
+                    <span>🛠️</span> <span>ADMIN CONTROL PANEL</span>
                 </h3>
                 <button onclick="closeModal('adminModal')" class="text-gray-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 font-mono">
-                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 text-center">
-                    <span class="text-[9px] text-gray-400 block">Pending Dep.</span>
-                    <strong class="text-xs text-amber-400 font-black">2 Requests</strong>
-                </div>
-                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 text-center">
-                    <span class="text-[9px] text-gray-400 block">Pending W/D</span>
-                    <strong class="text-xs text-solGreen font-black">1 Request</strong>
-                </div>
-                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 text-center">
-                    <span class="text-[9px] text-gray-400 block">Total Users</span>
-                    <strong class="text-xs text-purple-400 font-black">1,420</strong>
-                </div>
+            <!-- Admin Action Navigation Tabs / Grid -->
+            <div class="grid grid-cols-2 gap-2 text-[11px] font-bold">
+                <button onclick="switchAdminTab('stats')" id="adm-btn-stats" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 p-2 rounded-xl text-center cursor-pointer transition">📊 View Stats</button>
+                <button onclick="switchAdminTab('users')" id="adm-btn-users" class="bg-slate-900 text-gray-300 border border-slate-800 p-2 rounded-xl text-center cursor-pointer transition">👥 Manage User</button>
+                <button onclick="switchAdminTab('withdrawals')" id="adm-btn-w/d" class="bg-slate-900 text-gray-300 border border-slate-800 p-2 rounded-xl text-center cursor-pointer transition">🎁 Withdrawals</button>
+                <button onclick="switchAdminTab('broadcast')" id="adm-btn-bc" class="bg-slate-900 text-gray-300 border border-slate-800 p-2 rounded-xl text-center cursor-pointer transition">📢 Broadcast</button>
             </div>
 
-            <div class="flex space-x-2 border-b border-slate-800 pb-2 text-xs font-bold">
-                <button onclick="switchAdminTab('deposits')" id="adm-tab-dep" class="text-amber-400 border-b-2 border-amber-400 pb-1 cursor-pointer">Pending Deposits</button>
-                <button onclick="switchAdminTab('withdrawals')" id="adm-tab-wit" class="text-gray-400 pb-1 cursor-pointer">Pending Withdrawals</button>
-                <button onclick="switchAdminTab('users')" id="adm-tab-usr" class="text-gray-400 pb-1 cursor-pointer">User Manager</button>
-            </div>
-
-            <div id="admin-content-area" class="overflow-y-auto pr-1 flex-1 space-y-3 font-mono text-xs">
-                <!-- Dynamically populated -->
+            <!-- Dynamic Admin Content Area -->
+            <div id="admin-content-area" class="overflow-y-auto pr-1 flex-1 space-y-3 text-xs">
+                <!-- Dynamically loaded via JavaScript -->
             </div>
 
             <button onclick="closeModal('adminModal')" class="w-full bg-slate-800 hover:bg-slate-700 transition py-2.5 rounded-xl font-bold text-xs text-white cursor-pointer">
-                Close Admin Panel
+                Close Panel
             </button>
         </div>
     </div>
@@ -1690,44 +1680,140 @@ document.addEventListener('change', function(e) {
     }
 
     function switchAdminTab(tab) {
-        const area = document.getElementById('admin-content-area');
-        document.getElementById('adm-tab-dep').className = tab === 'deposits' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 cursor-pointer' : 'text-gray-400 pb-1 cursor-pointer';
-        document.getElementById('adm-tab-wit').className = tab === 'withdrawals' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 cursor-pointer' : 'text-gray-400 pb-1 cursor-pointer';
-        document.getElementById('adm-tab-usr').className = tab === 'users' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 cursor-pointer' : 'text-gray-400 pb-1 cursor-pointer';
+        // Update button styles
+        ['stats', 'users', 'withdrawals', 'broadcast'].forEach(t => {
+            const btn = document.getElementById(`adm-btn-${t}`);
+            if (btn) {
+                if (t === tab) {
+                    btn.className = "bg-amber-500/20 text-amber-300 border border-amber-500/40 p-2 rounded-xl text-center cursor-pointer transition";
+                } else {
+                    btn.className = "bg-slate-900 text-gray-300 border border-slate-800 p-2 rounded-xl text-center cursor-pointer transition";
+                }
+            }
+        });
 
-        if (tab === 'deposits') {
+        const area = document.getElementById('admin-content-area');
+        if (!area) return;
+
+        if (tab === 'stats') {
             area.innerHTML = `
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <div class="flex justify-between"><span class="text-gray-300">User: @CryptoFarmer</span><span class="text-amber-400">0.50 SOL</span></div>
-                    <div class="text-[10px] text-gray-400 break-all">TxHash: 5Kj8...9xZ1</div>
-                    <div class="flex space-x-2 pt-1">
-                        <button onclick="alert('Deposit Approved & ID Activated!');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Approve</button>
-                        <button onclick="alert('Deposit Rejected!');" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Reject</button>
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-center">
+                            <span class="text-[10px] text-gray-400 block">Total Users</span>
+                            <strong class="text-sm text-purple-400 font-black">1,420</strong>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-center">
+                            <span class="text-[10px] text-gray-400 block">Active Deposits</span>
+                            <strong class="text-sm text-solGreen font-black">42.50 SOL</strong>
+                        </div>
                     </div>
-                </div>
-            `;
-        } else if (tab === 'withdrawals') {
-            area.innerHTML = `
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <div class="flex justify-between"><span class="text-gray-300">User: @CryptoFarmer</span><span class="text-solGreen">0.25 SOL</span></div>
-                    <div class="text-[10px] text-gray-400 break-all">Address: BY3Tzt...KqjnRZ</div>
-                    <div class="flex space-x-2 pt-1">
-                        <button onclick="alert('Withdrawal Payout Sent Successfully!');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Pay & Complete</button>
-                        <button onclick="alert('Withdrawal Cancelled!');" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Cancel</button>
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div class="text-xs font-bold text-amber-400">⚡ Quick Actions</div>
+                        <button onclick="adminTopupModal('free')" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded-lg text-white font-bold text-xs cursor-pointer">➕ Top-up Free ID</button>
+                        <button onclick="adminTopupModal('paid')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-2 rounded-lg text-white font-bold text-xs cursor-pointer">💎 Top-up Paid ID</button>
                     </div>
                 </div>
             `;
         } else if (tab === 'users') {
             area.innerHTML = `
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <div class="flex justify-between"><span class="text-white font-bold">@CryptoFarmer</span><span class="text-purple-400">STAR RANK</span></div>
-                    <div class="text-[10px] text-gray-400">Balance: 0.00 SOL | Directs: 5</div>
-                    <div class="flex space-x-2 pt-1">
-                        <button onclick="prompt('Enter SOL amount to add/deduct for user:');" class="flex-1 bg-blue-600 hover:bg-blue-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Adjust Balance</button>
+                <div class="space-y-3">
+                    <div class="flex space-x-2">
+                        <input type="text" id="adm-search-user" placeholder="Enter Telegram ID or Username..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <button onclick="adminSearchUser()" class="bg-amber-600 hover:bg-amber-500 px-4 rounded-xl text-white font-bold text-xs cursor-pointer">Search</button>
+                    </div>
+                    <div id="adm-user-result" class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2 hidden">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <span id="res-username" class="text-amber-300 font-bold">@Username</span>
+                            <span id="res-status" class="text-emerald-400 text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">Active</span>
+                        </div>
+                        <div class="text-[11px] text-gray-300 space-y-1">
+                            <div>Deposit: <strong id="res-deposit" class="text-white">0.00 SOL</strong></div>
+                            <div>Sponsor: <strong id="res-sponsor" class="text-sky-400">@Sponsor</strong></div>
+                            <div>Rank: <strong id="res-rank" class="text-amber-400">NO RANK</strong></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 pt-2">
+                            <button onclick="adminAction('block')" class="bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">🚫 Block / Unblock</button>
+                            <button onclick="adminAction('sponsor')" class="bg-blue-600 hover:bg-blue-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">🔗 Change Sponsor</button>
+                            <button onclick="adminAction('balance')" class="bg-purple-600 hover:bg-purple-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">💰 Manage Balance</button>
+                            <button onclick="adminAction('rank')" class="bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">👑 Update Rank</button>
+                        </div>
                     </div>
                 </div>
             `;
+        } else if (tab === 'withdrawals') {
+            area.innerHTML = `
+                <div class="space-y-2">
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between"><span class="text-gray-300">User: @CryptoFarmer</span><span class="text-solGreen font-bold">0.25 SOL</span></div>
+                        <div class="text-[10px] text-gray-400 break-all">Address: BY3Tzt...KqjnRZ</div>
+                        <div class="flex space-x-2 pt-1">
+                            <button onclick="alert('Withdrawal Approved & Sent!');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Approve</button>
+                            <button onclick="alert('Withdrawal Rejected!');" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Reject</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (tab === 'broadcast') {
+            area.innerHTML = `
+                <div class="space-y-3">
+                    <label class="text-[10px] text-gray-400 block font-bold uppercase">Broadcast Message to All Bot Users</label>
+                    <textarea id="broadcast-msg" rows="4" placeholder="Type your announcement or promotional message here..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white outline-none"></textarea>
+                    <button onclick="sendBroadcastMessage()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:opacity-90 py-2.5 rounded-xl text-white font-bold text-xs cursor-pointer shadow-lg">
+                        🚀 Send Broadcast to All Users
+                    </button>
+                </div>
+            `;
         }
+    }
+
+    // Helper admin action handler functions
+    function adminSearchUser() {
+        const query = document.getElementById('adm-search-user').value.trim();
+        if (!query) {
+            alert('Please enter a Telegram ID or Username to search.');
+            return;
+        }
+        // Show result box for demonstration / connectivity
+        const resBox = document.getElementById('adm-user-result');
+        if (resBox) {
+            resBox.classList.remove('hidden');
+            document.getElementById('res-username').innerText = `@${query}`;
+        }
+    }
+
+    function adminAction(type) {
+        if (type === 'block') {
+            alert('User status toggled: ID blocked/unblocked successfully!');
+        } else if (type === 'sponsor') {
+            let newSponsor = prompt("Enter new Sponsor Telegram Username or ID:");
+            if (newSponsor) alert(`Sponsor updated to @${newSponsor} successfully!`);
+        } else if (type === 'balance') {
+            let amt = prompt("Enter amount to add (positive) or deduct (negative) SOL:");
+            if (amt) alert(`User balance adjusted by ${amt} SOL successfully!`);
+        } else if (type === 'rank') {
+            let rank = prompt("Enter Rank to assign (e.g. STAR RANK, GALAXY RANK):");
+            if (rank) alert(`Rank updated to ${rank} successfully!`);
+        }
+    }
+
+    function adminTopupModal(type) {
+        let userId = prompt(`Enter Telegram ID/Username for ${type.toUpperCase()} Top-up:`);
+        if (!userId) return;
+        let amount = prompt("Enter SOL Deposit Amount:");
+        if (amount) {
+            alert(`Successfully processed ${type.toUpperCase()} top-up of ${amount} SOL for user ${userId}!`);
+        }
+    }
+
+    function sendBroadcastMessage() {
+        const msg = document.getElementById('broadcast-msg').value.trim();
+        if (!msg) {
+            alert('Please enter a message to broadcast.');
+            return;
+        }
+        alert('Broadcast message successfully sent to all registered users!');
+        document.getElementById('broadcast-msg').value = '';
     }
 
     // Calculate and update Team Volumes dynamically from levelMembersData
