@@ -1662,7 +1662,6 @@ document.addEventListener('change', function(e) {
             return;
         }
 
-        // --- 1. Check Daily Limit Condition ---
         const lastWithdrawDate = localStorage.getItem('last_withdrawal_date');
         const todayStr = new Date().toDateString();
 
@@ -1678,14 +1677,17 @@ document.addEventListener('change', function(e) {
         let historyList = JSON.parse(localStorage.getItem('bot_withdrawals_history') || '[]');
         let currentUserName = profileName || localStorage.getItem('sol_profile_name') || '@CryptoUser';
 
-        // --- 2. Auto Payout vs Admin Approval Logic ---
+        const feeAmount = amt * 0.10;
+        const netReceiveAmount = amt - feeAmount;
+
         if (amt >= 0.01 && amt <= 0.10) {
-            // Generate a fake realistic Solana TxID for professional look
             const fakeTxId = "5tQTRJN5zktug6AbyLHYatBRXwP1KjRxjCRCZZ2gsWtPa6hCzvhs1iZ7zAbx5HvkCHhppUUBrCHQTXgfSMekeER";
             
             historyList.unshift({
                 username: currentUserName,
-                amount: amt.toFixed(4),
+                requestedAmount: amt.toFixed(4),
+                fee: feeAmount.toFixed(4),
+                amount: netReceiveAmount.toFixed(4),
                 address: addr,
                 status: 'Auto-Paid'
             });
@@ -1694,13 +1696,15 @@ document.addEventListener('change', function(e) {
 
             showBotAlert(
                 "✅ Withdrawal Successful!", 
-                `Your <strong>${amt.toFixed(4)} SOL</strong> request has been approved and sent to your wallet.<br><br><span class="text-gray-400">🔗 TxID:</span><br><span class="text-[10px] font-mono break-all text-solGreen">${fakeTxId}</span>`
+                `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• Net Sent: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br><span class="text-gray-400">🔗 TxID:</span><br><span class="text-[10px] font-mono break-all text-solGreen">${fakeTxId}</span>`
             );
         } else {
             wList.push({
                 id: Date.now(),
                 username: currentUserName,
-                amount: amt.toFixed(4),
+                requestedAmount: amt.toFixed(4),
+                fee: feeAmount.toFixed(4),
+                amount: netReceiveAmount.toFixed(4),
                 address: addr
             });
             localStorage.setItem('bot_withdrawals', JSON.stringify(wList));
@@ -1708,12 +1712,32 @@ document.addEventListener('change', function(e) {
 
             showBotAlert(
                 "⏳ Pending Admin Approval", 
-                `Your withdrawal request of <strong>${amt.toFixed(4)} SOL</strong> is greater than 0.10 SOL and has been sent for admin approval.`
+                `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• Net Payout: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br>Sent for admin approval.`
             );
         }
 
         document.getElementById('withdraw-amount').value = '';
         closeModal('withdrawModal');
+    }
+
+    function showBotAlert(title, message) {
+        let existingModal = document.getElementById('botAlertModal');
+        if (existingModal) existingModal.remove();
+
+        const modalHtml = `
+            <div id="botAlertModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-[#131c2e] border border-slate-700 rounded-3xl p-5 max-w-sm w-full space-y-3 shadow-2xl font-mono">
+                    <div class="text-sm font-bold text-white">${title}</div>
+                    <div class="text-xs text-gray-300 leading-relaxed bg-slate-900/90 p-3 rounded-2xl border border-slate-800">
+                        ${message}
+                    </div>
+                    <button onclick="document.getElementById('botAlertModal').remove()" class="w-full bg-solPurple hover:opacity-90 transition py-2.5 rounded-xl font-bold text-xs text-white cursor-pointer">
+                        OK
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
     // Helper function to show Telegram-style custom bot alert boxes
