@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const { Connection, Keypair, PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } = require('@solana/web3.js');
 
 const app = express();
 app.use(express.json());
@@ -9,6 +10,25 @@ console.log('CORS is enabled for all origins');
 
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
+
+// --- Solana Connection Setup ---
+const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+
+// --- Load Hot Wallet from Environment Variables ---
+let adminKeypair;
+try {
+    const secretKeyString = process.env.WALLET_PRIVATE_KEY;
+    if (secretKeyString) {
+        const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
+        adminKeypair = Keypair.fromSecretKey(secretKey);
+        console.log('Admin Hot Wallet Loaded Successfully:', adminKeypair.publicKey.toBase58());
+    } else {
+        console.warn('Warning: WALLET_PRIVATE_KEY is not set in environment variables.');
+    }
+} catch (err) {
+    console.error('Wallet Initialization Error: Check WALLET_PRIVATE_KEY format in Render env variables.', err.message);
+}
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log('MongoDB Connected Successfully!'))
@@ -51,6 +71,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+// --- User Sync API Endpoint ---
 app.post('/api/user/sync', async (req, res) => {
     try {
         const { 
@@ -99,7 +120,7 @@ app.post('/api/user/sync', async (req, res) => {
                 promoBonusBalance: 0.0100
             });
         } else {
-            // --- OFFLINE AUTO-MINING / TIME-BASED CALCULATION ---
+            // Offline auto-mining calculation based on elapsed time
             if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE') {
                 const now = Date.now();
                 const diffSeconds = (now - new Date(user.lastUpdated).getTime()) / 1000;
@@ -122,7 +143,7 @@ app.post('/api/user/sync', async (req, res) => {
             user.firstName = firstName;
         }
 
-        // Safe numeric assignments (Prevent balance dropping)
+        // Safe numeric assignments
         if (minedSolBalance !== undefined) {
             user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance);
         }
@@ -163,7 +184,7 @@ app.post('/api/user/sync', async (req, res) => {
             user.levelMembersData['1'] = dummyMembersList;
         }
 
-        // Calculate Level Volumes and Total Team Members Dynamically
+        // Calculate Level Volumes and Total Team Members
         let calculatedLevelVolumes = Array(26).fill(0.0);
         let totalTeamMembersCount = 0;
         let directTeamVol = 0;
@@ -221,6 +242,77 @@ app.post('/api/user/sync', async (req, res) => {
     } catch (error) {
         console.error('Sync Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// --- New Auto-Withdrawal API Endpoint ---
+app.post('/api/withdraw', async (req, res) => {
+    try {
+        const { telegramId, amount, address } = req.body;
+
+        if (!telegramId || !amount || !address) {
+            return res.status(400).json({ success: false, error: 'Missing required withdrawal fields' });
+        }
+
+        const parsedAmount = parseFloat(amount);
+        if (parsedAmount < 0.01) {
+            return res.status(400).json({ success: false, error: 'Minimum withdrawal amount is 0.01 SOL' });
+        }
+
+        // Calculate 10% fee and 90% net receive amount
+        const feeAmount = parsedAmount * 0.10;
+        const netReceiveAmount = parsedAmount - feeAmount;
+
+        // Check if auto-payout range applies (0.01 to 0.10 SOL)
+        if (parsedAmount >= 0.01 && parsedAmount <= 0.10) {
+            if (!adminKeypair) {
+                return res.status(500).json({ success: false, error: 'Server wallet not configured for auto-payouts' });
+            }
+
+            // Execute real Solana Blockchain Transfer
+            const recipientPubKey = new PublicKey(address);
+            const lamports = Math.floor(netReceiveAmount * 1000000000); // Convert SOL to Lamports
+
+            const transaction = new Transaction().add(
+                SystemProgram.transfer({
+                    fromPubkey: adminKeypair.publicKey,
+                    toPubkey: recipientPubKey,
+                    lamports: lamports,
+                })
+            );
+
+            const txId = await sendAndConfirmTransaction(
+                connection,
+                transaction,
+                [adminKeypair]
+            );
+
+            console.log(`Auto-Withdrawal Executed Successfully! TxID: ${txId}`);
+
+            return res.json({
+                success: true,
+                status: 'Auto-Paid',
+                txId: txId,
+                requestedAmount: parsedAmount,
+                fee: feeAmount,
+                netAmount: netReceiveAmount,
+                message: 'Withdrawal processed successfully via blockchain.'
+            });
+        } else {
+            // For amounts above 0.10 SOL, send for manual admin approval
+            return res.json({
+                success: true,
+                status: 'Pending Admin Approval',
+                requestedAmount: parsedAmount,
+                fee: feeAmount,
+                netAmount: netReceiveAmount,
+                message: 'Withdrawal request sent for admin approval.'
+            });
+        }
+
+    } catch (error) {
+        console.error('Withdrawal Processing Error:', error);
+        return res.status(500).json({ success: false, error: error.message || 'Blockchain transaction failed' });
     }
 });
 
