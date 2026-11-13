@@ -1765,13 +1765,36 @@ document.addEventListener('change', function(e) {
 
         } else if (tab === 'withdrawals') {
             area.innerHTML = `
-                <div class="space-y-2">
+                <div class="space-y-3">
+                    <div class="text-xs font-bold text-amber-400 mb-1">🎁 Pending Withdrawals Requests</div>
+                    
+                    <!-- Withdrawal Item 1 -->
                     <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                        <div class="flex justify-between"><span class="text-gray-300">User: @CryptoFarmer</span><span class="text-solGreen font-bold">0.25 SOL</span></div>
-                        <div class="text-[10px] text-gray-400 break-all">Address: BY3Tzt...KqjnRZ</div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-white font-bold text-xs">@CryptoFarmer</span>
+                            <span class="text-solGreen font-mono font-bold text-xs">0.25 SOL</span>
+                        </div>
+                        <div class="text-[10px] text-gray-400 break-all bg-slate-950 p-1.5 rounded border border-slate-800">
+                            Addr: BY3Tzt7...KqjnRZ92
+                        </div>
                         <div class="flex space-x-2 pt-1">
-                            <button onclick="alert('Withdrawal Approved & Sent!');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Approve</button>
-                            <button onclick="alert('Withdrawal Rejected!');" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Reject</button>
+                            <button onclick="alert('Withdrawal Approved & Sent to Blockchain!');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Approve</button>
+                            <button onclick="alert('Withdrawal Rejected & Refunded!');" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Reject</button>
+                        </div>
+                    </div>
+
+                    <!-- Withdrawal Item 2 -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-white font-bold text-xs">@SolanaWhale</span>
+                            <span class="text-solGreen font-mono font-bold text-xs">1.50 SOL</span>
+                        </div>
+                        <div class="text-[10px] text-gray-400 break-all bg-slate-950 p-1.5 rounded border border-slate-800">
+                            Addr: 9WzDXwB...7x2kLm9
+                        </div>
+                        <div class="flex space-x-2 pt-1">
+                            <button onclick="alert('Withdrawal Approved & Sent to Blockchain!');" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Approve</button>
+                            <button onclick="alert('Withdrawal Rejected & Refunded!');" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">Reject</button>
                         </div>
                     </div>
                 </div>
