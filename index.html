@@ -1001,92 +1001,46 @@ document.addEventListener('change', function(e) {
 
     <!-- JavaScript Application Logic -->
     <script>
-    // Safely load saved state from localStorage with robust null/undefined checks
-    let savedState = null;
-    try {
-        const rawState = localStorage.getItem('sol_bot_state_v2');
-        if (rawState) {
-            savedState = JSON.parse(rawState);
-        }
-    } catch (e) {
-        savedState = null;
-        localStorage.removeItem('sol_bot_state_v2');
-    }
 
-    let minedSolBalance = savedState && savedState.minedSolBalance !== undefined ? parseFloat(savedState.minedSolBalance) || 0.0000 : 0.0000;
-    let availableSolBalance = savedState && savedState.availableSolBalance !== undefined ? parseFloat(savedState.availableSolBalance) || 0.0000 : 0.0000;
-    let totalSelfFarmingClaimed = savedState && savedState.totalSelfFarmingClaimed !== undefined ? parseFloat(savedState.totalSelfFarmingClaimed) || 0.0000 : 0.0000;
-    let activePlanTier = savedState && savedState.activePlanTier ? savedState.activePlanTier : 'NONE';
-    let userDepositAmount = savedState && savedState.userDepositAmount !== undefined ? parseFloat(savedState.userDepositAmount) || 0.00 : 0.00;
-    let miningSpeedPerSec = savedState && savedState.miningSpeedPerSec !== undefined ? parseFloat(savedState.miningSpeedPerSec) || 0.0000 : 0.0000;
-    let activeDirectsCount = savedState && savedState.activeDirectsCount !== undefined ? parseInt(savedState.activeDirectsCount) || 0 : 0;
+    let minedSolBalance = 0.0000;
+    let availableSolBalance = 0.0000;
+    let totalSelfFarmingClaimed = 0.0000;
+    let activePlanTier = 'NONE';
+    let userDepositAmount = 0.00;
+    let miningSpeedPerSec = 0.0000;
+    let activeDirectsCount = 0;
 
     // Promo, Earning Breakdowns & Ranks State
-    let promoBonusBalance = savedState && savedState.promoBonusBalance !== undefined ? parseFloat(savedState.promoBonusBalance) || 0.0100 : 0.0100;
-    let totalPromoTopups = savedState && savedState.totalPromoTopups !== undefined ? parseInt(savedState.totalPromoTopups) || 0 : 0;
-    let lastProcessedPromoTopups = savedState && savedState.lastProcessedPromoTopups !== undefined ? parseInt(savedState.lastProcessedPromoTopups) || 0 : 0;
-    let directReferralBonus = savedState && savedState.directReferralBonus !== undefined ? parseFloat(savedState.directReferralBonus) || 0.0000 : 0.0000;
-    let teamReferralBonus = savedState && savedState.teamReferralBonus !== undefined ? parseFloat(savedState.teamReferralBonus) || 0.0000 : 0.0000;
-    let teamOverrideBonus = savedState && savedState.teamOverrideBonus !== undefined ? parseFloat(savedState.teamOverrideBonus) || 0.0000 : 0.0000;
-    let rankRoyaltyBonus = savedState && savedState.rankRoyaltyBonus !== undefined ? parseFloat(savedState.rankRoyaltyBonus) || 0.0000 : 0.0000;
-    let highestAchievedRank = savedState && savedState.highestAchievedRank ? savedState.highestAchievedRank : 'NO RANK';
+    let promoBonusBalance = 0.0100;
+    let totalPromoTopups = 0;
+    let lastProcessedPromoTopups = 0;
+    let directReferralBonus = 0.0000;
+    let teamReferralBonus = 0.0000;
+    let teamOverrideBonus = 0.0000;
+    let rankRoyaltyBonus = 0.0000;
+    let highestAchievedRank = 'NO RANK';
 
     // Level-wise Team Business Volumes & Members Data (25 Levels)
-    let levelVolumes = savedState && Array.isArray(savedState.levelVolumes) ? savedState.levelVolumes : Array(26).fill(0.0);
-    let levelMembersData = savedState && savedState.levelMembersData && typeof savedState.levelMembersData === 'object' ? savedState.levelMembersData : {};
+    let levelVolumes = Array(26).fill(0.0);
+    let levelMembersData = {};
 
     // Rank Business Legs Data (Strongest Leg 40% & Other Legs 60%)
-    let userStrongestDone = savedState && savedState.userStrongestDone !== undefined ? parseFloat(savedState.userStrongestDone) || 0.0 : 0.0;
-    let userOtherDone = savedState && savedState.userOtherDone !== undefined ? parseFloat(savedState.userOtherDone) || 0.0 : 0.0;
+    let userStrongestDone = 0.0;
+    let userOtherDone = 0.0;
 
     // Profile Settings State Data
-    let profileName = savedState && savedState.profileName ? savedState.profileName : '';
-    let profileMobile = savedState && savedState.profileMobile ? savedState.profileMobile : '';
-    let profileEmail = savedState && savedState.profileEmail ? savedState.profileEmail : '';
-    let profileSolAddress = savedState && savedState.profileSolAddress ? savedState.profileSolAddress : '';
+    let profileName = '';
+    let profileMobile = '';
+    let profileEmail = '';
+    let profileSolAddress = '';
 
     // Capping Protocol & Total Earned State
-    let totalEarnedAmount = savedState && savedState.totalEarnedAmount !== undefined ? parseFloat(savedState.totalEarnedAmount) || 0.0000 : 0.0000;
+    let totalEarnedAmount = 0.0000;
 
     // Admin & Completed Withdrawals Lists State
-    let adminPendingDeposits = savedState && Array.isArray(savedState.adminPendingDeposits) ? savedState.adminPendingDeposits : [];
-    let adminPendingWithdrawals = savedState && Array.isArray(savedState.adminPendingWithdrawals) ? savedState.adminPendingWithdrawals : [];
-    let completedWithdrawals = savedState && Array.isArray(savedState.completedWithdrawals) ? savedState.completedWithdrawals : [];
-
-    // Comprehensive function to save all bot states automatically
-    function saveBotState() {
-        const currentState = {
-            minedSolBalance,
-            availableSolBalance,
-            totalSelfFarmingClaimed,
-            activePlanTier,
-            userDepositAmount,
-            miningSpeedPerSec,
-            activeDirectsCount,
-            promoBonusBalance,
-            totalPromoTopups,
-            lastProcessedPromoTopups,
-            directReferralBonus,
-            teamReferralBonus,
-            teamOverrideBonus,
-            rankRoyaltyBonus,
-            highestAchievedRank,
-            levelVolumes,
-            levelMembersData,
-            userStrongestDone,
-            userOtherDone,
-            profileName,
-            profileMobile,
-            profileEmail,
-            profileSolAddress,
-            totalEarnedAmount,
-            adminPendingDeposits,
-            adminPendingWithdrawals,
-            completedWithdrawals,
-            lastSavedTimestamp: Date.now()
-         };
-         localStorage.setItem('sol_bot_state_v2', JSON.stringify(currentState));
-    }
+    let adminPendingDeposits = [];
+    let adminPendingWithdrawals = [];
+    let completedWithdrawals = [];
 
     // Update mining speed and hashrate based on precise package tier and daily percentage rules
     function updateMiningSpeedForPlan(planName, depositAmount = 0.00) {
@@ -1308,11 +1262,9 @@ document.addEventListener('change', function(e) {
         const remCapEl = document.getElementById('remaining-cap-amount');
         if (remCapEl) remCapEl.innerText = `${(maxCapVal - 0.00).toFixed(4)} SOL`;
         
-        saveBotState();
     }
         
     // Real-time second-by-second smooth mining loop
-    let tickCounter = 0;
     setInterval(() => {
         if (userDepositAmount > 0) {
              minedSolBalance += miningSpeedPerSec;
@@ -1320,12 +1272,6 @@ document.addEventListener('change', function(e) {
              const minedEl = document.getElementById('mined-balance');
              if (minedEl) {
                  minedEl.innerHTML = `${minedSolBalance.toFixed(8)} <span class="text-solGreen text-lg">SOL</span>`;
-             }
-
-             tickCounter++;
-             if (tickCounter >= 10) {
-                 tickCounter = 0;
-                 saveBotState();
              }
          }
      }, 1000);
@@ -1361,8 +1307,6 @@ document.addEventListener('change', function(e) {
         if (minedEl) {
             minedEl.innerHTML = `0.00000000 <span class="text-solGreen text-lg">SOL</span>`;
         }
-
-        saveBotState();
 
         try {
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -1437,18 +1381,12 @@ document.addEventListener('change', function(e) {
         const mobile = document.getElementById('profile-mobile').value;
         const email = document.getElementById('profile-email').value;
         const solAddress = document.getElementById('profile-sol-address').value;
-        const avatarUrl = selectedAvatarBase64 || localStorage.getItem('sol_profile_avatar') || "";
+        const avatarUrl = selectedAvatarBase64 || "";
 
         profileName = name;
         profileMobile = mobile;
         profileEmail = email;
         profileSolAddress = solAddress;
-
-        localStorage.setItem('sol_profile_name', name);
-        localStorage.setItem('sol_profile_mobile', mobile);
-        localStorage.setItem('sol_profile_email', email);
-        localStorage.setItem('sol_profile_address', solAddress);
-        localStorage.setItem('sol_profile_avatar', avatarUrl);
 
         if (name) {
             document.getElementById('username').innerText = name;
@@ -1463,27 +1401,24 @@ document.addEventListener('change', function(e) {
             }
         }
 
-        saveBotState();
-        alert('Profile and withdrawal address saved successfully!');
+        alert('Profile and withdrawal address updated successfully!');
     }
 
     function loadSavedProfileToWithdraw() {
-        const savedAddress = profileSolAddress || localStorage.getItem('sol_profile_address');
-        if (savedAddress) {
+        if (profileSolAddress) {
             const withdrawAddrInput = document.getElementById('withdraw-address');
             if (withdrawAddrInput) {
-                withdrawAddrInput.value = savedAddress;
+                withdrawAddrInput.value = profileSolAddress;
             }
         }
     }
 
     function loadProfileOnStartup() {
-        const savedName = profileName || localStorage.getItem('sol_profile_name') || '';
-        if (savedName) {
+        if (profileName) {
             const profileNameInput = document.getElementById('profile-name');
             const usernameEl = document.getElementById('username');
-            if (profileNameInput) profileNameInput.value = savedName;
-            if (usernameEl) usernameEl.innerText = savedName;
+            if (profileNameInput) profileNameInput.value = profileName;
+            if (usernameEl) usernameEl.innerText = profileName;
         } else {
             const usernameEl = document.getElementById('username');
             if (usernameEl) usernameEl.innerText = '';
@@ -1501,17 +1436,6 @@ document.addEventListener('change', function(e) {
             const solAddrInput = document.getElementById('profile-sol-address');
             if (solAddrInput) solAddrInput.value = profileSolAddress;
         }
-        
-        const savedAvatar = localStorage.getItem('sol_profile_avatar');
-        if (savedAvatar) {
-            const avatarImg = document.getElementById('user-avatar-img');
-            const solLogo = document.getElementById('user-sol-logo');
-            if (avatarImg && solLogo) {
-                avatarImg.src = savedAvatar;
-                avatarImg.classList.remove('hidden');
-                solLogo.classList.add('hidden');
-            }
-        }
     }
 
     function copyDepositAddress() {
@@ -1524,6 +1448,7 @@ document.addEventListener('change', function(e) {
         document.body.removeChild(tempInput);
         alert("Deposit wallet address copied to clipboard!");
     }
+    
     // Referral & Promo Bonus Logic on Startup
     function checkReferralOnStartup() {
         const params = new URLSearchParams(window.location.search);
@@ -1569,7 +1494,7 @@ document.addEventListener('change', function(e) {
         totalPromoTopups = Math.floor(directCount / 10);
         promoBonusBalance = (directCount % 10) * 0.01;
 
-        if (typeof lastProcessedPromoTopups === 'undefined' || lastProcessedPromoTopups === null || localStorage.getItem('sol_bot_state_v2') === null) {
+        if (typeof lastProcessedPromoTopups === 'undefined' || lastProcessedPromoTopups === null) {
             lastProcessedPromoTopups = totalPromoTopups;
         }
 
@@ -1592,7 +1517,6 @@ document.addEventListener('change', function(e) {
 
         updateDirectMembersUI();
         calculateAndUpdateTeamVolumes();
-        saveBotState();
     }
 
     function updateDirectMembersUI() {
@@ -1673,9 +1597,9 @@ document.addEventListener('change', function(e) {
             return;
         }
 
-        let wList = JSON.parse(localStorage.getItem('bot_withdrawals') || '[]');
-        let historyList = JSON.parse(localStorage.getItem('bot_withdrawals_history') || '[]');
-        let currentUserName = profileName || localStorage.getItem('sol_profile_name') || '@CryptoUser';
+        let wList = completedWithdrawals || [];
+        let historyList = adminPendingWithdrawals || [];
+        let currentUserName = profileName || '@CryptoUser';
 
         const feeAmount = amt * 0.10;
         const netReceiveAmount = amt - feeAmount;
@@ -1691,7 +1615,6 @@ document.addEventListener('change', function(e) {
                 address: addr,
                 status: 'Auto-Paid'
             });
-            localStorage.setItem('bot_withdrawals_history', JSON.stringify(historyList));
             localStorage.setItem('last_withdrawal_date', todayStr);
 
             showBotAlert(
@@ -1707,7 +1630,6 @@ document.addEventListener('change', function(e) {
                 amount: netReceiveAmount.toFixed(4),
                 address: addr
             });
-            localStorage.setItem('bot_withdrawals', JSON.stringify(wList));
             localStorage.setItem('last_withdrawal_date', todayStr);
 
             showBotAlert(
@@ -1718,26 +1640,6 @@ document.addEventListener('change', function(e) {
 
         document.getElementById('withdraw-amount').value = '';
         closeModal('withdrawModal');
-    }
-
-    function showBotAlert(title, message) {
-        let existingModal = document.getElementById('botAlertModal');
-        if (existingModal) existingModal.remove();
-
-        const modalHtml = `
-            <div id="botAlertModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                <div class="bg-[#131c2e] border border-slate-700 rounded-3xl p-5 max-w-sm w-full space-y-3 shadow-2xl font-mono">
-                    <div class="text-sm font-bold text-white">${title}</div>
-                    <div class="text-xs text-gray-300 leading-relaxed bg-slate-900/90 p-3 rounded-2xl border border-slate-800">
-                        ${message}
-                    </div>
-                    <button onclick="document.getElementById('botAlertModal').remove()" class="w-full bg-solPurple hover:opacity-90 transition py-2.5 rounded-xl font-bold text-xs text-white cursor-pointer">
-                        OK
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
     // Helper function to show Telegram-style custom bot alert boxes
@@ -1867,8 +1769,8 @@ document.addEventListener('change', function(e) {
             `;
 
         } else if (tab === 'withdrawals') {
-            let wList = JSON.parse(localStorage.getItem('bot_withdrawals') || '[]');
-            let historyList = JSON.parse(localStorage.getItem('bot_withdrawals_history') || '[]');
+            let wList = adminPendingWithdrawals || [];
+            let historyList = completedWithdrawals || [];
 
             let html = '<div class="space-y-4">';
             
@@ -1907,11 +1809,11 @@ document.addEventListener('change', function(e) {
                         <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 text-xs flex justify-between items-center">
                             <div>
                                 <span class="text-white font-bold block">${h.username}</span>
-                                <span class="text-[10px] text-gray-400">Addr: ${h.address.substring(0, 10)}...</span>
+                                <span class="text-[10px] text-gray-400">Addr: ${h.address ? h.address.substring(0, 10) : ''}...</span>
                             </div>
                             <div class="text-right">
                                 <span class="text-solGreen font-mono font-bold block">${h.amount} SOL</span>
-                                <span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold">${h.status}</span>
+                                <span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold">${h.status || 'Auto-Paid'}</span>
                             </div>
                         </div>
                     `;
@@ -1934,8 +1836,8 @@ document.addEventListener('change', function(e) {
     }
     
     function processWithdrawal(index, action) {
-        let wList = JSON.parse(localStorage.getItem('bot_withdrawals') || '[]');
-        let historyList = JSON.parse(localStorage.getItem('bot_withdrawals_history') || '[]');
+        let wList = adminPendingWithdrawals || [];
+        let historyList = completedWithdrawals || [];
         
         let item = wList[index];
         if (!item) return;
@@ -1947,14 +1849,12 @@ document.addEventListener('change', function(e) {
                 address: item.address,
                 status: 'Approved'
             });
-            localStorage.setItem('bot_withdrawals_history', JSON.stringify(historyList));
             alert(`Withdrawal of ${item.amount} SOL for ${item.username} Approved Successfully!`);
         } else {
             alert(`Withdrawal for ${item.username} Rejected & Refunded!`);
         }
         
         wList.splice(index, 1);
-        localStorage.setItem('bot_withdrawals', JSON.stringify(wList));
         
         switchAdminTab('withdrawals');
     }
@@ -2130,7 +2030,6 @@ document.addEventListener('change', function(e) {
 
         if (typeof renderLevels === 'function') renderLevels();
         if (typeof renderAllRanks === 'function') renderAllRanks();
-        saveBotState();
     }
 
     // Render 25 Levels for Team Override Bonus with Direct Business Condition
@@ -2347,16 +2246,6 @@ document.addEventListener('change', function(e) {
 
     // Initialize on Window Load - Instant Rendering
     window.onload = function() {
-        if (savedState && savedState.lastSavedTimestamp && userDepositAmount > 0) {
-            const elapsedSeconds = (Date.now() - savedState.lastSavedTimestamp) / 1000;
-            if (elapsedSeconds > 0) {
-                minedSolBalance += elapsedSeconds * miningSpeedPerSec;
-                const minedEl = document.getElementById('mined-balance');
-                if (minedEl) {
-                    minedEl.innerHTML = `${minedSolBalance.toFixed(8)} <span class="text-solGreen text-lg">SOL</span>`;
-                }
-            }
-        }
         calculateAndUpdateTeamVolumes();
 
         if (userDepositAmount >= 25.10) {
@@ -2391,10 +2280,9 @@ document.addEventListener('change', function(e) {
         }
 
         if (!nameDisplay) {
-            let savedName = localStorage.getItem('sol_profile_name') || '';
+            let savedName = profileName || '';
             if (savedName === '@User' || savedName === 'User' || !savedName) {
                 nameDisplay = '';
-                localStorage.removeItem('sol_profile_name');
             } else {
                 nameDisplay = savedName;
             }
@@ -2404,7 +2292,7 @@ document.addEventListener('change', function(e) {
         if (usernameEl) usernameEl.innerText = nameDisplay;
 
         const profileNameInput = document.getElementById('profile-name');
-        if (profileNameInput && !localStorage.getItem('sol_profile_name')) {
+        if (profileNameInput && !profileName) {
             profileNameInput.value = nameDisplay;
         }
 
@@ -2445,7 +2333,7 @@ document.addEventListener('change', function(e) {
             window.Telegram.WebApp.expand();
         }
 
-        // --- BACKGROUND SYNC (Non-blocking, Instant Load) ---
+        // --- BACKGROUND SYNC (Non-blocking, Instant Load from MongoDB) ---
         setTimeout(async () => {
             try {
                 if (tgUser && tgUser.id) {
@@ -2495,16 +2383,12 @@ document.addEventListener('change', function(e) {
                         if (balanceEl) {
                             balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
                         }
-                        
-                        saveBotState();
                     }
                 }
             } catch (err) {
                 console.error("Background Sync Error:", err);
             }
         }, 100);
-
-        availableSolBalance = savedState && savedState.availableSolBalance !== undefined ? parseFloat(savedState.availableSolBalance) : availableSolBalance;
 
         const balanceEl = document.getElementById('balance-delay') || document.getElementById('balance-display');
         if (balanceEl) {
@@ -2533,16 +2417,6 @@ document.addEventListener('change', function(e) {
         if (typeof checkReferralOnStartup === 'function') checkReferralOnStartup();
         if (typeof updateDirectMembersUI === 'function') updateDirectMembersUI();
     };
-    document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-            saveBotState();
-        }
-    });
-        
-    window.addEventListener('beforeunload', function () {
-        saveBotState();
-    });
-   
     </script>
 </body>
 </html>
