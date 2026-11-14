@@ -236,10 +236,9 @@ app.post('/api/admin/search', async (req, res) => {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
 
-        // Validate rank against criteria and correct stale database rank automatically
         let userRank = user.highestAchievedRank || 'NO RANK';
         if (userRank !== 'NO RANK') {
-            let requiredStrongest = 12; // Star rank requirement
+            let requiredStrongest = 12;
             let requiredOther = 18;
             
             if (user.userStrongestDone < requiredStrongest || user.userOtherDone < requiredOther) {
@@ -344,6 +343,31 @@ app.post('/api/admin/rank', async (req, res) => {
         res.json({ success: true, message: 'Rank updated successfully' });
     } catch (err) {
         console.error('Admin Rank Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 6. Fix User Leg Volumes for Testing/Correction
+app.post('/api/admin/fix-legs', async (req, res) => {
+    try {
+        const { telegramId, username, strongest, other } = req.body;
+        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+
+        let user = await User.findOne(query);
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        if (strongest !== undefined) user.userStrongestDone = parseFloat(strongest);
+        if (other !== undefined) user.userOtherDone = parseFloat(other);
+
+        await user.save();
+        res.json({ 
+            success: true, 
+            message: 'Leg volumes updated successfully!', 
+            strongest: user.userStrongestDone, 
+            other: user.userOtherDone 
+        });
+    } catch (err) {
+        console.error('Fix Legs Error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
