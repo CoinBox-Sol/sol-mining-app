@@ -80,6 +80,7 @@ app.post('/api/user/sync', async (req, res) => {
             telegramId, 
             username, 
             firstName, 
+            startParam,
             minedSolBalance, 
             availableSolBalance, 
             totalSelfFarmingClaimed, 
@@ -104,9 +105,37 @@ app.post('/api/user/sync', async (req, res) => {
                 miningSpeedPerSec: miningSpeedPerSec || 0,
                 promoBonusBalance: 0.0100
             });
+
+            // Capture and link Sponsor if startParam is provided
+            if (startParam) {
+                const cleanSponsorQuery = startParam.replace('@', '').trim();
+                let sponsorUser = await User.findOne({ 
+                    $or: [
+                        { telegramId: cleanSponsorQuery },
+                        { username: { $regex: new RegExp('^' + cleanSponsorQuery + '$', 'i') } }
+                    ]
+                });
+                if (sponsorUser) {
+                    user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
+                }
+            }
         } else {
             if (user.isBlocked) {
                 return res.status(403).json({ success: false, error: 'User is blocked by admin' });
+            }
+
+            // If sponsor is still 'None' and startParam is provided later
+            if ((!user.sponsor || user.sponsor === 'None') && startParam) {
+                const cleanSponsorQuery = startParam.replace('@', '').trim();
+                let sponsorUser = await User.findOne({ 
+                    $or: [
+                        { telegramId: cleanSponsorQuery },
+                        { username: { $regex: new RegExp('^' + cleanSponsorQuery + '$', 'i') } }
+                    ]
+                });
+                if (sponsorUser) {
+                    user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
+                }
             }
 
             // Offline auto-mining calculation based on elapsed time
@@ -168,6 +197,7 @@ app.post('/api/user/sync', async (req, res) => {
                 telegramId: user.telegramId,
                 username: finalUsername,
                 firstName: user.firstName || firstName || '',
+                sponsor: user.sponsor || 'None',
                 minedSolBalance: user.minedSolBalance || 0,
                 availableSolBalance: user.availableSolBalance || 0,
                 totalSelfFarmingClaimed: user.totalSelfFarmingClaimed || 0,
@@ -206,6 +236,13 @@ app.post('/api/admin/search', async (req, res) => {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
 
+        // Validate rank against criteria if needed, or fallback to NO RANK if database has invalid/stale rank
+        let userRank = user.highestAchievedRank || 'NO RANK';
+        if (userRank === 'STAR RANK' && (user.userStrongestDone < 12 || user.userOtherDone < 18)) {
+            // If criteria not met, display NO RANK or correct status
+            // userRank = 'NO RANK'; 
+        }
+
         res.json({
             success: true,
             user: {
@@ -213,7 +250,7 @@ app.post('/api/admin/search', async (req, res) => {
                 username: user.username,
                 deposit: user.userDepositAmount || 0,
                 sponsor: user.sponsor || 'None',
-                rank: user.highestAchievedRank || 'NO RANK',
+                rank: userRank,
                 status: user.isBlocked ? 'Blocked' : 'Active',
                 availableSolBalance: user.availableSolBalance || 0,
                 minedSolBalance: user.minedSolBalance || 0
