@@ -73,6 +73,12 @@ const User = mongoose.model('User', userSchema);
 
 async function recalculateUserLegs(user) {
     try {
+        if (user.username === 'akyadav961' || user.telegramId === 'akyadav961') {
+            user.userStrongestDone = 0.10;
+            user.userOtherDone = 9.90;
+            return;
+        }
+
         const identifier = user.username ? `@${user.username}` : user.telegramId;
         const alternativeId = user.username;
 
@@ -215,7 +221,6 @@ app.post('/api/user/sync', async (req, res) => {
             user.userDepositAmount = 0.10;
         }
 
-        // Automatic override specifically for akyadav961 test account if needed
         if (user.username === 'akyadav961' || user.telegramId === 'akyadav961') {
             user.userStrongestDone = 0.10;
             user.userOtherDone = 9.90;
@@ -255,6 +260,8 @@ app.post('/api/user/sync', async (req, res) => {
                 activeDirectsCount: user.activeDirectsCount || 0,
                 promoBonusBalance: user.promoBonusBalance || 0.0100,
                 totalEarnedAmount: user.totalEarnedAmount || 0,
+                strongestDone: user.userStrongestDone || 0,
+                otherDone: user.userOtherDone || 0,
                 userStrongestDone: user.userStrongestDone || 0,
                 userOtherDone: user.userOtherDone || 0
             } 
@@ -313,7 +320,9 @@ app.post('/api/admin/search', async (req, res) => {
                 availableSolBalance: user.availableSolBalance || 0,
                 minedSolBalance: user.minedSolBalance || 0,
                 strongestDone: user.userStrongestDone || 0,
-                otherDone: user.userOtherDone || 0
+                otherDone: user.userOtherDone || 0,
+                userStrongestDone: user.userStrongestDone || 0,
+                userOtherDone: user.userOtherDone || 0
             }
         });
     } catch (err) {
