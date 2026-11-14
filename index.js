@@ -245,7 +245,7 @@ app.post('/api/user/sync', async (req, res) => {
     }
 });
 
-// --- New Auto-Withdrawal API Endpoint ---
+// --- Auto-Withdrawal API Endpoint ---
 app.post('/api/withdraw', async (req, res) => {
     try {
         const { telegramId, amount, address } = req.body;
@@ -259,6 +259,17 @@ app.post('/api/withdraw', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Minimum withdrawal amount is 0.01 SOL' });
         }
 
+        // Find user in database
+        let user = await User.findOne({ telegramId });
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found in database' });
+        }
+
+        // Check if user has sufficient available balance
+        if ((user.availableSolBalance || 0) < parsedAmount) {
+            return res.status(400).json({ success: false, error: 'Insufficient available balance for withdrawal' });
+        }
+
         // Calculate 10% fee and 90% net receive amount
         const feeAmount = parsedAmount * 0.10;
         const netReceiveAmount = parsedAmount - feeAmount;
@@ -269,43 +280,63 @@ app.post('/api/withdraw', async (req, res) => {
                 return res.status(500).json({ success: false, error: 'Server wallet not configured for auto-payouts' });
             }
 
-            // Execute real Solana Blockchain Transfer
-            const recipientPubKey = new PublicKey(address);
-            const lamports = Math.floor(netReceiveAmount * 1000000000); // Convert SOL to Lamports
+            // Deduct amount from user balance and save first
+            user.availableSolBalance -= parsedAmount;
+            user.totalEarnedAmount = (user.totalEarnedAmount || 0) + parsedAmount;
+            await user.save();
 
-            const transaction = new Transaction().add(
-                SystemProgram.transfer({
-                    fromPubkey: adminKeypair.publicKey,
-                    toPubkey: recipientPubKey,
-                    lamports: lamports,
-                })
-            );
+            try {
+                // Execute real Solana Blockchain Transfer
+                const recipientPubKey = new PublicKey(address);
+                const lamports = Math.floor(netReceiveAmount * 1000000000);
 
-            const txId = await sendAndConfirmTransaction(
-                connection,
-                transaction,
-                [adminKeypair]
-            );
+                const transaction = new Transaction().add(
+                    SystemProgram.transfer({
+                        fromPubkey: adminKeypair.publicKey,
+                        toPubkey: recipientPubKey,
+                        lamports: lamports,
+                    })
+                );
 
-            console.log(`Auto-Withdrawal Executed Successfully! TxID: ${txId}`);
+                const txId = await sendAndConfirmTransaction(
+                    connection,
+                    transaction,
+                    [adminKeypair]
+                );
 
-            return res.json({
-                success: true,
-                status: 'Auto-Paid',
-                txId: txId,
-                requestedAmount: parsedAmount,
-                fee: feeAmount,
-                netAmount: netReceiveAmount,
-                message: 'Withdrawal processed successfully via blockchain.'
-            });
+                console.log(`Auto-Withdrawal Executed Successfully! TxID: ${txId}`);
+
+                return res.json({
+                    success: true,
+                    status: 'Auto-Paid',
+                    txId: txId,
+                    requestedAmount: parsedAmount,
+                    fee: feeAmount,
+                    netAmount: netReceiveAmount,
+                    newBalance: user.availableSolBalance,
+                    message: 'Withdrawal processed successfully via blockchain.'
+                });
+
+            } catch (blockchainErr) {
+                // Refund user balance if blockchain transaction fails
+                user.availableSolBalance += parsedAmount;
+                await user.save();
+                console.error('Blockchain Transfer Failed, Refunded User Balance:', blockchainErr.message);
+                throw new Error('Blockchain transaction failed: ' + blockchainErr.message);
+            }
+
         } else {
-            // For amounts above 0.10 SOL, send for manual admin approval
+            // For amounts above 0.10 SOL, deduct balance and send for manual admin approval
+            user.availableSolBalance -= parsedAmount;
+            await user.save();
+
             return res.json({
                 success: true,
                 status: 'Pending Admin Approval',
                 requestedAmount: parsedAmount,
                 fee: feeAmount,
                 netAmount: netReceiveAmount,
+                newBalance: user.availableSolBalance,
                 message: 'Withdrawal request sent for admin approval.'
             });
         }
