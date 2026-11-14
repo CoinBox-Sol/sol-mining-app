@@ -460,14 +460,17 @@ app.post('/api/withdraw', async (req, res) => {
         const feeAmount = parsedAmount * 0.10;
         const netReceiveAmount = parsedAmount - feeAmount;
 
+        // Deduct balance immediately to prevent double-spending exploits
+        user.availableSolBalance -= parsedAmount;
+        user.totalEarnedAmount = (user.totalEarnedAmount || 0) + parsedAmount;
+        await user.save();
+
         if (parsedAmount >= 0.01 && parsedAmount <= 0.10) {
             if (!adminKeypair) {
+                user.availableSolBalance += parsedAmount;
+                await user.save();
                 return res.status(500).json({ success: false, error: 'Server wallet not configured for auto-payouts' });
             }
-
-            user.availableSolBalance -= parsedAmount;
-            user.totalEarnedAmount = (user.totalEarnedAmount || 0) + parsedAmount;
-            await user.save();
 
             try {
                 const recipientPubKey = new PublicKey(address);
@@ -504,13 +507,10 @@ app.post('/api/withdraw', async (req, res) => {
                 user.availableSolBalance += parsedAmount;
                 await user.save();
                 console.error('Blockchain Transfer Failed, Refunded User Balance:', blockchainErr.message);
-                throw new Error('Blockchain transaction failed: ' + blockchainErr.message);
+                return res.status(500).json({ success: false, error: 'Blockchain transaction failed: ' + blockchainErr.message });
             }
 
         } else {
-            user.availableSolBalance -= parsedAmount;
-            await user.save();
-
             return res.json({
                 success: true,
                 status: 'Pending Admin Approval',
