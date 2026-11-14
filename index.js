@@ -196,7 +196,8 @@ app.post('/api/user/sync', async (req, res) => {
         }
 
         if (minedSolBalance !== undefined) {
-            user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance);
+            // Fix: Allow minedSolBalance to be reset to 0 upon claiming
+            user.minedSolBalance = minedSolBalance === 0 ? 0 : Math.max(user.minedSolBalance || 0, minedSolBalance);
         }
         if (availableSolBalance !== undefined) {
             user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
