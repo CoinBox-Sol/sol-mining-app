@@ -2206,8 +2206,9 @@ document.addEventListener('change', function(e) {
         let legVolumes = [];
         if (l1Members.length > 0) {
             legVolumes = l1Members.map(m => {
-                let dep = m.deposit || "0";
-                return parseFloat(dep) || 0.10;
+                let depStr = (typeof m === 'string') ? m : (m.deposit || "0");
+                let numMatch = String(depStr).match(/[\d.]+/);
+                return numMatch ? parseFloat(numMatch[0]) : 0.0;
             });
         }
 
