@@ -287,6 +287,24 @@ app.post('/api/admin/block', async (req, res) => {
     }
 });
 
+// 5. Update User Rank from Admin
+app.post('/api/admin/rank', async (req, res) => {
+    try {
+        const { telegramId, username, rank } = req.body;
+        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+
+        let user = await User.findOne(query);
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        user.highestAchievedRank = rank || 'NO RANK';
+        await user.save();
+        res.json({ success: true, message: 'Rank updated successfully' });
+    } catch (err) {
+        console.error('Admin Rank Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // --- Auto-Withdrawal API Endpoint ---
 app.post('/api/withdraw', async (req, res) => {
     try {
