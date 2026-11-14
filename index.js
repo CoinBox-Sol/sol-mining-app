@@ -38,6 +38,8 @@ const userSchema = new mongoose.Schema({
     telegramId: { type: String, required: true, unique: true },
     username: { type: String, default: '' },
     firstName: { type: String, default: '' },
+    sponsor: { type: String, default: 'None' },
+    isBlocked: { type: Boolean, default: false },
     
     minedSolBalance: { type: Number, default: 0.0000 },
     availableSolBalance: { type: Number, default: 0.0000 },
@@ -91,23 +93,6 @@ app.post('/api/user/sync', async (req, res) => {
             return res.status(400).json({ error: 'Telegram ID is required' });
         }
 
-        // Generate dummy test users if not existing
-        for (let i = 1; i <= 100; i++) {
-            let dummyId = `test_user_${i}`;
-            let existing = await User.findOne({ telegramId: dummyId });
-            if (!existing) {
-                await new User({
-                    telegramId: dummyId,
-                    username: `user_${i}`,
-                    firstName: `TestUser ${i}`,
-                    profileName: `User ${i}`,
-                    activePlanTier: 'STARTER',
-                    userDepositAmount: 0.10,
-                    miningSpeedPerSec: 0.00000115
-                }).save();
-            }
-        }
-
         let user = await User.findOne({ telegramId });
         if (!user) {
             user = new User({ 
@@ -120,6 +105,10 @@ app.post('/api/user/sync', async (req, res) => {
                 promoBonusBalance: 0.0100
             });
         } else {
+            if (user.isBlocked) {
+                return res.status(403).json({ success: false, error: 'User is blocked by admin' });
+            }
+
             // Offline auto-mining calculation based on elapsed time
             if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE') {
                 const now = Date.now();
@@ -134,7 +123,6 @@ app.post('/api/user/sync', async (req, res) => {
             }
         }
 
-        // Username preservation
         if (username && typeof username === 'string' && username.trim() !== '' && username !== 'undefined') {
             user.username = username;
         }
@@ -143,7 +131,6 @@ app.post('/api/user/sync', async (req, res) => {
             user.firstName = firstName;
         }
 
-        // Safe numeric assignments
         if (minedSolBalance !== undefined) {
             user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance);
         }
@@ -165,50 +152,11 @@ app.post('/api/user/sync', async (req, res) => {
         if (userDepositAmount !== undefined) user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
         if (promoBonusBalance !== undefined) user.promoBonusBalance = Math.max(user.promoBonusBalance || 0.0100, promoBonusBalance);
 
-        // Auto-Topup Trigger
         if (user.promoBonusBalance >= 0.10 && (!user.activePlanTier || user.activePlanTier === 'NONE')) {
             user.activePlanTier = 'STARTER';
             user.userDepositAmount = 0.10;
         }
 
-        const allTestUsers = await User.find({ telegramId: /^test_user_/ });
-        let dummyMembersList = allTestUsers.map(u => ({
-            name: `@${u.username}`,
-            deposit: "0.10 SOL",
-            date: new Date().toISOString().split('T')[0]
-        }));
-
-        if (!user.levelMembersData || Object.keys(user.levelMembersData).length === 0) {
-            user.levelMembersData = { '1': dummyMembersList };
-        } else if (!user.levelMembersData['1'] || user.levelMembersData['1'].length === 0) {
-            user.levelMembersData['1'] = dummyMembersList;
-        }
-
-        // Calculate Level Volumes and Total Team Members
-        let calculatedLevelVolumes = Array(26).fill(0.0);
-        let totalTeamMembersCount = 0;
-        let directTeamVol = 0;
-        let overallTeamVol = 0;
-
-        for (let lvl = 1; lvl <= 25; lvl++) {
-            let members = (user.levelMembersData && user.levelMembersData[lvl]) || [];
-            let lvlSum = 0;
-
-            members.forEach(m => {
-                let depStr = (typeof m === 'string') ? m : (m.deposit || "0.10");
-                let numMatch = String(depStr).match(/[\d.]+/);
-                let val = numMatch ? parseFloat(numMatch[0]) : 0.10;
-                lvlSum += val;
-            });
-
-            calculatedLevelVolumes[lvl] = lvlSum;
-            totalTeamMembersCount += members.length;
-            overallTeamVol += lvlSum;
-            if (lvl === 1) directTeamVol = lvlSum;
-        }
-
-        user.levelVolumes = calculatedLevelVolumes;
-        user.activeDirectsCount = (user.levelMembersData && user.levelMembersData['1']) ? user.levelMembersData['1'].length : 0;
         user.lastUpdated = Date.now();
         await user.save();
 
@@ -227,21 +175,115 @@ app.post('/api/user/sync', async (req, res) => {
                 userDepositAmount: user.userDepositAmount || 0,
                 miningSpeedPerSec: user.miningSpeedPerSec || 0,
                 activeDirectsCount: user.activeDirectsCount || 0,
-                directTeamVolume: directTeamVol,
-                totalTeamMembersCount: totalTeamMembersCount,
-                totalTeamVolume: overallTeamVol,
                 promoBonusBalance: user.promoBonusBalance || 0.0100,
-                userStrongestDone: user.userStrongestDone || 0,
-                userOtherDone: user.userOtherDone || 0,
-                totalEarnedAmount: user.totalEarnedAmount || 0,
-                levelVolumes: user.levelVolumes,
-                levelMembersData: user.levelMembersData
+                totalEarnedAmount: user.totalEarnedAmount || 0
             } 
         });
 
     } catch (error) {
         console.error('Sync Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// --- Admin Management API Endpoints ---
+
+// 1. Search User for Admin Panel
+app.post('/api/admin/search', async (req, res) => {
+    try {
+        const { query } = req.body;
+        if (!query) return res.status(400).json({ success: false, error: 'Query is required' });
+
+        let cleanQuery = query.replace('@', '').trim();
+        let user = await User.findOne({ 
+            $or: [
+                { username: { $regex: new RegExp('^' + cleanQuery + '$', 'i') } },
+                { telegramId: cleanQuery }
+            ]
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            user: {
+                telegramId: user.telegramId,
+                username: user.username,
+                deposit: user.userDepositAmount || 0,
+                sponsor: user.sponsor || 'None',
+                rank: user.highestAchievedRank || 'NO RANK',
+                status: user.isBlocked ? 'Blocked' : 'Active',
+                availableSolBalance: user.availableSolBalance || 0,
+                minedSolBalance: user.minedSolBalance || 0
+            }
+        });
+    } catch (err) {
+        console.error('Admin Search Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 2. Manage / Update User Balance from Admin
+app.post('/api/admin/balance', async (req, res) => {
+    try {
+        const { telegramId, username, amount, type } = req.body;
+        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+        
+        let user = await User.findOne(query);
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        let val = parseFloat(amount) || 0;
+        if (type === 'sub') {
+            user.availableSolBalance = Math.max(0, (user.availableSolBalance || 0) - val);
+        } else if (type === 'set') {
+            user.availableSolBalance = val;
+        } else {
+            user.availableSolBalance = (user.availableSolBalance || 0) + val;
+        }
+
+        await user.save();
+        res.json({ success: true, newBalance: user.availableSolBalance, message: 'Balance updated successfully' });
+    } catch (err) {
+        console.error('Admin Balance Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 3. Update User Sponsor from Admin
+app.post('/api/admin/sponsor', async (req, res) => {
+    try {
+        const { telegramId, username, sponsor } = req.body;
+        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+
+        let user = await User.findOne(query);
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        user.sponsor = sponsor || 'None';
+        await user.save();
+        res.json({ success: true, message: 'Sponsor updated successfully' });
+    } catch (err) {
+        console.error('Admin Sponsor Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// 4. Block / Unblock User from Admin
+app.post('/api/admin/block', async (req, res) => {
+    try {
+        const { telegramId, username } = req.body;
+        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+
+        let user = await User.findOne(query);
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        user.isBlocked = !user.isBlocked;
+        await user.save();
+        res.json({ success: true, status: user.isBlocked ? 'Blocked' : 'Active', message: 'User status updated' });
+    } catch (err) {
+        console.error('Admin Block Error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -259,34 +301,32 @@ app.post('/api/withdraw', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Minimum withdrawal amount is 0.01 SOL' });
         }
 
-        // Find user in database
         let user = await User.findOne({ telegramId });
         if (!user) {
             return res.status(404).json({ success: false, error: 'User not found in database' });
         }
 
-        // Check if user has sufficient available balance
+        if (user.isBlocked) {
+            return res.status(403).json({ success: false, error: 'User is blocked' });
+        }
+
         if ((user.availableSolBalance || 0) < parsedAmount) {
             return res.status(400).json({ success: false, error: 'Insufficient available balance for withdrawal' });
         }
 
-        // Calculate 10% fee and 90% net receive amount
         const feeAmount = parsedAmount * 0.10;
         const netReceiveAmount = parsedAmount - feeAmount;
 
-        // Check if auto-payout range applies (0.01 to 0.10 SOL)
         if (parsedAmount >= 0.01 && parsedAmount <= 0.10) {
             if (!adminKeypair) {
                 return res.status(500).json({ success: false, error: 'Server wallet not configured for auto-payouts' });
             }
 
-            // Deduct amount from user balance and save first
             user.availableSolBalance -= parsedAmount;
             user.totalEarnedAmount = (user.totalEarnedAmount || 0) + parsedAmount;
             await user.save();
 
             try {
-                // Execute real Solana Blockchain Transfer
                 const recipientPubKey = new PublicKey(address);
                 const lamports = Math.floor(netReceiveAmount * 1000000000);
 
@@ -318,7 +358,6 @@ app.post('/api/withdraw', async (req, res) => {
                 });
 
             } catch (blockchainErr) {
-                // Refund user balance if blockchain transaction fails
                 user.availableSolBalance += parsedAmount;
                 await user.save();
                 console.error('Blockchain Transfer Failed, Refunded User Balance:', blockchainErr.message);
@@ -326,7 +365,6 @@ app.post('/api/withdraw', async (req, res) => {
             }
 
         } else {
-            // For amounts above 0.10 SOL, deduct balance and send for manual admin approval
             user.availableSolBalance -= parsedAmount;
             await user.save();
 
