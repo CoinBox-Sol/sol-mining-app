@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const bs58 = require('bs58');
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } = require('@solana/web3.js');
 
 const app = express();
@@ -18,7 +19,12 @@ let adminKeypair;
 try {
     const secretKeyString = process.env.WALLET_PRIVATE_KEY;
     if (secretKeyString) {
-        const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
+        let secretKey;
+        if (secretKeyString.trim().startsWith('[')) {
+            secretKey = Uint8Array.from(JSON.parse(secretKeyString));
+        } else {
+            secretKey = bs58.decode(secretKeyString.trim());
+        }
         adminKeypair = Keypair.fromSecretKey(secretKey);
         console.log('Admin Hot Wallet Loaded Successfully:', adminKeypair.publicKey.toBase58());
     } else {
@@ -443,7 +449,6 @@ app.post('/api/withdraw', async (req, res) => {
         const feeAmount = parsedAmount * 0.10;
         const netReceiveAmount = parsedAmount - feeAmount;
 
-        // Balance deduction to prevent double-spending exploits
         user.availableSolBalance -= parsedAmount;
         user.totalEarnedAmount = (user.totalEarnedAmount || 0) + parsedAmount;
         await user.save();
