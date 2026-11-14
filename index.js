@@ -196,7 +196,6 @@ app.post('/api/user/sync', async (req, res) => {
         }
 
         if (minedSolBalance !== undefined) {
-            // Fix: Allow minedSolBalance to be reset to 0 upon claiming
             user.minedSolBalance = minedSolBalance === 0 ? 0 : Math.max(user.minedSolBalance || 0, minedSolBalance);
         }
         if (availableSolBalance !== undefined) {
@@ -417,6 +416,31 @@ app.post('/api/admin/fix-legs', async (req, res) => {
         });
     } catch (err) {
         console.error('Fix Legs Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Real-time Admin Stats Endpoint
+app.get('/api/admin/stats', async (req, res) => {
+    try {
+        const totalUsers = await User.countDocuments();
+        const agg = await User.aggregate([
+            { $group: { _id: null, totalDeposits: { $sum: "$userDepositAmount" } } }
+        ]);
+        const activeDeposits = agg.length > 0 ? agg[0].totalDeposits : 0;
+        res.json({ success: true, totalUsers, activeDeposits });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Real-time Registered Users Directory Endpoint
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const users = await User.find({}, 'telegramId username firstName activePlanTier userDepositAmount')
+                                .sort({ lastUpdated: -1 });
+        res.json({ success: true, users });
+    } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
