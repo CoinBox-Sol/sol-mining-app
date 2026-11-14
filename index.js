@@ -73,12 +73,6 @@ const User = mongoose.model('User', userSchema);
 
 async function recalculateUserLegs(user) {
     try {
-        if (user.username === 'akyadav961' || user.telegramId === 'akyadav961') {
-            user.userStrongestDone = 0.10;
-            user.userOtherDone = 9.90;
-            return;
-        }
-
         const identifier = user.username ? `@${user.username}` : user.telegramId;
         const alternativeId = user.username;
 
@@ -221,12 +215,7 @@ app.post('/api/user/sync', async (req, res) => {
             user.userDepositAmount = 0.10;
         }
 
-        if (user.username === 'akyadav961' || user.telegramId === 'akyadav961') {
-            user.userStrongestDone = 0.10;
-            user.userOtherDone = 9.90;
-        } else {
-            await recalculateUserLegs(user);
-        }
+        await recalculateUserLegs(user);
 
         if (user.sponsor && user.sponsor !== 'None') {
             const sponsorClean = user.sponsor.replace('@', '').trim();
@@ -288,12 +277,6 @@ app.post('/api/admin/search', async (req, res) => {
 
         if (!user) {
             return res.status(404).json({ success: false, error: 'User not found' });
-        }
-
-        if (user.username === 'akyadav961' || user.telegramId === 'akyadav961') {
-            user.userStrongestDone = 0.10;
-            user.userOtherDone = 9.90;
-            await user.save();
         }
 
         let userRank = user.highestAchievedRank || 'NO RANK';
@@ -460,7 +443,7 @@ app.post('/api/withdraw', async (req, res) => {
         const feeAmount = parsedAmount * 0.10;
         const netReceiveAmount = parsedAmount - feeAmount;
 
-        // Deduct balance immediately to prevent double-spending exploits
+        // Balance deduction to prevent double-spending exploits
         user.availableSolBalance -= parsedAmount;
         user.totalEarnedAmount = (user.totalEarnedAmount || 0) + parsedAmount;
         await user.save();
