@@ -11,11 +11,9 @@ console.log('CORS is enabled for all origins');
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 
-// --- Solana Connection Setup ---
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
 
-// --- Load Hot Wallet from Environment Variables ---
 let adminKeypair;
 try {
     const secretKeyString = process.env.WALLET_PRIVATE_KEY;
@@ -73,7 +71,46 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// --- User Sync API Endpoint ---
+// Helper function to automatically calculate and update strongest and other leg volumes
+async function recalculateUserLegs(user) {
+    try {
+        const identifier = user.username ? `@${user.username}` : user.telegramId;
+        const alternativeId = user.username;
+
+        // Find all direct referrals whose sponsor matches this user
+        const directs = await User.find({
+            $or: [
+                { sponsor: identifier },
+                { sponsor: user.telegramId },
+                ...(alternativeId ? [{ sponsor: `@${alternativeId}` }] : [])
+            ]
+        });
+
+        if (!directs || directs.length === 0) {
+            user.userStrongestDone = 0.0;
+            user.userOtherDone = 0.0;
+            return;
+        }
+
+        // Calculate total deposit volume for each direct referral branch
+        const directVolumes = directs.map(d => (d.userDepositAmount || 0));
+
+        if (directVolumes.length === 0) {
+            user.userStrongestDone = 0.0;
+            user.userOtherDone = 0.0;
+            return;
+        }
+
+        // Sort descending to find the strongest leg
+        directVolumes.sort((a, b) => b - a);
+
+        user.userStrongestDone = directVolumes[0]; // Highest single leg
+        user.userOtherDone = directVolumes.slice(1).reduce((acc, val) => acc + val, 0.0); // Sum of all other legs
+    } catch (err) {
+        console.error('Error recalculating legs:', err);
+    }
+}
+
 app.post('/api/user/sync', async (req, res) => {
     try {
         const { 
@@ -106,7 +143,6 @@ app.post('/api/user/sync', async (req, res) => {
                 promoBonusBalance: 0.0100
             });
 
-            // Capture and link Sponsor if startParam is provided
             if (startParam) {
                 const cleanSponsorQuery = startParam.replace('@', '').trim();
                 let sponsorUser = await User.findOne({ 
@@ -124,7 +160,6 @@ app.post('/api/user/sync', async (req, res) => {
                 return res.status(403).json({ success: false, error: 'User is blocked by admin' });
             }
 
-            // If sponsor is still 'None' and startParam is provided later
             if ((!user.sponsor || user.sponsor === 'None') && startParam) {
                 const cleanSponsorQuery = startParam.replace('@', '').trim();
                 let sponsorUser = await User.findOne({ 
@@ -138,11 +173,9 @@ app.post('/api/user/sync', async (req, res) => {
                 }
             }
 
-            // Offline auto-mining calculation based on elapsed time
             if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE') {
                 const now = Date.now();
                 const diffSeconds = (now - new Date(user.lastUpdated).getTime()) / 1000;
-                
                 let activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : (miningSpeedPerSec || 0);
 
                 if (diffSeconds > 0 && activeSpeed > 0) {
@@ -186,6 +219,21 @@ app.post('/api/user/sync', async (req, res) => {
             user.userDepositAmount = 0.10;
         }
 
+        // Automatically recalculate legs for this user
+        await recalculateUserLegs(user);
+
+        // Also update sponsor's legs if sponsor exists
+        if (user.sponsor && user.sponsor !== 'None') {
+            const sponsorClean = user.sponsor.replace('@', '').trim();
+            let sponsorDoc = await User.findOne({
+                $or: [{ telegramId: sponsorClean }, { username: { $regex: new RegExp('^' + sponsorClean + '$', 'i') } }]
+            });
+            if (sponsorDoc) {
+                await recalculateUserLegs(sponsorDoc);
+                await sponsorDoc.save();
+            }
+        }
+
         user.lastUpdated = Date.now();
         await user.save();
 
@@ -206,7 +254,9 @@ app.post('/api/user/sync', async (req, res) => {
                 miningSpeedPerSec: user.miningSpeedPerSec || 0,
                 activeDirectsCount: user.activeDirectsCount || 0,
                 promoBonusBalance: user.promoBonusBalance || 0.0100,
-                totalEarnedAmount: user.totalEarnedAmount || 0
+                totalEarnedAmount: user.totalEarnedAmount || 0,
+                userStrongestDone: user.userStrongestDone || 0,
+                userOtherDone: user.userOtherDone || 0
             } 
         });
 
@@ -216,9 +266,6 @@ app.post('/api/user/sync', async (req, res) => {
     }
 });
 
-// --- Admin Management API Endpoints ---
-
-// 1. Search User for Admin Panel
 app.post('/api/admin/search', async (req, res) => {
     try {
         const { query } = req.body;
@@ -258,7 +305,9 @@ app.post('/api/admin/search', async (req, res) => {
                 rank: userRank,
                 status: user.isBlocked ? 'Blocked' : 'Active',
                 availableSolBalance: user.availableSolBalance || 0,
-                minedSolBalance: user.minedSolBalance || 0
+                minedSolBalance: user.minedSolBalance || 0,
+                strongestDone: user.userStrongestDone || 0,
+                otherDone: user.userOtherDone || 0
             }
         });
     } catch (err) {
@@ -267,7 +316,6 @@ app.post('/api/admin/search', async (req, res) => {
     }
 });
 
-// 2. Manage / Update User Balance from Admin
 app.post('/api/admin/balance', async (req, res) => {
     try {
         const { telegramId, username, amount, type } = req.body;
@@ -293,7 +341,6 @@ app.post('/api/admin/balance', async (req, res) => {
     }
 });
 
-// 3. Update User Sponsor from Admin
 app.post('/api/admin/sponsor', async (req, res) => {
     try {
         const { telegramId, username, sponsor } = req.body;
@@ -311,7 +358,6 @@ app.post('/api/admin/sponsor', async (req, res) => {
     }
 });
 
-// 4. Block / Unblock User from Admin
 app.post('/api/admin/block', async (req, res) => {
     try {
         const { telegramId, username } = req.body;
@@ -329,7 +375,6 @@ app.post('/api/admin/block', async (req, res) => {
     }
 });
 
-// 5. Update User Rank from Admin
 app.post('/api/admin/rank', async (req, res) => {
     try {
         const { telegramId, username, rank } = req.body;
@@ -347,7 +392,6 @@ app.post('/api/admin/rank', async (req, res) => {
     }
 });
 
-// 6. Fix User Leg Volumes for Testing/Correction
 app.post('/api/admin/fix-legs', async (req, res) => {
     try {
         const { telegramId, username, strongest, other } = req.body;
@@ -372,7 +416,6 @@ app.post('/api/admin/fix-legs', async (req, res) => {
     }
 });
 
-// --- Auto-Withdrawal API Endpoint ---
 app.post('/api/withdraw', async (req, res) => {
     try {
         const { telegramId, amount, address } = req.body;
