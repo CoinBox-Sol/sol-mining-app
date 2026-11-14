@@ -236,11 +236,17 @@ app.post('/api/admin/search', async (req, res) => {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
 
-        // Validate rank against criteria if needed, or fallback to NO RANK if database has invalid/stale rank
+        // Validate rank against criteria and correct stale database rank automatically
         let userRank = user.highestAchievedRank || 'NO RANK';
-        if (userRank === 'STAR RANK' && (user.userStrongestDone < 12 || user.userOtherDone < 18)) {
-            // If criteria not met, display NO RANK or correct status
-            // userRank = 'NO RANK'; 
+        if (userRank !== 'NO RANK') {
+            let requiredStrongest = 12; // Star rank requirement
+            let requiredOther = 18;
+            
+            if (user.userStrongestDone < requiredStrongest || user.userOtherDone < requiredOther) {
+                userRank = 'NO RANK';
+                user.highestAchievedRank = 'NO RANK';
+                await user.save();
+            }
         }
 
         res.json({
