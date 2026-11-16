@@ -1,12 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const multer = require('multer');
 const bs58 = require('bs58');
 const { Connection, Keypair, PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } = require('@solana/web3.js');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 console.log('CORS is enabled for all origins');
 
 const PORT = process.env.PORT || 3000;
@@ -488,9 +492,11 @@ app.post('/api/admin/fix-legs', async (req, res) => {
     }
 });
 
-app.post('/api/admin/broadcast', async (req, res) => {
+app.post('/api/admin/broadcast', upload.single('photo'), async (req, res) => {
     try {
         const { message, photoUrl } = req.body;
+        const photoFile = req.file;
+
         if (!message) {
             return res.status(400).json({ success: false, error: 'Broadcast message is required' });
         }
@@ -510,28 +516,43 @@ app.post('/api/admin/broadcast', async (req, res) => {
 
         for (const user of users) {
             try {
-                let url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                let bodyData = {
-                    chat_id: user.telegramId,
-                    text: message,
-                    parse_mode: 'HTML'
-                };
+                let response;
+                if (photoFile) {
+                    const formData = new FormData();
+                    formData.append('chat_id', user.telegramId);
+                    formData.append('caption', message);
+                    formData.append('parse_mode', 'HTML');
+                    
+                    const blob = new Blob([photoFile.buffer], { type: photoFile.mimetype });
+                    formData.append('photo', blob, photoFile.originalname || 'broadcast.jpg');
 
-                if (photoUrl && photoUrl.trim() !== '') {
-                    url = `https://api.telegram.org/bot${botToken}/sendPhoto`;
-                    bodyData = {
-                        chat_id: user.telegramId,
-                        photo: photoUrl,
-                        caption: message,
-                        parse_mode: 'HTML'
-                    };
+                    response = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else if (photoUrl && photoUrl.trim() !== '') {
+                    const responseUrl = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: user.telegramId,
+                            photo: photoUrl,
+                            caption: message,
+                            parse_mode: 'HTML'
+                        })
+                    });
+                    response = responseUrl;
+                } else {
+                    response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: user.telegramId,
+                            text: message,
+                            parse_mode: 'HTML'
+                        })
+                    });
                 }
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bodyData)
-                });
 
                 const result = await response.json();
                 if (result.ok) {
