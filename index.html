@@ -2339,21 +2339,31 @@ document.addEventListener('change', function(e) {
 
         const ADMIN_TELEGRAM_ID = "5939907983";
 
-        let tgUser = null;
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-        }
+    let tgUser = null;
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+    }
 
-        let nameDisplay = '';
-        if (tgUser) {
-            if (tgUser.username) {
-                nameDisplay = `@${tgUser.username}`;
-            } else if (tgUser.first_name) {
-                nameDisplay = tgUser.first_name;
-            } else if (tgUser.id) {
-                nameDisplay = `ID: ${tgUser.id}`;
-            }
+    // Instant Telegram Name Display on Startup
+    let initialName = '';
+    if (tgUser) {
+        if (tgUser.username) {
+            initialName = `@${tgUser.username}`;
+        } else if (tgUser.first_name) {
+            initialName = tgUser.first_name;
+        } else if (tgUser.id) {
+            initialName = `User_${tgUser.id.toString().slice(-4)}`;
         }
+    }
+
+    if (initialName) {
+        profileName = initialName;
+        const usernameEl = document.getElementById('username');
+        if (usernameEl) usernameEl.innerText = initialName;
+        
+        const profileNameInput = document.getElementById('profile-name');
+        if (profileNameInput) profileNameInput.value = initialName;
+    }
 
         if (!nameDisplay) {
             let savedName = profileName || '';
@@ -2458,6 +2468,26 @@ document.addEventListener('change', function(e) {
                         const balanceEl = document.getElementById('balance-display');
                         if (balanceEl) {
                             balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
+                        }
+                        if (data.user.profileName) {
+                            profileName = data.user.profileName;
+                            document.getElementById('username').innerText = profileName;
+                            const profileNameInput = document.getElementById('profile-name');
+                            if (profileNameInput) profileNameInput.value = profileName;
+                        }
+                        if (data.user.solAddress) {
+                            profileSolAddress = data.user.solAddress;
+                            const solAddrInput = document.getElementById('profile-sol-address');
+                            if (solAddrInput) solAddrInput.value = solAddrAddress; // ya solAddrInput.value = profileSolAddress;
+                        }
+                        
+                        activeDirectsCount = data.user.activeDirectsCount || 0;
+                        promoBonusBalance = data.user.promoBonusBalance || 0.0100;
+                        updateDirectMembersUI();
+                        calculateAndUpdateTeamVolumes();
+                        
+                        if (data.user.telegramId) {
+                            fetchTeamMembersFromDB(data.user.telegramId.toString(), data.user.username || '');
                         }
                     }
                 }
