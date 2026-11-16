@@ -1474,7 +1474,12 @@ document.addEventListener('change', function(e) {
             .then(data => {
                 if (data.success && data.user) {
                     activeDirectsCount = data.user.activeDirectsCount || 0;
-                    promoBonusBalance = data.user.promoBonusBalance || 0.0100;
+                    totalPromoTopups = Math.floor(activeDirectsCount / 10);
+                    promoBonusBalance = 0.0100 + ((activeDirectsCount % 10) * 0.01);
+                    
+                    updateDirectMembersUI();
+                    calculateAndUpdateTeamVolumes();
+
                     // MongoDB se live team members fetch karne ke liye
                     fetchTeamMembersFromDB(tgUser.id.toString(), tgUser.username || '');
                 }
