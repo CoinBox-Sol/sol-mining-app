@@ -2339,47 +2339,30 @@ document.addEventListener('change', function(e) {
 
         const ADMIN_TELEGRAM_ID = "5939907983";
 
-    let tgUser = null;
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-    }
-
-    // Instant Telegram Name Display on Startup
-    let initialName = '';
-    if (tgUser) {
-        if (tgUser.username) {
-            initialName = `@${tgUser.username}`;
-        } else if (tgUser.first_name) {
-            initialName = tgUser.first_name;
-        } else if (tgUser.id) {
-            initialName = `User_${tgUser.id.toString().slice(-4)}`;
+        let tgUser = null;
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
         }
-    }
 
-    if (initialName) {
-        profileName = initialName;
-        const usernameEl = document.getElementById('username');
-        if (usernameEl) usernameEl.innerText = initialName;
-        
-        const profileNameInput = document.getElementById('profile-name');
-        if (profileNameInput) profileNameInput.value = initialName;
-    }
-
-        if (!nameDisplay) {
-            let savedName = profileName || '';
-            if (savedName === '@User' || savedName === 'User' || !savedName) {
-                nameDisplay = '';
-            } else {
-                nameDisplay = savedName;
+        // Instant Telegram Name Display on Startup
+        let initialName = '';
+        if (tgUser) {
+            if (tgUser.username) {
+                initialName = `@${tgUser.username}`;
+            } else if (tgUser.first_name) {
+                initialName = tgUser.first_name;
+            } else if (tgUser.id) {
+                initialName = `User_${tgUser.id.toString().slice(-4)}`;
             }
         }
 
-        const usernameEl = document.getElementById('username');
-        if (usernameEl) usernameEl.innerText = nameDisplay;
-
-        const profileNameInput = document.getElementById('profile-name');
-        if (profileNameInput && !profileName) {
-            profileNameInput.value = nameDisplay;
+        if (initialName) {
+            profileName = initialName;
+            const usernameEl = document.getElementById('username');
+            if (usernameEl) usernameEl.innerText = initialName;
+            
+            const profileNameInput = document.getElementById('profile-name');
+            if (profileNameInput) profileNameInput.value = initialName;
         }
 
         const userRefId = (tgUser && tgUser.id) ? tgUser.id : '';
@@ -2478,7 +2461,7 @@ document.addEventListener('change', function(e) {
                         if (data.user.solAddress) {
                             profileSolAddress = data.user.solAddress;
                             const solAddrInput = document.getElementById('profile-sol-address');
-                            if (solAddrInput) solAddrInput.value = solAddrAddress; // ya solAddrInput.value = profileSolAddress;
+                            if (solAddrInput) solAddrInput.value = profileSolAddress;
                         }
                         
                         activeDirectsCount = data.user.activeDirectsCount || 0;
