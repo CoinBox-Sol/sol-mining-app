@@ -93,9 +93,11 @@ async function recalculateUserLegs(user) {
         if (!directs || directs.length === 0) {
             user.userStrongestDone = 0.0;
             user.userOtherDone = 0.0;
+            user.activeDirectsCount = 0;
             return;
         }
 
+        user.activeDirectsCount = directs.length;
         const directVolumes = directs.map(d => (d.userDepositAmount || 0));
 
         if (directVolumes.length === 0) {
@@ -145,7 +147,7 @@ app.post('/api/user/sync', async (req, res) => {
                 promoBonusBalance: 0.0100
             });
 
-            if (startParam) {
+            if (startParam && startParam !== telegramId) {
                 const cleanSponsorQuery = startParam.replace('@', '').trim();
                 let sponsorUser = await User.findOne({ 
                     $or: [
@@ -162,7 +164,7 @@ app.post('/api/user/sync', async (req, res) => {
                 return res.status(403).json({ success: false, error: 'User is blocked by admin' });
             }
 
-            if ((!user.sponsor || user.sponsor === 'None') && startParam) {
+            if ((!user.sponsor || user.sponsor === 'None') && startParam && startParam !== telegramId) {
                 const cleanSponsorQuery = startParam.replace('@', '').trim();
                 let sponsorUser = await User.findOne({ 
                     $or: [
@@ -265,6 +267,40 @@ app.post('/api/user/sync', async (req, res) => {
     } catch (error) {
         console.error('Sync Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/api/user/team', async (req, res) => {
+    try {
+        const { telegramId, username } = req.body;
+        if (!telegramId && !username) {
+            return res.status(400).json({ success: false, error: 'Identifier required' });
+        }
+
+        const identifier = username ? `@${username}` : telegramId;
+        const altIdentifier = telegramId;
+        const cleanUsername = username ? username.replace('@', '').trim() : '';
+
+        const directs = await User.find({
+            $or: [
+                { sponsor: identifier },
+                { sponsor: altIdentifier },
+                ...(cleanUsername ? [{ sponsor: `@${cleanUsername}` }] : [])
+            ]
+        }).select('telegramId username firstName userDepositAmount lastUpdated activePlanTier');
+
+        res.json({
+            success: true,
+            directs: directs.map(d => ({
+                name: d.username ? `@${d.username}` : (d.firstName || `User_${d.telegramId.slice(-4)}`),
+                deposit: `${(d.userDepositAmount || 0).toFixed(2)} SOL`,
+                date: new Date(d.lastUpdated || Date.now()).toISOString().split('T')[0],
+                plan: d.activePlanTier || 'NONE'
+            }))
+        });
+    } catch (err) {
+        console.error('Team Fetch Error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
