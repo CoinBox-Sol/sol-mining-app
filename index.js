@@ -121,6 +121,7 @@ app.post('/api/user/sync', async (req, res) => {
             telegramId, 
             username, 
             firstName, 
+            lastName,
             startParam,
             minedSolBalance, 
             availableSolBalance, 
@@ -128,7 +129,11 @@ app.post('/api/user/sync', async (req, res) => {
             activePlanTier, 
             userDepositAmount, 
             miningSpeedPerSec, 
-            promoBonusBalance 
+            promoBonusBalance,
+            profileName,
+            profileMobile,
+            profileEmail,
+            profileSolAddress 
         } = req.body;
 
         if (!telegramId) {
@@ -137,10 +142,12 @@ app.post('/api/user/sync', async (req, res) => {
 
         let user = await User.findOne({ telegramId });
         if (!user) {
+            const defaultProfileName = profileName || (username ? `@${username}` : (firstName || `User_${telegramId.slice(-4)}`));
             user = new User({ 
                 telegramId, 
                 username: username || '', 
                 firstName: firstName || '',
+                profileName: defaultProfileName,
                 activePlanTier: 'NONE',
                 userDepositAmount: 0.00,
                 miningSpeedPerSec: miningSpeedPerSec || 0,
@@ -197,6 +204,16 @@ app.post('/api/user/sync', async (req, res) => {
             user.firstName = firstName;
         }
 
+        if (profileName && typeof profileName === 'string' && profileName.trim() !== '') {
+            user.profileName = profileName;
+        } else if (!user.profileName) {
+            user.profileName = user.username ? `@${user.username}` : (user.firstName || `User_${user.telegramId.slice(-4)}`);
+        }
+
+        if (profileMobile !== undefined) user.profileMobile = profileMobile;
+        if (profileEmail !== undefined) user.profileEmail = profileEmail;
+        if (profileSolAddress !== undefined) user.profileSolAddress = profileSolAddress;
+
         if (minedSolBalance !== undefined) {
             user.minedSolBalance = minedSolBalance === 0 ? 0 : Math.max(user.minedSolBalance || 0, minedSolBalance);
         }
@@ -247,6 +264,10 @@ app.post('/api/user/sync', async (req, res) => {
                 telegramId: user.telegramId,
                 username: finalUsername,
                 firstName: user.firstName || firstName || '',
+                profileName: user.profileName || finalUsername || user.firstName || `User_${user.telegramId.slice(-4)}`,
+                profileMobile: user.profileMobile || '',
+                profileEmail: user.profileEmail || '',
+                profileSolAddress: user.profileSolAddress || '',
                 sponsor: user.sponsor || 'None',
                 minedSolBalance: user.minedSolBalance || 0,
                 availableSolBalance: user.availableSolBalance || 0,
@@ -287,12 +308,12 @@ app.post('/api/user/team', async (req, res) => {
                 { sponsor: altIdentifier },
                 ...(cleanUsername ? [{ sponsor: `@${cleanUsername}` }] : [])
             ]
-        }).select('telegramId username firstName userDepositAmount lastUpdated activePlanTier');
+        }).select('telegramId username firstName profileName userDepositAmount lastUpdated activePlanTier');
 
         res.json({
             success: true,
             directs: directs.map(d => ({
-                name: d.username ? `@${d.username}` : (d.firstName || `User_${d.telegramId.slice(-4)}`),
+                name: d.profileName || (d.username ? `@${d.username}` : (d.firstName || `User_${d.telegramId.slice(-4)}`)),
                 deposit: `${(d.userDepositAmount || 0).toFixed(2)} SOL`,
                 date: new Date(d.lastUpdated || Date.now()).toISOString().split('T')[0],
                 plan: d.activePlanTier || 'NONE'
@@ -473,7 +494,7 @@ app.get('/api/admin/stats', async (req, res) => {
 
 app.get('/api/admin/users', async (req, res) => {
     try {
-        let users = await User.find({}, 'telegramId username firstName activePlanTier userDepositAmount')
+        let users = await User.find({}, 'telegramId username firstName profileName activePlanTier userDepositAmount')
                                .sort({ lastUpdated: -1 });
         
         if (!users || users.length === 0) {
@@ -481,6 +502,7 @@ app.get('/api/admin/users', async (req, res) => {
                 telegramId: '5939907983',
                 username: 'Farming_Master',
                 firstName: 'Admin',
+                profileName: 'Admin',
                 activePlanTier: 'NONE',
                 userDepositAmount: 0.00
             }];
