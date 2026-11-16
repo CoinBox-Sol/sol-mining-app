@@ -488,6 +488,73 @@ app.post('/api/admin/fix-legs', async (req, res) => {
     }
 });
 
+app.post('/api/admin/broadcast', async (req, res) => {
+    try {
+        const { message, photoUrl } = req.body;
+        if (!message) {
+            return res.status(400).json({ success: false, error: 'Broadcast message is required' });
+        }
+
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        if (!botToken) {
+            return res.status(500).json({ success: false, error: 'Telegram Bot Token not configured on server' });
+        }
+
+        const users = await User.find({}, 'telegramId');
+        if (!users || users.length === 0) {
+            return res.json({ success: false, error: 'No users found to broadcast' });
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const user of users) {
+            try {
+                let url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                let bodyData = {
+                    chat_id: user.telegramId,
+                    text: message,
+                    parse_mode: 'HTML'
+                };
+
+                if (photoUrl && photoUrl.trim() !== '') {
+                    url = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+                    bodyData = {
+                        chat_id: user.telegramId,
+                        photo: photoUrl,
+                        caption: message,
+                        parse_mode: 'HTML'
+                    };
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const result = await response.json();
+                if (result.ok) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch (err) {
+                failCount++;
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Broadcast completed successfully! Sent: ${successCount}, Failed: ${failCount}`
+        });
+
+    } catch (err) {
+        console.error('Broadcast Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.get('/api/admin/stats', async (req, res) => {
     try {
         let totalUsers = await User.countDocuments();
