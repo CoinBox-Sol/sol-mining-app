@@ -2466,6 +2466,7 @@ document.addEventListener('change', function(e) {
                         
                         activeDirectsCount = data.user.activeDirectsCount || 0;
                         promoBonusBalance = data.user.promoBonusBalance || 0.0100;
+                        totalPromoTopups = Math.floor(activeDirectsCount / 10);
                         updateDirectMembersUI();
                         calculateAndUpdateTeamVolumes();
                         
