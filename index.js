@@ -79,14 +79,17 @@ const User = mongoose.model('User', userSchema);
 
 async function recalculateUserLegs(user) {
     try {
-        const identifier = user.username ? `@${user.username}` : user.telegramId;
-        const alternativeId = user.username;
+        const usernameClean = user.username ? user.username.replace('@', '').trim() : '';
+        const telegramIdStr = user.telegramId ? user.telegramId.toString() : '';
 
         const directs = await User.find({
             $or: [
-                { sponsor: identifier },
-                { sponsor: user.telegramId },
-                ...(alternativeId ? [{ sponsor: `@${alternativeId}` }] : [])
+                { sponsor: telegramIdStr },
+                ...(usernameClean ? [
+                    { sponsor: usernameClean },
+                    { sponsor: `@${usernameClean}` },
+                    { sponsor: new RegExp('^@?' + usernameClean + '$', 'i') }
+                ] : [])
             ]
         });
 
@@ -298,15 +301,17 @@ app.post('/api/user/team', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Identifier required' });
         }
 
-        const identifier = username ? `@${username}` : telegramId;
-        const altIdentifier = telegramId;
-        const cleanUsername = username ? username.replace('@', '').trim() : '';
+        const usernameClean = username ? username.replace('@', '').trim() : '';
+        const telegramIdStr = telegramId ? telegramId.toString() : '';
 
         const directs = await User.find({
             $or: [
-                { sponsor: identifier },
-                { sponsor: altIdentifier },
-                ...(cleanUsername ? [{ sponsor: `@${cleanUsername}` }] : [])
+                { sponsor: telegramIdStr },
+                ...(usernameClean ? [
+                    { sponsor: usernameClean },
+                    { sponsor: `@${usernameClean}` },
+                    { sponsor: new RegExp('^@?' + usernameClean + '$', 'i') }
+                ] : [])
             ]
         }).select('telegramId username firstName profileName userDepositAmount lastUpdated activePlanTier');
 
@@ -580,7 +585,7 @@ app.post('/api/withdraw', async (req, res) => {
                 console.log(`Auto-Withdrawal Executed Successfully! TxID: ${txId}`);
 
                 return res.json({
-                    success: true,
+                    success: { success: true },
                     status: 'Auto-Paid',
                     txId: txId,
                     requestedAmount: parsedAmount,
@@ -601,7 +606,7 @@ app.post('/api/withdraw', async (req, res) => {
             return res.json({
                 success: true,
                 status: 'Pending Admin Approval',
-                requestedAmount: parsedObject || parsedAmount,
+                requestedAmount: parsedAmount,
                 fee: feeAmount,
                 netAmount: netReceiveAmount,
                 newBalance: user.availableSolBalance,
