@@ -313,6 +313,8 @@ app.post('/api/user/team', async (req, res) => {
         res.json({
             success: true,
             directs: directs.map(d => ({
+                telegramId: d.telegramId,
+                username: d.username || '',
                 name: d.profileName || (d.username ? `@${d.username}` : (d.firstName || `User_${d.telegramId.slice(-4)}`)),
                 deposit: `${(d.userDepositAmount || 0).toFixed(2)} SOL`,
                 date: new Date(d.lastUpdated || Date.now()).toISOString().split('T')[0],
@@ -412,6 +414,10 @@ app.post('/api/admin/sponsor', async (req, res) => {
 
         user.sponsor = sponsor || 'None';
         await user.save();
+
+        await recalculateUserLegs(user);
+        await user.save();
+
         res.json({ success: true, message: 'Sponsor updated successfully' });
     } catch (err) {
         console.error('Admin Sponsor Error:', err);
@@ -595,7 +601,7 @@ app.post('/api/withdraw', async (req, res) => {
             return res.json({
                 success: true,
                 status: 'Pending Admin Approval',
-                requestedAmount: parsedAmount,
+                requestedAmount: parsedObject || parsedAmount,
                 fee: feeAmount,
                 netAmount: netReceiveAmount,
                 newBalance: user.availableSolBalance,
