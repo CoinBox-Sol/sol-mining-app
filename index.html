@@ -1453,70 +1453,60 @@ document.addEventListener('change', function(e) {
     function checkReferralOnStartup() {
         const params = new URLSearchParams(window.location.search);
         let refId = params.get('start');
-    
+
         if (!refId && window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
             refId = window.Telegram.WebApp.initDataUnsafe.start_param;
         }
 
-        let isNewReferralJoined = false;
-
-        if (refId && !localStorage.getItem('sol_referred_flag_v3')) {
-            const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-            if (tgUser && tgUser.id) {
-                fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/user/sync', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        telegramId: tgUser.id.toString(),
-                        username: tgUser.username || '',
-                        firstName: tgUser.first_name || '',
-                        startParam: refId || null
-                    })
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (tgUser && tgUser.id) {
+            fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/user/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegramId: tgUser.id.toString(),
+                    username: tgUser.username || '',
+                    firstName: tgUser.first_name || '',
+                    startParam: refId || null
                 })
-                .catch(err => console.error("Sync Error:", err));
-            }
-
-            activeDirectsCount += 1;
-
-            if (!levelMembersData[1]) levelMembersData[1] = [];
-            levelMembersData[1].push({
-                name: `@Referral_User_${refId.slice(-4)}`,
-                deposit: "0.10 SOL (Promo)",
-                date: new Date().toISOString().split('T')[0]
-            });
-
-            localStorage.setItem('sol_referred_flag_v3', 'true');
-            isNewReferralJoined = true;
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.user) {
+                    activeDirectsCount = data.user.activeDirectsCount || 0;
+                    promoBonusBalance = data.user.promoBonusBalance || 0.0100;
+                    // MongoDB se live team members fetch karne ke liye
+                    fetchTeamMembersFromDB(tgUser.id.toString(), tgUser.username || '');
+                }
+            })
+            .catch(err => console.error("Referral Sync Error:", err));
         }
 
-        let directCount = (levelMembersData[1] && levelMembersData[1].length > 0) ? levelMembersData[1].length : activeDirectsCount;
-
+        let directCount = activeDirectsCount;
         totalPromoTopups = Math.floor(directCount / 10);
         promoBonusBalance = (directCount % 10) * 0.01;
 
-        if (typeof lastProcessedPromoTopups === 'undefined' || lastProcessedPromoTopups === null) {
-            lastProcessedPromoTopups = totalPromoTopups;
-        }
-
-        if (isNewReferralJoined && totalPromoTopups > lastProcessedPromoTopups) {
-            let newlyUnlockedTopups = totalPromoTopups - lastProcessedPromoTopups;
-            let addedVolume = newlyUnlockedTopups * 0.10;
-            
-            userDepositAmount += addedVolume;
-            lastProcessedPromoTopups = totalPromoTopups;
-
-            alert(`Congratulations! ${newlyUnlockedTopups} new Promo Auto-Topup(s) triggered! Added ${addedVolume.toFixed(2)} SOL to Investment Volume.`);
-            updateMiningSpeedForPlan(activePlanTier === 'NONE' ? 'STARTER' : activePlanTier, userDepositAmount);
-        } else {
-            lastProcessedPromoTopups = totalPromoTopups;
-        }
-
-        if (userDepositAmount > 0 && activePlanTier === 'NONE') {
-            activePlanTier = 'STARTER';
-        }
-
         updateDirectMembersUI();
         calculateAndUpdateTeamVolumes();
+    }
+
+    async function fetchTeamMembersFromDB(telegramId, username) {
+        try {
+            const response = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/user/team', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId, username })
+            });
+            const data = await response.json();
+            if (data.success && data.directs) {
+                levelMembersData[1] = data.directs;
+                activeDirectsCount = data.directs.length;
+                calculateAndUpdateTeamVolumes();
+                updateDirectMembersUI();
+            }
+        } catch (err) {
+            console.error("Failed to fetch team members from DB:", err);
+        }
     }
 
     function updateDirectMembersUI() {
