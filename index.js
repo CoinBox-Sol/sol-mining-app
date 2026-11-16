@@ -494,6 +494,7 @@ app.post('/api/admin/fix-legs', async (req, res) => {
 
 app.post('/api/admin/broadcast', upload.single('photo'), async (req, res) => {
     try {
+        console.log('=== BROADCAST STARTED ===');
         const { message, photoUrl } = req.body;
         const photoFile = req.file;
 
@@ -503,12 +504,15 @@ app.post('/api/admin/broadcast', upload.single('photo'), async (req, res) => {
 
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         if (!botToken) {
+            console.error('Error: TELEGRAM_BOT_TOKEN is missing in environment variables!');
             return res.status(500).json({ success: false, error: 'Telegram Bot Token not configured on server' });
         }
 
         const users = await User.find({}, 'telegramId');
+        console.log(`Total users found in database: ${users.length}`);
+
         if (!users || users.length === 0) {
-            return res.json({ success: false, error: 'No users found to broadcast' });
+            return res.json({ success: false, error: 'No users found in database to broadcast' });
         }
 
         let successCount = 0;
@@ -531,7 +535,7 @@ app.post('/api/admin/broadcast', upload.single('photo'), async (req, res) => {
                         body: formData
                     });
                 } else if (photoUrl && photoUrl.trim() !== '') {
-                    const responseUrl = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                    response = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -541,7 +545,6 @@ app.post('/api/admin/broadcast', upload.single('photo'), async (req, res) => {
                             parse_mode: 'HTML'
                         })
                     });
-                    response = responseUrl;
                 } else {
                     response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                         method: 'POST',
@@ -558,20 +561,24 @@ app.post('/api/admin/broadcast', upload.single('photo'), async (req, res) => {
                 if (result.ok) {
                     successCount++;
                 } else {
+                    console.error(`Failed for user ${user.telegramId}:`, result);
                     failCount++;
                 }
             } catch (err) {
+                console.error(`Exception for user ${user.telegramId}:`, err.message);
                 failCount++;
             }
         }
 
+        console.log(`=== BROADCAST FINISHED === Sent: ${successCount}, Failed: ${failCount}`);
+
         res.json({
             success: true,
-            message: `Broadcast completed successfully! Sent: ${successCount}, Failed: ${failCount}`
+            message: `Broadcast completed! Sent: ${successCount}, Failed: ${failCount}`
         });
 
     } catch (err) {
-        console.error('Broadcast Error:', err);
+        console.error('Broadcast Route Error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
