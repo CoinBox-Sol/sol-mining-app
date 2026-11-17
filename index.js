@@ -239,8 +239,15 @@ app.post('/api/user/sync', async (req, res) => {
             user.activePlanTier = activePlanTier;
         }
 
-        if (userDepositAmount !== undefined) user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
-        if (promoBonusBalance !== undefined) user.promoBonusBalance = Math.max(user.promoBonusBalance || 0.0100, promoBonusBalance);
+        if (userDepositAmount !== undefined) {
+            user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
+        }
+        
+        if (promoBonusBalance !== undefined) {
+            if (promoBonusBalance > (user.promoBonusBalance || 0)) {
+                user.promoBonusBalance = promoBonusBalance;
+            }
+        }
 
         if (user.promoBonusBalance >= 0.10 && (!user.activePlanTier || user.activePlanTier === 'NONE')) {
             user.activePlanTier = 'STARTER';
@@ -409,6 +416,46 @@ app.post('/api/admin/balance', async (req, res) => {
         res.json({ success: true, newBalance: user.availableSolBalance, message: 'Balance updated successfully' });
     } catch (err) {
         console.error('Admin Balance Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/topup', async (req, res) => {
+    try {
+        const { telegramId, username, amount, planTier } = req.body;
+        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+
+        let user = await User.findOne(query);
+        if (!user) return res.status(404).json({ success: false, error: 'User not found in database' });
+
+        const topupAmount = parseFloat(amount) || 0.10;
+        const selectedPlan = planTier || 'STARTER';
+
+        user.userDepositAmount = (user.userDepositAmount || 0) + topupAmount;
+        user.activePlanTier = selectedPlan;
+        
+        if (!user.miningSpeedPerSec || user.miningSpeedPerSec === 0) {
+            user.miningSpeedPerSec = 0.00001;
+        }
+
+        await recalculateUserLegs(user);
+        user.lastUpdated = Date.now();
+        await user.save();
+
+        console.log(`Admin Top-Up Successful for User: ${user.telegramId || user.username}, Amount: ${topupAmount} SOL, Plan: ${selectedPlan}`);
+
+        res.json({ 
+            success: true, 
+            message: `Successfully processed top-up of ${topupAmount.toFixed(2)} SOL for user!`,
+            user: {
+                telegramId: user.telegramId,
+                username: user.username,
+                deposit: user.userDepositAmount,
+                plan: user.activePlanTier
+            }
+        });
+    } catch (err) {
+        console.error('Admin Top-Up Error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
