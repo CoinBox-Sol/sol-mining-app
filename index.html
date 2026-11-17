@@ -2515,8 +2515,32 @@ document.addEventListener('change', function(e) {
                         }
 
                         if (typeof totalSelfFarmingClaimed !== 'undefined') {
-                            totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || 0);
+                            totalSelfFarmingClaimed = Math.max(totalSelfFarmingClaimed, data.user.totalSelfFarmingClaimed || data.user.selfFarmingBonus || 0);
                         }
+
+                        directReferralBonus = parseFloat(data.user.directReferralBonus || data.user.direct_referral_bonus || 0);
+                        teamReferralBonus = parseFloat(data.user.teamReferralBonus || data.user.team_referral_bonus || 0);
+                        teamOverrideBonus = parseFloat(data.user.teamOverrideBonus || data.user.team_override_bonus || 0);
+                        rankRoyaltyBonus = parseFloat(data.user.rankRoyaltyBonus || data.user.rank_royalty_bonus || 0);
+                        totalEarnedAmount = parseFloat(data.user.totalEarnedAmount || (totalSelfFarmingClaimed + directReferralBonus + teamReferralBonus + teamOverrideBonus + rankRoyaltyBonus) || 0);
+
+                        const statSelfEl = document.getElementById('stat-self-bonus');
+                        if (statSelfEl) statSelfEl.innerText = `${totalSelfFarmingClaimed.toFixed(4)} SOL`;
+
+                        const statDirectEl = document.getElementById('stat-direct-bonus');
+                        if (statDirectEl) statDirectEl.innerText = `${directReferralBonus.toFixed(4)} SOL`;
+
+                        const statTeamEl = document.getElementById('stat-team-bonus');
+                        if (statTeamEl) statTeamEl.innerText = `${teamReferralBonus.toFixed(4)} SOL`;
+
+                        const statOverrideEl = document.getElementById('stat-override-bonus');
+                        if (statOverrideEl) statOverrideEl.innerText = `${teamOverrideBonus.toFixed(4)} SOL`;
+
+                        const statRankEl = document.getElementById('stat-rank-bonus');
+                        if (statRankEl) statRankEl.innerText = `${rankRoyaltyBonus.toFixed(4)} SOL`;
+
+                        const totalEarnedEl = document.getElementById('total-earned-display');
+                        if (totalEarnedEl) totalEarnedEl.innerHTML = `${totalEarnedAmount.toFixed(4)} <span class="text-xs text-white">SOL</span>`;
                         
                         const minedEl = document.getElementById('mined-balance');
                         if (minedEl && minedSolBalance > 0) {
