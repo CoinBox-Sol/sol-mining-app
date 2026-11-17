@@ -101,6 +101,7 @@ async function recalculateUserLegs(user) {
             user.userStrongestDone = 0.0;
             user.userOtherDone = 0.0;
             user.activeDirectsCount = 0;
+            user.directReferralBonus = 0.0;
             return;
         }
 
@@ -111,6 +112,9 @@ async function recalculateUserLegs(user) {
         if (user.promoBonusBalance < expectedPromo && user.promoBonusBalance < 0.10) {
             user.promoBonusBalance = expectedPromo;
         }
+
+        const totalDirectDeposit = directs.reduce((acc, d) => acc + (d.userDepositAmount || 0), 0);
+        user.directReferralBonus = totalDirectDeposit * 0.05;
 
         const directVolumes = directs.map(d => (d.userDepositAmount || 0));
 
@@ -128,6 +132,47 @@ async function recalculateUserLegs(user) {
         console.error('Error recalculating legs:', err);
     }
 }
+
+app.post('/api/user/claim', async (req, res) => {
+    try {
+        const { telegramId, claimedAmount } = req.body;
+        if (!telegramId) {
+            return res.status(400).json({ success: false, error: 'Telegram ID is required' });
+        }
+
+        let user = await User.findOne({ telegramId });
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        let amount = parseFloat(claimedAmount) || 0;
+        if (amount > 0) {
+            user.availableSolBalance = (user.availableSolBalance || 0) + amount;
+            user.totalSelfFarmingClaimed = (user.totalSelfFarmingClaimed || 0) + amount;
+            user.minedSolBalance = 0;
+            user.lastUpdated = Date.now();
+            await user.save();
+        }
+
+        return res.json({
+            success: true,
+            user: {
+                telegramId: user.telegramId,
+                minedSolBalance: user.minedSolBalance || 0,
+                availableSolBalance: user.availableSolBalance || 0,
+                totalSelfFarmingClaimed: user.totalSelfFarmingClaimed || 0,
+                selfFarmingBonus: user.totalSelfFarmingClaimed || 0,
+                self_farming_bonus: user.totalSelfFarmingClaimed || 0,
+                directReferralBonus: user.directReferralBonus || 0,
+                direct_referral_bonus: user.directReferralBonus || 0,
+                promoBonusBalance: user.promoBonusBalance || 0.0100
+            }
+        });
+    } catch (err) {
+        console.error('Claim Route Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 app.post('/api/user/sync', async (req, res) => {
     try {
@@ -257,21 +302,6 @@ app.post('/api/user/sync', async (req, res) => {
         }
 
         await recalculateUserLegs(user);
-
-        const usernameClean = user.username ? user.username.replace('@', '').trim() : '';
-        const telegramIdStr = user.telegramId ? user.telegramId.toString() : '';
-        const directsList = await User.find({
-            $or: [
-                { sponsor: telegramIdStr },
-                ...(usernameClean ? [
-                    { sponsor: usernameClean },
-                    { sponsor: `@${usernameClean}` },
-                    { sponsor: new RegExp('^@?' + usernameClean + '$', 'i') }
-                ] : [])
-            ]
-        });
-        const totalDirectDeposit = directsList.reduce((acc, d) => acc + (d.userDepositAmount || 0), 0);
-        user.directReferralBonus = totalDirectDeposit * 0.05;
 
         while (user.promoBonusBalance >= 0.10) {
             user.promoBonusBalance -= 0.10;
