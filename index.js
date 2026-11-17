@@ -422,17 +422,28 @@ app.post('/api/admin/balance', async (req, res) => {
 
 app.post('/api/admin/topup', async (req, res) => {
     try {
-        const { telegramId, username, amount, planTier } = req.body;
+        const { telegramId, username, amount } = req.body;
         let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
 
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found in database' });
 
         const topupAmount = parseFloat(amount) || 0.10;
-        const selectedPlan = planTier || 'STARTER';
 
         user.userDepositAmount = (user.userDepositAmount || 0) + topupAmount;
-        user.activePlanTier = selectedPlan;
+
+        let calculatedTier = 'STARTER';
+        if (user.userDepositAmount >= 25.10) {
+            calculatedTier = 'GALAXY';
+        } else if (user.userDepositAmount >= 10.10) {
+            calculatedTier = 'PREMIUM';
+        } else if (user.userDepositAmount >= 2.10) {
+            calculatedTier = 'ADVANCE';
+        } else {
+            calculatedTier = 'STARTER';
+        }
+
+        user.activePlanTier = calculatedTier;
         
         if (!user.miningSpeedPerSec || user.miningSpeedPerSec === 0) {
             user.miningSpeedPerSec = 0.00001;
@@ -442,11 +453,11 @@ app.post('/api/admin/topup', async (req, res) => {
         user.lastUpdated = Date.now();
         await user.save();
 
-        console.log(`Admin Top-Up Successful for User: ${user.telegramId || user.username}, Amount: ${topupAmount} SOL, Plan: ${selectedPlan}`);
+        console.log(`Admin Top-Up Successful for User: ${user.telegramId || user.username}, Added: ${topupAmount} SOL, Total Deposit: ${user.userDepositAmount} SOL, Plan: ${calculatedTier}`);
 
         res.json({ 
             success: true, 
-            message: `Successfully processed top-up of ${topupAmount.toFixed(2)} SOL for user!`,
+            message: `Successfully processed top-up of ${topupAmount.toFixed(2)} SOL! Total Deposit: ${user.userDepositAmount.toFixed(2)} SOL, Plan: ${calculatedTier}`,
             user: {
                 telegramId: user.telegramId,
                 username: user.username,
