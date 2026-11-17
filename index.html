@@ -2500,6 +2500,10 @@ document.addEventListener('change', function(e) {
                     });
                     const data = await response.json();
                     if (data.success && data.user) {
+                        activePlanTier = data.user.activePlanTier || 'NONE';
+                        userDepositAmount = parseFloat(data.user.userDepositAmount) || 0.00;
+                        updateMiningSpeedForPlan(activePlanTier, userDepositAmount);
+
                         if (typeof data.user.minedSolBalance !== 'undefined') {
                             if (minedSolBalance <= 0 && data.user.minedSolBalance > 0) {
                                 minedSolBalance = parseFloat(data.user.minedSolBalance) || 0;
