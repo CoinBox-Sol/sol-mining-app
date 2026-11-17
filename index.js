@@ -197,17 +197,6 @@ app.post('/api/user/sync', async (req, res) => {
                     user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
                 }
             }
-
-            if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE') {
-                const now = Date.now();
-                const diffSeconds = (now - new Date(user.lastUpdated).getTime()) / 1000;
-                let activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : 0;
-
-                if (diffSeconds > 0 && activeSpeed > 0) {
-                    const offlineMined = diffSeconds * activeSpeed;
-                    user.minedSolBalance = (user.minedSolBalance || 0) + offlineMined;
-                }
-            }
         }
 
         if (isNewUser && foundSponsorUser) {
@@ -246,13 +235,6 @@ app.post('/api/user/sync', async (req, res) => {
         if (profileEmail !== undefined) user.profileEmail = profileEmail;
         if (profileSolAddress !== undefined) user.profileSolAddress = profileSolAddress;
 
-        if (minedSolBalance !== undefined) {
-            if (minedSolBalance === 0) {
-                user.minedSolBalance = 0;
-            } else {
-                user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance);
-            }
-        }
         if (availableSolBalance !== undefined) {
             user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
         }
@@ -272,8 +254,8 @@ app.post('/api/user/sync', async (req, res) => {
             user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
         }
         
-        if (promoBonusBalance !== undefined && promoBonusBalance > (user.promoBonusBalance || 0.0100)) {
-            user.promoBonusBalance = promoBonusBalance;
+        if (promoBonusBalance !== undefined) {
+            user.promoBonusBalance = Math.max(user.promoBonusBalance || 0.0100, promoBonusBalance);
         }
 
         while (user.promoBonusBalance >= 0.10) {
@@ -299,6 +281,28 @@ app.post('/api/user/sync', async (req, res) => {
             }
             user.activePlanTier = calculatedTier;
             user.miningSpeedPerSec = calcSpeed;
+        }
+
+        let offlineMined = 0;
+        if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE') {
+            const now = Date.now();
+            const diffSeconds = (now - new Date(user.lastUpdated).getTime()) / 1000;
+            let activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : 0;
+
+            if (diffSeconds > 0 && activeSpeed > 0) {
+                offlineMined = diffSeconds * activeSpeed;
+            }
+        }
+
+        if (minedSolBalance !== undefined) {
+            if (minedSolBalance === 0) {
+                user.minedSolBalance = 0;
+                user.lastUpdated = Date.now();
+            } else {
+                user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance) + offlineMined;
+            }
+        } else {
+            user.minedSolBalance = (user.minedSolBalance || 0) + offlineMined;
         }
 
         await recalculateUserLegs(user);
@@ -801,7 +805,7 @@ app.post('/api/withdraw', async (req, res) => {
             } catch (blockchainErr) {
                 user.availableSolBalance += parsedAmount;
                 await user.save();
-                console.error('Blockchain Transfer Failed, Refunded User Deposit / Balance:', blockchainErr.message);
+                console.error('Blockchain Transfer Failed, Refunded User Balance:', blockchainErr.message);
                 return res.status(500).json({ success: false, error: 'Blockchain transaction failed: ' + blockchainErr.message });
             }
 
