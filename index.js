@@ -147,8 +147,12 @@ app.post('/api/user/sync', async (req, res) => {
             return res.status(400).json({ error: 'Telegram ID is required' });
         }
 
+        let isNewUser = false;
+        let foundSponsorUser = null;
+
         let user = await User.findOne({ telegramId });
         if (!user) {
+            isNewUser = true;
             const defaultProfileName = profileName || (username ? `@${username}` : (firstName || `User_${telegramId.slice(-4)}`));
             user = new User({ 
                 telegramId, 
@@ -171,6 +175,7 @@ app.post('/api/user/sync', async (req, res) => {
                 });
                 if (sponsorUser) {
                     user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
+                    foundSponsorUser = sponsorUser;
                 }
             }
         } else {
@@ -201,6 +206,29 @@ app.post('/api/user/sync', async (req, res) => {
                     user.minedSolBalance = (user.minedSolBalance || 0) + offlineMined;
                 }
             }
+        }
+
+        if (isNewUser && foundSponsorUser) {
+            foundSponsorUser.promoBonusBalance = (foundSponsorUser.promoBonusBalance || 0) + 0.01;
+            
+            while (foundSponsorUser.promoBonusBalance >= 0.10) {
+                foundSponsorUser.promoBonusBalance -= 0.10;
+                foundSponsorUser.userDepositAmount = (foundSponsorUser.userDepositAmount || 0) + 0.10;
+                
+                let calculatedTier = 'STARTER';
+                if (foundSponsorUser.userDepositAmount >= 25.10) {
+                    calculatedTier = 'GALAXY';
+                } else if (foundSponsorUser.userDepositAmount >= 10.10) {
+                    calculatedTier = 'PREMIUM';
+                } else if (foundSponsorUser.userDepositAmount >= 2.10) {
+                    calculatedTier = 'ADVANCE';
+                } else {
+                    calculatedTier = 'STARTER';
+                }
+                foundSponsorUser.activePlanTier = calculatedTier;
+            }
+            await recalculateUserLegs(foundSponsorUser);
+            await foundSponsorUser.save();
         }
 
         if (username && typeof username === 'string' && username.trim() !== '' && username !== 'undefined') {
@@ -249,9 +277,23 @@ app.post('/api/user/sync', async (req, res) => {
             }
         }
 
-        if (user.promoBonusBalance >= 0.10 && (!user.activePlanTier || user.activePlanTier === 'NONE')) {
-            user.activePlanTier = 'STARTER';
-            user.userDepositAmount = 0.10;
+        while (user.promoBonusBalance >= 0.10) {
+            user.promoBonusBalance -= 0.10;
+            user.userDepositAmount = (user.userDepositAmount || 0) + 0.10;
+        }
+
+        if (user.userDepositAmount > 0) {
+            let calculatedTier = 'STARTER';
+            if (user.userDepositAmount >= 25.10) {
+                calculatedTier = 'GALAXY';
+            } else if (user.userDepositAmount >= 10.10) {
+                calculatedTier = 'PREMIUM';
+            } else if (user.userDepositAmount >= 2.10) {
+                calculatedTier = 'ADVANCE';
+            } else {
+                calculatedTier = 'STARTER';
+            }
+            user.activePlanTier = calculatedTier;
         }
 
         await recalculateUserLegs(user);
@@ -462,7 +504,8 @@ app.post('/api/admin/topup', async (req, res) => {
                 telegramId: user.telegramId,
                 username: user.username,
                 deposit: user.userDepositAmount,
-                plan: user.activePlanTier
+                plan: user.activePlanTier,
+                promoBonusBalance: user.promoBonusBalance
             }
         });
     } catch (err) {
