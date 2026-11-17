@@ -349,6 +349,7 @@ app.post('/api/user/sync', async (req, res) => {
                 minedSolBalance: user.minedSolBalance || 0,
                 availableSolBalance: user.availableSolBalance || 0,
                 totalSelfFarmingClaimed: user.totalSelfFarmingClaimed || 0,
+                selfFarmingBonus: user.totalSelfFarmingClaimed || 0,
                 activePlanTier: user.activePlanTier || 'NONE',
                 userDepositAmount: user.userDepositAmount || 0,
                 miningSpeedPerSec: user.miningSpeedPerSec || 0,
