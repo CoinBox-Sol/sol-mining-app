@@ -107,8 +107,6 @@ async function recalculateUserLegs(user) {
         const activeDirects = directs.filter(d => (d.userDepositAmount || 0) > 0);
         user.activeDirectsCount = activeDirects.length;
 
-        // PROMO BONUS UPDATE: Ensure sponsor gets +0.01 for each direct referral registered
-        // If exact direct count is greater than current promo increments, accumulate properly
         const expectedPromo = 0.01 + (directs.length * 0.01);
         if (user.promoBonusBalance < expectedPromo && user.promoBonusBalance < 0.10) {
             user.promoBonusBalance = expectedPromo;
@@ -260,6 +258,21 @@ app.post('/api/user/sync', async (req, res) => {
 
         await recalculateUserLegs(user);
 
+        const usernameClean = user.username ? user.username.replace('@', '').trim() : '';
+        const telegramIdStr = user.telegramId ? user.telegramId.toString() : '';
+        const directsList = await User.find({
+            $or: [
+                { sponsor: telegramIdStr },
+                ...(usernameClean ? [
+                    { sponsor: usernameClean },
+                    { sponsor: `@${usernameClean}` },
+                    { sponsor: new RegExp('^@?' + usernameClean + '$', 'i') }
+                ] : [])
+            ]
+        });
+        const totalDirectDeposit = directsList.reduce((acc, d) => acc + (d.userDepositAmount || 0), 0);
+        user.directReferralBonus = totalDirectDeposit * 0.05;
+
         while (user.promoBonusBalance >= 0.10) {
             user.promoBonusBalance -= 0.10;
             user.userDepositAmount = (user.userDepositAmount || 0) + 0.10;
@@ -341,6 +354,10 @@ app.post('/api/user/sync', async (req, res) => {
                 miningSpeedPerSec: user.miningSpeedPerSec || 0,
                 activeDirectsCount: user.activeDirectsCount || 0,
                 promoBonusBalance: user.promoBonusBalance || 0.0100,
+                directReferralBonus: user.directReferralBonus || 0,
+                teamReferralBonus: user.teamReferralBonus || 0,
+                teamOverrideBonus: user.teamOverrideBonus || 0,
+                rankRoyaltyBonus: user.rankRoyaltyBonus || 0,
                 totalEarnedAmount: user.totalEarnedAmount || 0,
                 strongestDone: user.userStrongestDone || 0,
                 otherDone: user.userOtherDone || 0,
