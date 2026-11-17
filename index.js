@@ -209,23 +209,18 @@ app.post('/api/user/sync', async (req, res) => {
         }
 
         if (isNewUser && foundSponsorUser) {
-            foundSponsorUser.promoBonusBalance = (foundSponsorUser.promoBonusBalance || 0) + 0.01;
+            foundSponsorUser.promoBonusBalance = (foundSponsorUser.promoBonusBalance || 0.0100) + 0.01;
             
             while (foundSponsorUser.promoBonusBalance >= 0.10) {
                 foundSponsorUser.promoBonusBalance -= 0.10;
                 foundSponsorUser.userDepositAmount = (foundSponsorUser.userDepositAmount || 0) + 0.10;
                 
-                let calculatedTier = 'STARTER';
-                if (foundSponsorUser.userDepositAmount >= 25.10) {
-                    calculatedTier = 'GALAXY';
-                } else if (foundSponsorUser.userDepositAmount >= 10.10) {
-                    calculatedTier = 'PREMIUM';
-                } else if (foundSponsorUser.userDepositAmount >= 2.10) {
-                    calculatedTier = 'ADVANCE';
-                } else {
-                    calculatedTier = 'STARTER';
-                }
-                foundSponsorUser.activePlanTier = calculatedTier;
+                let calcTier = 'STARTER';
+                if (foundSponsorUser.userDepositAmount >= 25.10) calcTier = 'GALAXY';
+                else if (foundSponsorUser.userDepositAmount >= 10.10) calcTier = 'PREMIUM';
+                else if (foundSponsorUser.userDepositAmount >= 2.10) calcTier = 'ADVANCE';
+                else calcTier = 'STARTER';
+                foundSponsorUser.activePlanTier = calcTier;
             }
             await recalculateUserLegs(foundSponsorUser);
             await foundSponsorUser.save();
@@ -250,7 +245,7 @@ app.post('/api/user/sync', async (req, res) => {
         if (profileSolAddress !== undefined) user.profileSolAddress = profileSolAddress;
 
         if (minedSolBalance !== undefined) {
-            user.minedSolBalance = minedSolBalance === 0 ? 0 : Math.max(user.minedSolBalance || 0, minedSolBalance);
+            user.minedSolBalance = minedSolBalance === 0 ? user.minedSolBalance : Math.max(user.minedSolBalance || 0, minedSolBalance);
         }
         if (availableSolBalance !== undefined) {
             user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
@@ -271,10 +266,8 @@ app.post('/api/user/sync', async (req, res) => {
             user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
         }
         
-        if (promoBonusBalance !== undefined) {
-            if (promoBonusBalance > (user.promoBonusBalance || 0)) {
-                user.promoBonusBalance = promoBonusBalance;
-            }
+        if (promoBonusBalance !== undefined && promoBonusBalance > (user.promoBonusBalance || 0.0100)) {
+            user.promoBonusBalance = promoBonusBalance;
         }
 
         while (user.promoBonusBalance >= 0.10) {
