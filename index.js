@@ -297,7 +297,6 @@ app.post('/api/user/sync', async (req, res) => {
         if (minedSolBalance !== undefined) {
             if (minedSolBalance === 0) {
                 user.minedSolBalance = 0;
-                user.lastUpdated = Date.now();
             } else {
                 user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance) + offlineMined;
             }
