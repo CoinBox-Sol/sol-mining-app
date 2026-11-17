@@ -2049,26 +2049,40 @@ document.addEventListener('change', function(e) {
     async function adminTopupModal(type) {
         let userId = prompt(`Enter Telegram ID or Username for ${type.toUpperCase()} Top-up:`);
         if (!userId) return;
-        let amount = prompt("Enter SOL Deposit Amount (e.g. 0.10):", type === 'free' ? "0.10" : "1.00");
+        
+        let cleanUserId = userId.trim().replace(/^@/, '');
+        let amount = prompt("Enter SOL Deposit Amount (e.g., 0.10, 2.10, 10.10, 25.10):", type === 'free' ? "0.10" : "1.00");
         if (!amount) return;
 
-        let planTier = parseFloat(amount) >= 10.0 ? 'PREMIUM' : (parseFloat(amount) >= 2.1 ? 'ADVANCE' : 'STARTER');
+        let parsedAmount = parseFloat(amount);
+        
+        let planTier = 'STARTER';
+        if (parsedAmount >= 25.10) {
+            planTier = 'GALAXY';
+        } else if (parsedAmount >= 10.10) {
+            planTier = 'PREMIUM';
+        } else if (parsedAmount >= 2.10) {
+            planTier = 'ADVANCE';
+        } else {
+            planTier = 'STARTER';
+        }
 
         try {
             const response = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/admin/topup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    telegramId: userId.startsWith('5') ? userId : null,
-                    username: !userId.startsWith('5') ? userId : null,
-                    amount: parseFloat(amount),
+                    telegramId: /^\d+$/.test(cleanUserId) ? cleanUserId : null,
+                    username: !/^\d+$/.test(cleanUserId) ? cleanUserId : null,
+                    amount: parsedAmount,
                     planTier: planTier
                 })
             });
 
             const result = await response.json();
             if (result.success) {
-                alert(`✅ Successfully processed top-up of ${parseFloat(amount).toFixed(2)} SOL for user ${userId}! Plan: ${planTier}`);
+                alert(`✅ Successfully processed top-up of ${parsedAmount.toFixed(2)} SOL for user @${cleanUserId}! Package Tier: ${planTier}`);
+                location.reload();
             } else {
                 alert(`❌ Error: ${result.error || 'Failed to process top-up'}`);
             }
