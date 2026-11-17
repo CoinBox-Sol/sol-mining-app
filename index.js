@@ -149,10 +149,10 @@ app.post('/api/user/sync', async (req, res) => {
             return res.status(400).json({ error: 'Telegram ID is required' });
         }
 
+        let user = await User.findOne({ telegramId });
         let isNewUser = false;
         let foundSponsorUser = null;
 
-        let user = await User.findOne({ telegramId });
         if (!user) {
             isNewUser = true;
             const defaultProfileName = profileName || (username ? `@${username}` : (firstName || `User_${telegramId.slice(-4)}`));
@@ -205,13 +205,6 @@ app.post('/api/user/sync', async (req, res) => {
             while (foundSponsorUser.promoBonusBalance >= 0.10) {
                 foundSponsorUser.promoBonusBalance -= 0.10;
                 foundSponsorUser.userDepositAmount = (foundSponsorUser.userDepositAmount || 0) + 0.10;
-                
-                let calcTier = 'STARTER';
-                if (foundSponsorUser.userDepositAmount >= 25.10) calcTier = 'GALAXY';
-                else if (foundSponsorUser.userDepositAmount >= 10.10) calcTier = 'PREMIUM';
-                else if (foundSponsorUser.userDepositAmount >= 2.10) calcTier = 'ADVANCE';
-                else calcTier = 'STARTER';
-                foundSponsorUser.activePlanTier = calcTier;
             }
             await recalculateUserLegs(foundSponsorUser);
             await foundSponsorUser.save();
@@ -235,11 +228,11 @@ app.post('/api/user/sync', async (req, res) => {
         if (profileEmail !== undefined) user.profileEmail = profileEmail;
         if (profileSolAddress !== undefined) user.profileSolAddress = profileSolAddress;
 
-        if (availableSolBalance !== undefined) {
-            user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
+        if (availableSolBalance !== undefined && availableSolBalance > (user.availableSolBalance || 0)) {
+            user.availableSolBalance = availableSolBalance;
         }
-        if (totalSelfFarmingClaimed !== undefined) {
-            user.totalSelfFarmingClaimed = Math.max(user.totalSelfFarmingClaimed || 0, totalSelfFarmingClaimed);
+        if (totalSelfFarmingClaimed !== undefined && totalSelfFarmingClaimed > (user.totalSelfFarmingClaimed || 0)) {
+            user.totalSelfFarmingClaimed = totalSelfFarmingClaimed;
         }
         
         if (miningSpeedPerSec !== undefined && miningSpeedPerSec > 0) {
@@ -254,8 +247,8 @@ app.post('/api/user/sync', async (req, res) => {
             user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
         }
         
-        if (promoBonusBalance !== undefined) {
-            user.promoBonusBalance = Math.max(user.promoBonusBalance || 0.0100, promoBonusBalance);
+        if (promoBonusBalance !== undefined && promoBonusBalance > (user.promoBonusBalance || 0.0100)) {
+            user.promoBonusBalance = promoBonusBalance;
         }
 
         while (user.promoBonusBalance >= 0.10) {
@@ -296,7 +289,7 @@ app.post('/api/user/sync', async (req, res) => {
 
         if (minedSolBalance !== undefined) {
             if (minedSolBalance === 0) {
-                user.minedSolBalance = 0;
+                user.minedSolBalance = offlineMined;
             } else {
                 user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance) + offlineMined;
             }
