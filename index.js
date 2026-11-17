@@ -104,7 +104,9 @@ async function recalculateUserLegs(user) {
             return;
         }
 
-        user.activeDirectsCount = directs.length;
+        const activeDirects = directs.filter(d => (d.userDepositAmount || 0) > 0);
+        user.activeDirectsCount = activeDirects.length;
+
         const directVolumes = directs.map(d => (d.userDepositAmount || 0));
 
         if (directVolumes.length === 0) {
@@ -161,7 +163,7 @@ app.post('/api/user/sync', async (req, res) => {
                 profileName: defaultProfileName,
                 activePlanTier: 'NONE',
                 userDepositAmount: 0.00,
-                miningSpeedPerSec: miningSpeedPerSec || 0,
+                miningSpeedPerSec: 0.0000,
                 promoBonusBalance: 0.0100
             });
 
@@ -199,7 +201,7 @@ app.post('/api/user/sync', async (req, res) => {
             if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE') {
                 const now = Date.now();
                 const diffSeconds = (now - new Date(user.lastUpdated).getTime()) / 1000;
-                let activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : (miningSpeedPerSec || 0);
+                let activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : 0;
 
                 if (diffSeconds > 0 && activeSpeed > 0) {
                     const offlineMined = diffSeconds * activeSpeed;
@@ -245,7 +247,11 @@ app.post('/api/user/sync', async (req, res) => {
         if (profileSolAddress !== undefined) user.profileSolAddress = profileSolAddress;
 
         if (minedSolBalance !== undefined) {
-            user.minedSolBalance = minedSolBalance === 0 ? user.minedSolBalance : Math.max(user.minedSolBalance || 0, minedSolBalance);
+            if (minedSolBalance === 0) {
+                user.minedSolBalance = 0;
+            } else {
+                user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance);
+            }
         }
         if (availableSolBalance !== undefined) {
             user.availableSolBalance = Math.max(user.availableSolBalance || 0, availableSolBalance);
@@ -277,16 +283,22 @@ app.post('/api/user/sync', async (req, res) => {
 
         if (user.userDepositAmount > 0) {
             let calculatedTier = 'STARTER';
+            let calcSpeed = 0.00000578;
             if (user.userDepositAmount >= 25.10) {
                 calculatedTier = 'GALAXY';
+                calcSpeed = 0.00002315;
             } else if (user.userDepositAmount >= 10.10) {
                 calculatedTier = 'PREMIUM';
+                calcSpeed = 0.00001736;
             } else if (user.userDepositAmount >= 2.10) {
                 calculatedTier = 'ADVANCE';
+                calcSpeed = 0.00001157;
             } else {
                 calculatedTier = 'STARTER';
+                calcSpeed = 0.00000578;
             }
             user.activePlanTier = calculatedTier;
+            user.miningSpeedPerSec = calcSpeed;
         }
 
         await recalculateUserLegs(user);
@@ -468,21 +480,23 @@ app.post('/api/admin/topup', async (req, res) => {
         user.userDepositAmount = (user.userDepositAmount || 0) + topupAmount;
 
         let calculatedTier = 'STARTER';
+        let calcSpeed = 0.00000578;
         if (user.userDepositAmount >= 25.10) {
             calculatedTier = 'GALAXY';
+            calcSpeed = 0.00002315;
         } else if (user.userDepositAmount >= 10.10) {
             calculatedTier = 'PREMIUM';
+            calcSpeed = 0.00001736;
         } else if (user.userDepositAmount >= 2.10) {
             calculatedTier = 'ADVANCE';
+            calcSpeed = 0.00001157;
         } else {
             calculatedTier = 'STARTER';
+            calcSpeed = 0.00000578;
         }
 
         user.activePlanTier = calculatedTier;
-        
-        if (!user.miningSpeedPerSec || user.miningSpeedPerSec === 0) {
-            user.miningSpeedPerSec = 0.00001;
-        }
+        user.miningSpeedPerSec = calcSpeed;
 
         await recalculateUserLegs(user);
         user.lastUpdated = Date.now();
@@ -787,7 +801,7 @@ app.post('/api/withdraw', async (req, res) => {
             } catch (blockchainErr) {
                 user.availableSolBalance += parsedAmount;
                 await user.save();
-                console.error('Blockchain Transfer Failed, Refunded User Balance:', blockchainErr.message);
+                console.error('Blockchain Transfer Failed, Refunded User Deposit / Balance:', blockchainErr.message);
                 return res.status(500).json({ success: false, error: 'Blockchain transaction failed: ' + blockchainErr.message });
             }
 
