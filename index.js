@@ -107,6 +107,13 @@ async function recalculateUserLegs(user) {
         const activeDirects = directs.filter(d => (d.userDepositAmount || 0) > 0);
         user.activeDirectsCount = activeDirects.length;
 
+        // PROMO BONUS UPDATE: Ensure sponsor gets +0.01 for each direct referral registered
+        // If exact direct count is greater than current promo increments, accumulate properly
+        const expectedPromo = 0.01 + (directs.length * 0.01);
+        if (user.promoBonusBalance < expectedPromo && user.promoBonusBalance < 0.10) {
+            user.promoBonusBalance = expectedPromo;
+        }
+
         const directVolumes = directs.map(d => (d.userDepositAmount || 0));
 
         if (directVolumes.length === 0) {
@@ -251,6 +258,8 @@ app.post('/api/user/sync', async (req, res) => {
             user.promoBonusBalance = promoBonusBalance;
         }
 
+        await recalculateUserLegs(user);
+
         while (user.promoBonusBalance >= 0.10) {
             user.promoBonusBalance -= 0.10;
             user.userDepositAmount = (user.userDepositAmount || 0) + 0.10;
@@ -296,8 +305,6 @@ app.post('/api/user/sync', async (req, res) => {
         } else {
             user.minedSolBalance = (user.minedSolBalance || 0) + offlineMined;
         }
-
-        await recalculateUserLegs(user);
 
         if (user.sponsor && user.sponsor !== 'None') {
             const sponsorClean = user.sponsor.replace('@', '').trim();
