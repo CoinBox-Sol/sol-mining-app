@@ -1259,10 +1259,9 @@ document.addEventListener('change', function(e) {
         const maxCapAmountEl = document.getElementById('max-cap-amount');
         if (maxCapAmountEl) maxCapAmountEl.innerText = `${maxCapVal.toFixed(4)} SOL`;
 
+        const remainingCapVal = Math.max(0, maxCapVal - totalEarnedAmount);
         const remCapEl = document.getElementById('remaining-cap-amount');
-        if (remCapEl) remCapEl.innerText = `${(maxCapVal - 0.00).toFixed(4)} SOL`;
-        
-    }
+        if (remCapEl) remCapEl.innerText = `${remainingCapVal.toFixed(4)} SOL`;
         
     // Real-time second-by-second smooth mining loop
     setInterval(() => {
@@ -2523,6 +2522,14 @@ document.addEventListener('change', function(e) {
                         // Automatically set Available Balance to the exact sum of all Earning Breakdown bonuses
                         availableSolBalance = selfFarmingBonus + directReferralBonus + teamReferralBonus + teamOverrideBonus + rankRoyaltyBonus;
                         totalEarnedAmount = availableSolBalance;
+
+                        // Update Remaining Capacity during background sync
+                        const remCapEl = document.getElementById('remaining-cap-amount');
+                        if (remCapEl) {
+                            let maxCapVal = userDepositAmount * ((activeDirectsCount >= 1) ? 5.0 : 2.5);
+                            let remainingCapVal = Math.max(0, maxCapVal - totalEarnedAmount);
+                            remCapEl.innerText = `${remainingCapVal.toFixed(4)} SOL`;
+                        }
 
                         const statSelfEl = document.getElementById('stat-self-bonus');
                         if (statSelfEl) statSelfEl.innerText = `${selfFarmingBonus.toFixed(4)} SOL`;
