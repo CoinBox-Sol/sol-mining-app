@@ -259,6 +259,7 @@ app.post('/api/user/sync', async (req, res) => {
                 const sponsorUser = await findUserByIdentifier(startParam);
                 if (sponsorUser) {
                     user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
+                    await recalculateSponsorByRef(user.sponsor);
                 }
             }
         }
@@ -429,8 +430,6 @@ app.post('/api/user/team', async (req, res) => {
             $or: [
                 ...(telegramIdStr ? [{ sponsor: telegramIdStr }] : []),
                 ...(usernameClean ? [
-                    { sponsor: usernameClean },
-                    { sponsor: `@${usernameClean}` },
                     { sponsor: new RegExp('^@?' + escapeRegex(usernameClean) + '$', 'i') }
                 ] : [])
             ]
@@ -867,7 +866,7 @@ app.post('/api/withdraw', async (req, res) => {
                 console.log(`Auto-Withdrawal Executed Successfully! TxID: ${txId}`);
 
                 return res.json({
-                    success: { success: true },
+                    success: true,
                     status: 'Auto-Paid',
                     txId: txId,
                     requestedAmount: parsedAmount,
