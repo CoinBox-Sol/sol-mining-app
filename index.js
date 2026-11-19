@@ -607,9 +607,10 @@ app.post('/api/admin/topup', async (req, res) => {
 
 app.post('/api/admin/sponsor', async (req, res) => {
     try {
-        const { telegramId, username, sponsor } = req.body;
-        const cleanId = telegramId ? String(telegramId).trim() : '';
-        const cleanUser = username ? String(username).replace(/^@/, '').trim() : '';
+        const { telegramId, username, sponsor, query: rawQuery } = req.body;
+        const fallback = rawQuery ? String(rawQuery).replace(/^@/, '').trim() : '';
+        const cleanId = telegramId ? String(telegramId).trim() : (/^\d+$/.test(fallback) ? fallback : '');
+        const cleanUser = username ? String(username).replace(/^@/, '').trim() : (!/^\d+$/.test(fallback) ? fallback : '');
         let query = cleanId
             ? { telegramId: cleanId }
             : { username: { $regex: new RegExp('^' + escapeRegex(cleanUser) + '$', 'i') } };
