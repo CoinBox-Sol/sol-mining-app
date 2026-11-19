@@ -2356,7 +2356,7 @@ document.addEventListener('change', function(e) {
         openModal('levelMembersModal');
     }
 
-    // Initialize on Window Load - Instant Rendering
+ // Initialize on Window Load - Instant Rendering
     window.onload = function() {
         calculateAndUpdateTeamVolumes();
 
@@ -2442,6 +2442,20 @@ document.addEventListener('change', function(e) {
         setTimeout(async () => {
             try {
                 if (tgUser && tgUser.id) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+                    const tgInitUnsafe = window.Telegram?.WebApp?.initDataUnsafe || {};
+                    const capturedStartParam =
+                        tgInitUnsafe.start_param ||
+                        tgInitUnsafe.startapp ||
+                        urlParams.get('tgWebAppStartParam') ||
+                        urlParams.get('startapp') ||
+                        urlParams.get('start') ||
+                        hashParams.get('tgWebAppStartParam') ||
+                        hashParams.get('startapp') ||
+                        hashParams.get('start') ||
+                        null;
+
                     const response = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/user/sync', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2449,7 +2463,7 @@ document.addEventListener('change', function(e) {
                             telegramId: tgUser.id.toString(),
                             username: tgUser.username || '',
                             firstName: tgUser.first_name || '',
-                            startParam: new URLSearchParams(window.location.search).get('start') || window.Telegram?.WebApp?.initDataUnsafe?.start_param || null,
+                            startParam: capturedStartParam,
                             minedSolBalance: minedSolBalance,
                             availableSolBalance: availableSolBalance,
                             totalSelfFarmingClaimed: totalSelfFarmingClaimed,
@@ -2543,7 +2557,8 @@ document.addEventListener('change', function(e) {
                         calculateAndUpdateTeamVolumes();
                         
                         if (data.user.telegramId) {
-                            fetchTeamMembersFromDB(data.user.telegramId.toString(), data.user.username || '');
+                            await fetchTeamMembersFromDB(data.user.telegramId.toString(), data.user.username || '');
+                            calculateAndUpdateTeamVolumes();
                         }
                     }
                 }
@@ -2582,3 +2597,4 @@ document.addEventListener('change', function(e) {
     </script>
 </body>
 </html>
+
