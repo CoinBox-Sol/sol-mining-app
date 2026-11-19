@@ -85,9 +85,16 @@ function escapeRegex(str) {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function cleanSponsorDisplay(sponsorVal) {
+    if (!sponsorVal) return 'None';
+    const clean = String(sponsorVal).replace(/^@+/, '').trim();
+    if (!clean || clean.toLowerCase() === 'none') return 'None';
+    return /^\d+$/.test(clean) ? clean : `@${clean}`;
+}
+
 async function findUserByIdentifier(identifier) {
     if (!identifier) return null;
-    const clean = String(identifier).replace(/^@/, '').trim();
+    const clean = String(identifier).replace(/^@+/, '').trim();
     if (!clean || clean.toLowerCase() === 'none') return null;
 
     return await User.findOne({
@@ -99,7 +106,7 @@ async function findUserByIdentifier(identifier) {
 }
 
 function normalizeHandle(val) {
-    return String(val || '').replace(/^@/, '').trim().toLowerCase();
+    return String(val || '').replace(/^@+/, '').trim().toLowerCase();
 }
 
 function getUserIdentifiersSet(userDoc) {
@@ -150,7 +157,7 @@ function getDownlineByLevels(allUsers, rootIdentifiersSet, maxLevel = 25) {
         levelsMap[lvl] = levelUsers.map(d => ({
             telegramId: d.telegramId,
             username: d.username || '',
-            name: d.profileName || (d.username ? `@${d.username}` : (d.firstName || `User_${String(d.telegramId).slice(-4)}`)),
+            name: d.profileName || (d.username ? `@${d.username.replace(/^@+/, '')}` : (d.firstName || `User_${String(d.telegramId).slice(-4)}`)),
             deposit: `${(d.userDepositAmount || 0).toFixed(2)} SOL`,
             depositAmount: d.userDepositAmount || 0,
             date: new Date(d.lastUpdated || Date.now()).toISOString().split('T')[0],
@@ -166,7 +173,7 @@ function getDownlineByLevels(allUsers, rootIdentifiersSet, maxLevel = 25) {
 
 async function recalculateUserLegs(user) {
     try {
-        const usernameClean = user.username ? user.username.replace('@', '').trim() : '';
+        const usernameClean = user.username ? user.username.replace(/^@+/, '').trim() : '';
         const telegramIdStr = user.telegramId ? user.telegramId.toString() : '';
 
         const directs = await User.find({
@@ -175,7 +182,7 @@ async function recalculateUserLegs(user) {
                 ...(usernameClean ? [
                     { sponsor: usernameClean },
                     { sponsor: `@${usernameClean}` },
-                    { sponsor: new RegExp('^@?' + escapeRegex(usernameClean) + '$', 'i') }
+                    { sponsor: new RegExp('^@*' + escapeRegex(usernameClean) + '$', 'i') }
                 ] : [])
             ]
         });
@@ -308,10 +315,11 @@ app.post('/api/user/sync', async (req, res) => {
 
         if (!user) {
             isNewUser = true;
-            const defaultProfileName = profileName || (username ? `@${username}` : (firstName || `User_${telegramId.slice(-4)}`));
+            const cleanU = username ? String(username).replace(/^@+/, '').trim() : '';
+            const defaultProfileName = profileName || (cleanU ? `@${cleanU}` : (firstName || `User_${telegramId.slice(-4)}`));
             user = new User({ 
                 telegramId, 
-                username: username || '', 
+                username: cleanU, 
                 firstName: firstName || '',
                 profileName: defaultProfileName,
                 activePlanTier: 'NONE',
@@ -323,7 +331,8 @@ app.post('/api/user/sync', async (req, res) => {
             if (refCode && refCode !== telegramId) {
                 const sponsorUser = await findUserByIdentifier(refCode);
                 if (sponsorUser && sponsorUser.telegramId !== telegramId) {
-                    user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
+                    const cleanSpU = sponsorUser.username ? String(sponsorUser.username).replace(/^@+/, '').trim() : '';
+                    user.sponsor = cleanSpU ? `@${cleanSpU}` : sponsorUser.telegramId;
                     foundSponsorUser = sponsorUser;
                 }
             }
@@ -332,10 +341,15 @@ app.post('/api/user/sync', async (req, res) => {
                 return res.status(403).json({ success: false, error: 'User is blocked by admin' });
             }
 
+            if (user.sponsor && user.sponsor !== 'None') {
+                user.sponsor = cleanSponsorDisplay(user.sponsor);
+            }
+
             if ((!user.sponsor || user.sponsor === 'None') && refCode && refCode !== telegramId) {
                 const sponsorUser = await findUserByIdentifier(refCode);
                 if (sponsorUser && sponsorUser.telegramId !== telegramId) {
-                    user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
+                    const cleanSpU = sponsorUser.username ? String(sponsorUser.username).replace(/^@+/, '').trim() : '';
+                    user.sponsor = cleanSpU ? `@${cleanSpU}` : sponsorUser.telegramId;
                     sponsorUser.promoBonusBalance = (sponsorUser.promoBonusBalance || 0.0100) + 0.01;
                     while (sponsorUser.promoBonusBalance >= 0.10) {
                         sponsorUser.promoBonusBalance -= 0.10;
@@ -360,7 +374,7 @@ app.post('/api/user/sync', async (req, res) => {
         }
 
         if (username && typeof username === 'string' && username.trim() !== '' && username !== 'undefined') {
-            user.username = username;
+            user.username = username.replace(/^@+/, '').trim();
         }
 
         if (firstName && typeof firstName === 'string' && firstName.trim() !== '' && firstName !== 'undefined') {
@@ -370,7 +384,7 @@ app.post('/api/user/sync', async (req, res) => {
         if (profileName && typeof profileName === 'string' && profileName.trim() !== '') {
             user.profileName = profileName;
         } else if (!user.profileName) {
-            user.profileName = user.username ? `@${user.username}` : (user.firstName || `User_${user.telegramId.slice(-4)}`);
+            user.profileName = user.username ? `@${user.username.replace(/^@+/, '')}` : (user.firstName || `User_${user.telegramId.slice(-4)}`);
         }
 
         if (profileMobile !== undefined) user.profileMobile = profileMobile;
@@ -456,6 +470,7 @@ app.post('/api/user/sync', async (req, res) => {
         await user.save();
 
         const finalUsername = user.username || username || '';
+        const formattedSponsor = cleanSponsorDisplay(user.sponsor);
 
         return res.json({ 
             success: true, 
@@ -467,7 +482,7 @@ app.post('/api/user/sync', async (req, res) => {
                 profileMobile: user.profileMobile || '',
                 profileEmail: user.profileEmail || '',
                 profileSolAddress: user.profileSolAddress || '',
-                sponsor: user.sponsor || 'None',
+                sponsor: formattedSponsor,
                 minedSolBalance: user.minedSolBalance || 0,
                 availableSolBalance: user.availableSolBalance || 0,
                 totalSelfFarmingClaimed: user.totalSelfFarmingClaimed || 0,
@@ -557,7 +572,7 @@ app.post('/api/admin/search', async (req, res) => {
         const { query } = req.body;
         if (!query) return res.status(400).json({ success: false, error: 'Query is required' });
 
-        let cleanQuery = query.replace('@', '').trim();
+        let cleanQuery = query.replace(/^@+/, '').trim();
         let user = await User.findOne({ 
             $or: [
                 { username: { $regex: new RegExp('^' + escapeRegex(cleanQuery) + '$', 'i') } },
@@ -587,7 +602,7 @@ app.post('/api/admin/search', async (req, res) => {
                 telegramId: user.telegramId,
                 username: user.username,
                 deposit: user.userDepositAmount || 0,
-                sponsor: user.sponsor || 'None',
+                sponsor: cleanSponsorDisplay(user.sponsor),
                 rank: userRank,
                 status: user.isBlocked ? 'Blocked' : 'Active',
                 availableSolBalance: user.availableSolBalance || 0,
@@ -607,7 +622,7 @@ app.post('/api/admin/search', async (req, res) => {
 app.post('/api/admin/balance', async (req, res) => {
     try {
         const { telegramId, username, amount, type } = req.body;
-        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+        let query = telegramId ? { telegramId } : { username: (username || '').replace(/^@+/, '').trim() };
         
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found' });
@@ -632,7 +647,7 @@ app.post('/api/admin/balance', async (req, res) => {
 app.post('/api/admin/topup', async (req, res) => {
     try {
         const { telegramId, username, amount } = req.body;
-        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+        let query = telegramId ? { telegramId } : { username: (username || '').replace(/^@+/, '').trim() };
 
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found in database' });
@@ -700,7 +715,7 @@ app.post('/api/admin/sponsor', async (req, res) => {
             body.search,
             body.user
         ]
-            .map(v => (v === undefined || v === null ? '' : String(v).replace(/^@/, '').trim()))
+            .map(v => (v === undefined || v === null ? '' : String(v).replace(/^@+/, '').trim()))
             .find(Boolean);
 
         const user = await findUserByIdentifier(candidateStr);
@@ -709,16 +724,19 @@ app.post('/api/admin/sponsor', async (req, res) => {
         }
 
         const rawSponsor = body.sponsor ?? body.newSponsor ?? body.sponsorId ?? body.sponsorUsername ?? body.ref ?? '';
-        const cleanSponsor = String(rawSponsor).replace(/^@/, '').trim();
+        const cleanSponsor = String(rawSponsor).replace(/^@+/, '').trim();
 
         const oldSponsor = user.sponsor;
         let nextSponsor = 'None';
 
         if (cleanSponsor && cleanSponsor.toLowerCase() !== 'none' && cleanSponsor.toLowerCase() !== 'null') {
             const sponsorDoc = await findUserByIdentifier(cleanSponsor);
-            nextSponsor = sponsorDoc
-                ? (sponsorDoc.username ? `@${sponsorDoc.username}` : sponsorDoc.telegramId)
-                : String(rawSponsor).trim();
+            if (sponsorDoc) {
+                const spCleanU = sponsorDoc.username ? String(sponsorDoc.username).replace(/^@+/, '').trim() : '';
+                nextSponsor = spCleanU ? `@${spCleanU}` : sponsorDoc.telegramId;
+            } else {
+                nextSponsor = cleanSponsorDisplay(cleanSponsor);
+            }
         }
 
         user.sponsor = nextSponsor;
@@ -742,7 +760,7 @@ app.post('/api/admin/sponsor', async (req, res) => {
 app.post('/api/admin/block', async (req, res) => {
     try {
         const { telegramId, username } = req.body;
-        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+        let query = telegramId ? { telegramId } : { username: (username || '').replace(/^@+/, '').trim() };
 
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found' });
@@ -759,7 +777,7 @@ app.post('/api/admin/block', async (req, res) => {
 app.post('/api/admin/rank', async (req, res) => {
     try {
         const { telegramId, username, rank } = req.body;
-        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+        let query = telegramId ? { telegramId } : { username: (username || '').replace(/^@+/, '').trim() };
 
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found' });
@@ -776,7 +794,7 @@ app.post('/api/admin/rank', async (req, res) => {
 app.post('/api/admin/fix-legs', async (req, res) => {
     try {
         const { telegramId, username, strongest, other } = req.body;
-        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+        let query = telegramId ? { telegramId } : { username: (username || '').replace(/^@+/, '').trim() };
 
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found' });
