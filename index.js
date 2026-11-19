@@ -128,7 +128,9 @@ function getDownlineByLevels(allUsers, rootIdentifiersSet, maxLevel = 25) {
     const visitedIds = new Set();
 
     for (const u of allUsers) {
-        if (rootIdentifiersSet.has(normalizeHandle(u.telegramId)) || (u.username && rootIdentifiersSet.has(normalizeHandle(u.username)))) {
+        const idClean = normalizeHandle(u.telegramId);
+        const unClean = normalizeHandle(u.username);
+        if ((idClean && rootIdentifiersSet.has(idClean)) || (unClean && rootIdentifiersSet.has(unClean))) {
             if (u.telegramId) visitedIds.add(String(u.telegramId).trim());
         }
     }
@@ -155,8 +157,10 @@ function getDownlineByLevels(allUsers, rootIdentifiersSet, maxLevel = 25) {
             if (sponsorSet.has(spClean)) {
                 visitedIds.add(candidateId);
                 levelUsers.push(candidate);
-                if (candidate.telegramId) nextSponsors.push(normalizeHandle(candidate.telegramId));
-                if (candidate.username) nextSponsors.push(normalizeHandle(candidate.username));
+                const cIdNorm = normalizeHandle(candidate.telegramId);
+                const cUnNorm = normalizeHandle(candidate.username);
+                if (cIdNorm) nextSponsors.push(cIdNorm);
+                if (cUnNorm) nextSponsors.push(cUnNorm);
             }
         }
 
@@ -171,7 +175,7 @@ function getDownlineByLevels(allUsers, rootIdentifiersSet, maxLevel = 25) {
             level: lvl
         }));
 
-        currentSponsors = nextSponsors;
+        currentSponsors = Array.from(new Set(nextSponsors));
     }
 
     return levelsMap;
@@ -238,8 +242,21 @@ async function recalculateSponsorByRef(sponsorRef) {
     }
 }
 
-function extractReferralCode(body) {
-    const raw = body.startParam || body.startapp || body.ref || body.referral || body.sponsor || body.start || null;
+function extractReferralCode(req) {
+    const body = req.body || {};
+    const query = req.query || {};
+    const raw =
+        body.startParam ||
+        body.startapp ||
+        body.ref ||
+        body.referral ||
+        body.sponsor ||
+        body.start ||
+        query.tgWebAppStartParam ||
+        query.startapp ||
+        query.start ||
+        query.ref ||
+        null;
     if (!raw) return null;
     const str = String(raw).trim();
     if (!str || str.toLowerCase() === 'none' || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined') {
@@ -313,7 +330,7 @@ app.post('/api/user/sync', async (req, res) => {
             return res.status(400).json({ error: 'Telegram ID is required' });
         }
 
-        const refCode = extractReferralCode(req.body);
+        const refCode = extractReferralCode(req);
 
         let user = await User.findOne({ telegramId });
         let isNewUser = false;
@@ -612,12 +629,13 @@ app.post('/api/admin/search', async (req, res) => {
             }
         }
 
-        // index.html adds '@' in front of data.user.sponsor, so send clean handle/ID without leading '@'
+        const cleanUsername = String(user.username || '').replace(/^@+/, '').trim();
+
         res.json({
             success: true,
             user: {
                 telegramId: user.telegramId,
-                username: String(user.username || cleanQuery).replace(/^@+/, '').trim(),
+                username: cleanUsername || user.telegramId,
                 deposit: user.userDepositAmount || 0,
                 sponsor: cleanSponsorRaw(user.sponsor),
                 rank: userRank,
