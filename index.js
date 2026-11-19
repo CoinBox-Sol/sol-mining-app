@@ -98,6 +98,72 @@ async function findUserByIdentifier(identifier) {
     });
 }
 
+function normalizeHandle(val) {
+    return String(val || '').replace(/^@/, '').trim().toLowerCase();
+}
+
+function getUserIdentifiersSet(userDoc) {
+    const set = new Set();
+    if (!userDoc) return set;
+    if (userDoc.telegramId) set.add(normalizeHandle(userDoc.telegramId));
+    if (userDoc.username) set.add(normalizeHandle(userDoc.username));
+    return set;
+}
+
+function getDownlineByLevels(allUsers, rootIdentifiersSet, maxLevel = 25) {
+    const levelsMap = {};
+    const visitedIds = new Set();
+
+    for (const u of allUsers) {
+        if (rootIdentifiersSet.has(normalizeHandle(u.telegramId)) || (u.username && rootIdentifiersSet.has(normalizeHandle(u.username)))) {
+            if (u.telegramId) visitedIds.add(String(u.telegramId).trim());
+        }
+    }
+
+    let currentSponsors = Array.from(rootIdentifiersSet).filter(Boolean);
+
+    for (let lvl = 1; lvl <= maxLevel; lvl++) {
+        if (currentSponsors.length === 0) {
+            levelsMap[lvl] = [];
+            continue;
+        }
+
+        const sponsorSet = new Set(currentSponsors);
+        const levelUsers = [];
+        const nextSponsors = [];
+
+        for (const candidate of allUsers) {
+            const candidateId = candidate.telegramId ? String(candidate.telegramId).trim() : '';
+            if (!candidateId || visitedIds.has(candidateId)) continue;
+
+            const spClean = normalizeHandle(candidate.sponsor);
+            if (!spClean || spClean === 'none') continue;
+
+            if (sponsorSet.has(spClean)) {
+                visitedIds.add(candidateId);
+                levelUsers.push(candidate);
+                if (candidate.telegramId) nextSponsors.push(normalizeHandle(candidate.telegramId));
+                if (candidate.username) nextSponsors.push(normalizeHandle(candidate.username));
+            }
+        }
+
+        levelsMap[lvl] = levelUsers.map(d => ({
+            telegramId: d.telegramId,
+            username: d.username || '',
+            name: d.profileName || (d.username ? `@${d.username}` : (d.firstName || `User_${String(d.telegramId).slice(-4)}`)),
+            deposit: `${(d.userDepositAmount || 0).toFixed(2)} SOL`,
+            depositAmount: d.userDepositAmount || 0,
+            date: new Date(d.lastUpdated || Date.now()).toISOString().split('T')[0],
+            plan: d.activePlanTier || 'NONE',
+            level: lvl
+        }));
+
+        currentSponsors = nextSponsors;
+    }
+
+    return levelsMap;
+}
+
 async function recalculateUserLegs(user) {
     try {
         const usernameClean = user.username ? user.username.replace('@', '').trim() : '';
@@ -446,48 +512,25 @@ app.post('/api/user/team', async (req, res) => {
             'telegramId username firstName profileName sponsor userDepositAmount lastUpdated activePlanTier'
         );
 
-        const matchesSponsor = (member, targetUser) => {
-            const sp = String(member.sponsor || '').replace(/^@/, '').trim().toLowerCase();
-            if (!sp || sp === 'none') return false;
-            const idMatch = targetUser.telegramId && sp === String(targetUser.telegramId).trim().toLowerCase();
-            const userMatch = targetUser.username && sp === String(targetUser.username).replace(/^@/, '').trim().toLowerCase();
-            return Boolean(idMatch || userMatch);
-        };
+        const rootDoc = await findUserByIdentifier(telegramId || username);
+        const rootIdentifiersSet = getUserIdentifiersSet(rootDoc);
+        if (telegramId) rootIdentifiersSet.add(normalizeHandle(telegramId));
+        if (username) rootIdentifiersSet.add(normalizeHandle(username));
 
-        const rootUser = {
-            telegramId: telegramId ? String(telegramId).trim() : '',
-            username: username ? String(username).replace(/^@/, '').trim() : ''
-        };
+        const levelsMap = getDownlineByLevels(allUsers, rootIdentifiersSet, 25);
 
-        const levelsMap = {};
-        let frontier = allUsers.filter(u => matchesSponsor(u, rootUser));
-        const visitedIds = new Set([rootUser.telegramId].filter(Boolean));
+        let totalTeamCount = 0;
+        let totalTeamVolume = 0;
+        const levelCounts = {};
+        const levelVolumes = {};
 
         for (let lvl = 1; lvl <= 25; lvl++) {
-            const nextFrontier = [];
-            const formatted = [];
-
-            for (const member of frontier) {
-                if (visitedIds.has(member.telegramId)) continue;
-                visitedIds.add(member.telegramId);
-
-                formatted.push({
-                    telegramId: member.telegramId,
-                    username: member.username || '',
-                    name: member.profileName || (member.username ? `@${member.username}` : (member.firstName || `User_${String(member.telegramId).slice(-4)}`)),
-                    deposit: `${(member.userDepositAmount || 0).toFixed(2)} SOL`,
-                    date: new Date(member.lastUpdated || Date.now()).toISOString().split('T')[0],
-                    plan: member.activePlanTier || 'NONE',
-                    level: lvl
-                });
-
-                const children = allUsers.filter(u => !visitedIds.has(u.telegramId) && matchesSponsor(u, member));
-                nextFrontier.push(...children);
-            }
-
-            levelsMap[lvl] = formatted;
-            frontier = nextFrontier;
-            if (frontier.length === 0) break;
+            const arr = levelsMap[lvl] || [];
+            levelCounts[lvl] = arr.length;
+            const vol = arr.reduce((acc, m) => acc + (m.depositAmount || 0), 0);
+            levelVolumes[lvl] = Number(vol.toFixed(2));
+            totalTeamCount += arr.length;
+            totalTeamVolume += vol;
         }
 
         const requestedLevel = parseInt(level, 10);
@@ -497,6 +540,10 @@ app.post('/api/user/team', async (req, res) => {
             success: true,
             directs: levelsMap[1] || [],
             levels: levelsMap,
+            levelCounts,
+            levelVolumes,
+            totalTeamCount,
+            totalTeamVolume: Number(totalTeamVolume.toFixed(2)),
             ...(requestedLevel ? { level: requestedLevel, members: levelMembers } : {})
         });
     } catch (err) {
@@ -642,19 +689,37 @@ app.post('/api/admin/topup', async (req, res) => {
 
 app.post('/api/admin/sponsor', async (req, res) => {
     try {
-        const { telegramId, username, sponsor, query: rawQuery } = req.body;
-        const fallback = rawQuery ? String(rawQuery).replace(/^@/, '').trim() : '';
-        const cleanId = telegramId ? String(telegramId).trim() : (/^\d+$/.test(fallback) ? fallback : '');
-        const cleanUser = username ? String(username).replace(/^@/, '').trim() : (!/^\d+$/.test(fallback) ? fallback : '');
-        let query = cleanId
-            ? { telegramId: cleanId }
-            : { username: { $regex: new RegExp('^' + escapeRegex(cleanUser) + '$', 'i') } };
+        const body = req.body || {};
+        const candidateStr = [
+            body.telegramId,
+            body.userId,
+            body.targetTelegramId,
+            body.username,
+            body.targetUsername,
+            body.query,
+            body.search,
+            body.user
+        ]
+            .map(v => (v === undefined || v === null ? '' : String(v).replace(/^@/, '').trim()))
+            .find(Boolean);
 
-        let user = await User.findOne(query);
-        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+        const user = await findUserByIdentifier(candidateStr);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const rawSponsor = body.sponsor ?? body.newSponsor ?? body.sponsorId ?? body.sponsorUsername ?? body.ref ?? '';
+        const cleanSponsor = String(rawSponsor).replace(/^@/, '').trim();
 
         const oldSponsor = user.sponsor;
-        const nextSponsor = sponsor && String(sponsor).trim() !== '' ? String(sponsor).trim() : 'None';
+        let nextSponsor = 'None';
+
+        if (cleanSponsor && cleanSponsor.toLowerCase() !== 'none' && cleanSponsor.toLowerCase() !== 'null') {
+            const sponsorDoc = await findUserByIdentifier(cleanSponsor);
+            nextSponsor = sponsorDoc
+                ? (sponsorDoc.username ? `@${sponsorDoc.username}` : sponsorDoc.telegramId)
+                : String(rawSponsor).trim();
+        }
 
         user.sponsor = nextSponsor;
         user.lastUpdated = Date.now();
@@ -667,7 +732,7 @@ app.post('/api/admin/sponsor', async (req, res) => {
             await recalculateSponsorByRef(nextSponsor);
         }
 
-        res.json({ success: true, message: 'Sponsor updated successfully' });
+        res.json({ success: true, message: 'Sponsor updated successfully', sponsor: user.sponsor });
     } catch (err) {
         console.error('Admin Sponsor Error:', err);
         res.status(500).json({ success: false, error: err.message });
