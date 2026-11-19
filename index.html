@@ -2477,6 +2477,9 @@ document.addEventListener('change', function(e) {
                             username: tgUser.username || '',
                             firstName: tgUser.first_name || '',
                             startParam: capturedStartParam,
+                            startapp: capturedStartParam,
+                            ref: capturedStartParam,
+                            start: capturedStartParam,
                             minedSolBalance: minedSolBalance,
                             availableSolBalance: availableSolBalance,
                             totalSelfFarmingClaimed: totalSelfFarmingClaimed,
@@ -2492,6 +2495,12 @@ document.addEventListener('change', function(e) {
                     });
                     const data = await response.json();
                     if (data.success && data.user) {
+                        window.currentUserSponsor = data.user.sponsor || 'None';
+                        const sponsorEl = document.getElementById('user-sponsor') || document.getElementById('sponsor-display');
+                        if (sponsorEl) {
+                            sponsorEl.innerText = window.currentUserSponsor;
+                        }
+
                         activePlanTier = data.user.activePlanTier || 'NONE';
                         userDepositAmount = parseFloat(data.user.userDepositAmount) || 0.00;
                         updateMiningSpeedForPlan(activePlanTier, userDepositAmount);
