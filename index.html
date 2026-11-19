@@ -1451,46 +1451,10 @@ document.addEventListener('change', function(e) {
     
     // Referral & Promo Bonus Logic on Startup
     function checkReferralOnStartup() {
-        const params = new URLSearchParams(window.location.search);
-        let refId = params.get('start');
-
-        if (!refId && window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
-            refId = window.Telegram.WebApp.initDataUnsafe.start_param;
-        }
-
         const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (tgUser && tgUser.id) {
-            fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/user/sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    telegramId: tgUser.id.toString(),
-                    username: tgUser.username || '',
-                    firstName: tgUser.first_name || '',
-                    startParam: refId || null
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.user) {
-                    activeDirectsCount = data.user.activeDirectsCount || 0;
-                    totalPromoTopups = Math.floor(activeDirectsCount / 10);
-                    promoBonusBalance = 0.0100 + ((activeDirectsCount % 10) * 0.01);
-                    
-                    updateDirectMembersUI();
-                    calculateAndUpdateTeamVolumes();
-
-                    // MongoDB se live team members fetch karne ke liye
-                    fetchTeamMembersFromDB(tgUser.id.toString(), tgUser.username || '');
-                }
-            })
-            .catch(err => console.error("Referral Sync Error:", err));
+            fetchTeamMembersFromDB(tgUser.id.toString(), tgUser.username || '');
         }
-
-        let directCount = activeDirectsCount;
-        totalPromoTopups = Math.floor(directCount / 10);
-        promoBonusBalance = (directCount % 10) * 0.01;
-
         updateDirectMembersUI();
         calculateAndUpdateTeamVolumes();
     }
@@ -1503,9 +1467,8 @@ document.addEventListener('change', function(e) {
                 body: JSON.stringify({ telegramId, username })
             });
             const data = await response.json();
-            if (data.success && data.directs) {
+            if (data.success && Array.isArray(data.directs)) {
                 levelMembersData[1] = data.directs;
-                activeDirectsCount = data.directs.length;
                 calculateAndUpdateTeamVolumes();
                 updateDirectMembersUI();
             }
@@ -2136,7 +2099,9 @@ document.addEventListener('change', function(e) {
         let totalTeamVol = 0;
         let totalTeamMembers = 0;
         let directVol = 0;
-        let directMembersCount = activeDirectsCount;
+        let directMembersCount = (levelMembersData[1] && levelMembersData[1].length > 0)
+            ? levelMembersData[1].length
+            : activeDirectsCount;
 
         for (let lvl = 1; lvl <= 25; lvl++) {
             let members = levelMembersData[lvl] || [];
