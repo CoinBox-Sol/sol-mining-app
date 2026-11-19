@@ -259,6 +259,12 @@ app.post('/api/user/sync', async (req, res) => {
                 const sponsorUser = await findUserByIdentifier(startParam);
                 if (sponsorUser) {
                     user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
+                    sponsorUser.promoBonusBalance = (sponsorUser.promoBonusBalance || 0.0100) + 0.01;
+                    while (sponsorUser.promoBonusBalance >= 0.10) {
+                        sponsorUser.promoBonusBalance -= 0.10;
+                        sponsorUser.userDepositAmount = (sponsorUser.userDepositAmount || 0) + 0.10;
+                    }
+                    await sponsorUser.save();
                     await recalculateSponsorByRef(user.sponsor);
                 }
             }
