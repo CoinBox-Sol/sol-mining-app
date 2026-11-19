@@ -85,10 +85,16 @@ function escapeRegex(str) {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function cleanSponsorDisplay(sponsorVal) {
+function cleanSponsorRaw(sponsorVal) {
     if (!sponsorVal) return 'None';
     const clean = String(sponsorVal).replace(/^@+/, '').trim();
-    if (!clean || clean.toLowerCase() === 'none') return 'None';
+    if (!clean || clean.toLowerCase() === 'none' || clean.toLowerCase() === 'null') return 'None';
+    return clean;
+}
+
+function cleanSponsorDisplay(sponsorVal) {
+    const clean = cleanSponsorRaw(sponsorVal);
+    if (clean === 'None') return 'None';
     return /^\d+$/.test(clean) ? clean : `@${clean}`;
 }
 
@@ -540,7 +546,17 @@ app.post('/api/user/team', async (req, res) => {
         const levelVolumes = {};
 
         for (let lvl = 1; lvl <= 25; lvl++) {
-            const arr = levelsMap[lvl] || [];
+            const arr = (levelsMap[lvl] || []).map(m => ({
+                name: m.name,
+                date: m.date,
+                deposit: m.deposit,
+                depositAmount: m.depositAmount,
+                telegramId: m.telegramId,
+                username: m.username,
+                plan: m.plan,
+                level: m.level
+            }));
+            levelsMap[lvl] = arr;
             levelCounts[lvl] = arr.length;
             const vol = arr.reduce((acc, m) => acc + (m.depositAmount || 0), 0);
             levelVolumes[lvl] = Number(vol.toFixed(2));
@@ -572,7 +588,7 @@ app.post('/api/admin/search', async (req, res) => {
         const { query } = req.body;
         if (!query) return res.status(400).json({ success: false, error: 'Query is required' });
 
-        let cleanQuery = query.replace(/^@+/, '').trim();
+        let cleanQuery = String(query).replace(/^@+/, '').trim();
         let user = await User.findOne({ 
             $or: [
                 { username: { $regex: new RegExp('^' + escapeRegex(cleanQuery) + '$', 'i') } },
@@ -596,13 +612,14 @@ app.post('/api/admin/search', async (req, res) => {
             }
         }
 
+        // index.html adds '@' in front of data.user.sponsor, so send clean handle/ID without leading '@'
         res.json({
             success: true,
             user: {
                 telegramId: user.telegramId,
-                username: user.username,
+                username: String(user.username || cleanQuery).replace(/^@+/, '').trim(),
                 deposit: user.userDepositAmount || 0,
-                sponsor: cleanSponsorDisplay(user.sponsor),
+                sponsor: cleanSponsorRaw(user.sponsor),
                 rank: userRank,
                 status: user.isBlocked ? 'Blocked' : 'Active',
                 availableSolBalance: user.availableSolBalance || 0,
@@ -706,12 +723,12 @@ app.post('/api/admin/sponsor', async (req, res) => {
     try {
         const body = req.body || {};
         const candidateStr = [
+            body.query,
             body.telegramId,
             body.userId,
             body.targetTelegramId,
             body.username,
             body.targetUsername,
-            body.query,
             body.search,
             body.user
         ]
@@ -750,7 +767,7 @@ app.post('/api/admin/sponsor', async (req, res) => {
             await recalculateSponsorByRef(nextSponsor);
         }
 
-        res.json({ success: true, message: 'Sponsor updated successfully', sponsor: user.sponsor });
+        res.json({ success: true, message: 'Sponsor updated successfully', sponsor: cleanSponsorRaw(user.sponsor) });
     } catch (err) {
         console.error('Admin Sponsor Error:', err);
         res.status(500).json({ success: false, error: err.message });
