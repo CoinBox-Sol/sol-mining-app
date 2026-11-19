@@ -159,6 +159,16 @@ async function recalculateSponsorByRef(sponsorRef) {
     }
 }
 
+function extractReferralCode(body) {
+    const raw = body.startParam || body.startapp || body.ref || body.referral || body.sponsor || body.start || null;
+    if (!raw) return null;
+    const str = String(raw).trim();
+    if (!str || str.toLowerCase() === 'none' || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined') {
+        return null;
+    }
+    return str.replace(/^(ref_|start_|sponsor_)/i, '').trim() || null;
+}
+
 app.post('/api/user/claim', async (req, res) => {
     try {
         const { telegramId, claimedAmount } = req.body;
@@ -207,7 +217,6 @@ app.post('/api/user/sync', async (req, res) => {
             username, 
             firstName, 
             lastName,
-            startParam,
             minedSolBalance, 
             availableSolBalance, 
             totalSelfFarmingClaimed, 
@@ -224,6 +233,8 @@ app.post('/api/user/sync', async (req, res) => {
         if (!telegramId) {
             return res.status(400).json({ error: 'Telegram ID is required' });
         }
+
+        const refCode = extractReferralCode(req.body);
 
         let user = await User.findOne({ telegramId });
         let isNewUser = false;
@@ -243,9 +254,9 @@ app.post('/api/user/sync', async (req, res) => {
                 promoBonusBalance: 0.0100
             });
 
-            if (startParam && startParam !== telegramId) {
-                const sponsorUser = await findUserByIdentifier(startParam);
-                if (sponsorUser) {
+            if (refCode && refCode !== telegramId) {
+                const sponsorUser = await findUserByIdentifier(refCode);
+                if (sponsorUser && sponsorUser.telegramId !== telegramId) {
                     user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
                     foundSponsorUser = sponsorUser;
                 }
@@ -255,15 +266,16 @@ app.post('/api/user/sync', async (req, res) => {
                 return res.status(403).json({ success: false, error: 'User is blocked by admin' });
             }
 
-            if ((!user.sponsor || user.sponsor === 'None') && startParam && startParam !== telegramId) {
-                const sponsorUser = await findUserByIdentifier(startParam);
-                if (sponsorUser) {
+            if ((!user.sponsor || user.sponsor === 'None') && refCode && refCode !== telegramId) {
+                const sponsorUser = await findUserByIdentifier(refCode);
+                if (sponsorUser && sponsorUser.telegramId !== telegramId) {
                     user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
                     sponsorUser.promoBonusBalance = (sponsorUser.promoBonusBalance || 0.0100) + 0.01;
                     while (sponsorUser.promoBonusBalance >= 0.10) {
                         sponsorUser.promoBonusBalance -= 0.10;
                         sponsorUser.userDepositAmount = (sponsorUser.userDepositAmount || 0) + 0.10;
                     }
+                    await recalculateUserLegs(sponsorUser);
                     await sponsorUser.save();
                     await recalculateSponsorByRef(user.sponsor);
                 }
