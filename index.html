@@ -1461,14 +1461,27 @@ document.addEventListener('change', function(e) {
 
     async function fetchTeamMembersFromDB(telegramId, username) {
         try {
+            const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user || {};
+            const finalId = telegramId || (tgUser.id ? String(tgUser.id) : '');
+            const finalUser = username || (tgUser.username ? String(tgUser.username).replace(/^@+/, '').trim() : '');
+            if (!finalId && !finalUser) return;
+
             const response = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/user/team', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramId, username })
+                body: JSON.stringify({ telegramId: finalId, username: finalUser })
             });
             const data = await response.json();
-            if (data.success && Array.isArray(data.directs)) {
-                levelMembersData[1] = data.directs;
+            if (data.success) {
+                for (let lvl = 1; lvl <= 25; lvl++) {
+                    if (data.levels && Array.isArray(data.levels[lvl])) {
+                        levelMembersData[lvl] = data.levels[lvl];
+                    } else if (lvl === 1 && Array.isArray(data.directs)) {
+                        levelMembersData[1] = data.directs;
+                    } else {
+                        levelMembersData[lvl] = [];
+                    }
+                }
                 calculateAndUpdateTeamVolumes();
                 updateDirectMembersUI();
             }
