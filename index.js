@@ -436,33 +436,68 @@ app.post('/api/user/sync', async (req, res) => {
 
 app.post('/api/user/team', async (req, res) => {
     try {
-        const { telegramId, username } = req.body;
+        const { telegramId, username, level } = req.body;
         if (!telegramId && !username) {
             return res.status(400).json({ success: false, error: 'Identifier required' });
         }
 
-        const usernameClean = username ? String(username).replace(/^@/, '').trim() : '';
-        const telegramIdStr = telegramId ? String(telegramId).trim() : '';
+        const allUsers = await User.find(
+            {},
+            'telegramId username firstName profileName sponsor userDepositAmount lastUpdated activePlanTier'
+        );
 
-        const directs = await User.find({
-            $or: [
-                ...(telegramIdStr ? [{ sponsor: telegramIdStr }] : []),
-                ...(usernameClean ? [
-                    { sponsor: new RegExp('^@?' + escapeRegex(usernameClean) + '$', 'i') }
-                ] : [])
-            ]
-        }).select('telegramId username firstName profileName userDepositAmount lastUpdated activePlanTier');
+        const matchesSponsor = (member, targetUser) => {
+            const sp = String(member.sponsor || '').replace(/^@/, '').trim().toLowerCase();
+            if (!sp || sp === 'none') return false;
+            const idMatch = targetUser.telegramId && sp === String(targetUser.telegramId).trim().toLowerCase();
+            const userMatch = targetUser.username && sp === String(targetUser.username).replace(/^@/, '').trim().toLowerCase();
+            return Boolean(idMatch || userMatch);
+        };
+
+        const rootUser = {
+            telegramId: telegramId ? String(telegramId).trim() : '',
+            username: username ? String(username).replace(/^@/, '').trim() : ''
+        };
+
+        const levelsMap = {};
+        let frontier = allUsers.filter(u => matchesSponsor(u, rootUser));
+        const visitedIds = new Set([rootUser.telegramId].filter(Boolean));
+
+        for (let lvl = 1; lvl <= 25; lvl++) {
+            const nextFrontier = [];
+            const formatted = [];
+
+            for (const member of frontier) {
+                if (visitedIds.has(member.telegramId)) continue;
+                visitedIds.add(member.telegramId);
+
+                formatted.push({
+                    telegramId: member.telegramId,
+                    username: member.username || '',
+                    name: member.profileName || (member.username ? `@${member.username}` : (member.firstName || `User_${String(member.telegramId).slice(-4)}`)),
+                    deposit: `${(member.userDepositAmount || 0).toFixed(2)} SOL`,
+                    date: new Date(member.lastUpdated || Date.now()).toISOString().split('T')[0],
+                    plan: member.activePlanTier || 'NONE',
+                    level: lvl
+                });
+
+                const children = allUsers.filter(u => !visitedIds.has(u.telegramId) && matchesSponsor(u, member));
+                nextFrontier.push(...children);
+            }
+
+            levelsMap[lvl] = formatted;
+            frontier = nextFrontier;
+            if (frontier.length === 0) break;
+        }
+
+        const requestedLevel = parseInt(level, 10);
+        const levelMembers = requestedLevel ? (levelsMap[requestedLevel] || []) : undefined;
 
         res.json({
             success: true,
-            directs: directs.map(d => ({
-                telegramId: d.telegramId,
-                username: d.username || '',
-                name: d.profileName || (d.username ? `@${d.username}` : (d.firstName || `User_${String(d.telegramId).slice(-4)}`)),
-                deposit: `${(d.userDepositAmount || 0).toFixed(2)} SOL`,
-                date: new Date(d.lastUpdated || Date.now()).toISOString().split('T')[0],
-                plan: d.activePlanTier || 'NONE'
-            }))
+            directs: levelsMap[1] || [],
+            levels: levelsMap,
+            ...(requestedLevel ? { level: requestedLevel, members: levelMembers } : {})
         });
     } catch (err) {
         console.error('Team Fetch Error:', err);
