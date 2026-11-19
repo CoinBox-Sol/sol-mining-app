@@ -81,6 +81,23 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+function escapeRegex(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function findUserByIdentifier(identifier) {
+    if (!identifier) return null;
+    const clean = String(identifier).replace(/^@/, '').trim();
+    if (!clean || clean.toLowerCase() === 'none') return null;
+
+    return await User.findOne({
+        $or: [
+            { telegramId: clean },
+            { username: { $regex: new RegExp('^' + escapeRegex(clean) + '$', 'i') } }
+        ]
+    });
+}
+
 async function recalculateUserLegs(user) {
     try {
         const usernameClean = user.username ? user.username.replace('@', '').trim() : '';
@@ -92,7 +109,7 @@ async function recalculateUserLegs(user) {
                 ...(usernameClean ? [
                     { sponsor: usernameClean },
                     { sponsor: `@${usernameClean}` },
-                    { sponsor: new RegExp('^@?' + usernameClean + '$', 'i') }
+                    { sponsor: new RegExp('^@?' + escapeRegex(usernameClean) + '$', 'i') }
                 ] : [])
             ]
         });
@@ -130,6 +147,15 @@ async function recalculateUserLegs(user) {
         user.userOtherDone = directVolumes.slice(1).reduce((acc, val) => acc + val, 0.0);
     } catch (err) {
         console.error('Error recalculating legs:', err);
+    }
+}
+
+async function recalculateSponsorByRef(sponsorRef) {
+    const sponsorDoc = await findUserByIdentifier(sponsorRef);
+    if (sponsorDoc) {
+        await recalculateUserLegs(sponsorDoc);
+        sponsorDoc.lastUpdated = Date.now();
+        await sponsorDoc.save();
     }
 }
 
@@ -218,13 +244,7 @@ app.post('/api/user/sync', async (req, res) => {
             });
 
             if (startParam && startParam !== telegramId) {
-                const cleanSponsorQuery = startParam.replace('@', '').trim();
-                let sponsorUser = await User.findOne({ 
-                    $or: [
-                        { telegramId: cleanSponsorQuery },
-                        { username: { $regex: new RegExp('^' + cleanSponsorQuery + '$', 'i') } }
-                    ]
-                });
+                const sponsorUser = await findUserByIdentifier(startParam);
                 if (sponsorUser) {
                     user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
                     foundSponsorUser = sponsorUser;
@@ -236,13 +256,7 @@ app.post('/api/user/sync', async (req, res) => {
             }
 
             if ((!user.sponsor || user.sponsor === 'None') && startParam && startParam !== telegramId) {
-                const cleanSponsorQuery = startParam.replace('@', '').trim();
-                let sponsorUser = await User.findOne({ 
-                    $or: [
-                        { telegramId: cleanSponsorQuery },
-                        { username: { $regex: new RegExp('^' + cleanSponsorQuery + '$', 'i') } }
-                    ]
-                });
+                const sponsorUser = await findUserByIdentifier(startParam);
                 if (sponsorUser) {
                     user.sponsor = sponsorUser.username ? `@${sponsorUser.username}` : sponsorUser.telegramId;
                 }
@@ -350,14 +364,7 @@ app.post('/api/user/sync', async (req, res) => {
         }
 
         if (user.sponsor && user.sponsor !== 'None') {
-            const sponsorClean = user.sponsor.replace('@', '').trim();
-            let sponsorDoc = await User.findOne({
-                $or: [{ telegramId: sponsorClean }, { username: { $regex: new RegExp('^' + sponsorClean + '$', 'i') } }]
-            });
-            if (sponsorDoc) {
-                await recalculateUserLegs(sponsorDoc);
-                await sponsorDoc.save();
-            }
+            await recalculateSponsorByRef(user.sponsor);
         }
 
         user.lastUpdated = Date.now();
@@ -415,16 +422,16 @@ app.post('/api/user/team', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Identifier required' });
         }
 
-        const usernameClean = username ? username.replace('@', '').trim() : '';
-        const telegramIdStr = telegramId ? telegramId.toString() : '';
+        const usernameClean = username ? String(username).replace(/^@/, '').trim() : '';
+        const telegramIdStr = telegramId ? String(telegramId).trim() : '';
 
         const directs = await User.find({
             $or: [
-                { sponsor: telegramIdStr },
+                ...(telegramIdStr ? [{ sponsor: telegramIdStr }] : []),
                 ...(usernameClean ? [
                     { sponsor: usernameClean },
                     { sponsor: `@${usernameClean}` },
-                    { sponsor: new RegExp('^@?' + usernameClean + '$', 'i') }
+                    { sponsor: new RegExp('^@?' + escapeRegex(usernameClean) + '$', 'i') }
                 ] : [])
             ]
         }).select('telegramId username firstName profileName userDepositAmount lastUpdated activePlanTier');
@@ -434,7 +441,7 @@ app.post('/api/user/team', async (req, res) => {
             directs: directs.map(d => ({
                 telegramId: d.telegramId,
                 username: d.username || '',
-                name: d.profileName || (d.username ? `@${d.username}` : (d.firstName || `User_${d.telegramId.slice(-4)}`)),
+                name: d.profileName || (d.username ? `@${d.username}` : (d.firstName || `User_${String(d.telegramId).slice(-4)}`)),
                 deposit: `${(d.userDepositAmount || 0).toFixed(2)} SOL`,
                 date: new Date(d.lastUpdated || Date.now()).toISOString().split('T')[0],
                 plan: d.activePlanTier || 'NONE'
@@ -454,7 +461,7 @@ app.post('/api/admin/search', async (req, res) => {
         let cleanQuery = query.replace('@', '').trim();
         let user = await User.findOne({ 
             $or: [
-                { username: { $regex: new RegExp('^' + cleanQuery + '$', 'i') } },
+                { username: { $regex: new RegExp('^' + escapeRegex(cleanQuery) + '$', 'i') } },
                 { telegramId: cleanQuery }
             ]
         });
@@ -558,6 +565,10 @@ app.post('/api/admin/topup', async (req, res) => {
         user.lastUpdated = Date.now();
         await user.save();
 
+        if (user.sponsor && user.sponsor !== 'None') {
+            await recalculateSponsorByRef(user.sponsor);
+        }
+
         console.log(`Admin Top-Up Successful for User: ${user.telegramId || user.username}, Added: ${topupAmount} SOL, Total Deposit: ${user.userDepositAmount} SOL, Plan: ${calculatedTier}`);
 
         res.json({ 
@@ -580,16 +591,28 @@ app.post('/api/admin/topup', async (req, res) => {
 app.post('/api/admin/sponsor', async (req, res) => {
     try {
         const { telegramId, username, sponsor } = req.body;
-        let query = telegramId ? { telegramId } : { username: (username || '').replace('@', '').trim() };
+        const cleanId = telegramId ? String(telegramId).trim() : '';
+        const cleanUser = username ? String(username).replace(/^@/, '').trim() : '';
+        let query = cleanId
+            ? { telegramId: cleanId }
+            : { username: { $regex: new RegExp('^' + escapeRegex(cleanUser) + '$', 'i') } };
 
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
-        user.sponsor = sponsor || 'None';
+        const oldSponsor = user.sponsor;
+        const nextSponsor = sponsor && String(sponsor).trim() !== '' ? String(sponsor).trim() : 'None';
+
+        user.sponsor = nextSponsor;
+        user.lastUpdated = Date.now();
         await user.save();
 
-        await recalculateUserLegs(user);
-        await user.save();
+        if (oldSponsor && oldSponsor !== 'None') {
+            await recalculateSponsorByRef(oldSponsor);
+        }
+        if (nextSponsor && nextSponsor !== 'None') {
+            await recalculateSponsorByRef(nextSponsor);
+        }
 
         res.json({ success: true, message: 'Sponsor updated successfully' });
     } catch (err) {
