@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
@@ -1064,7 +1065,7 @@ app.post('/api/withdraw', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.send('SolMiningBot Server is Running Live!');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
