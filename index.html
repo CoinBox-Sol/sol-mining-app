@@ -1650,7 +1650,7 @@ document.addEventListener('change', function(e) {
         const pin = prompt("Enter Admin Security PIN (default: 7777):");
         if (pin === "7777" || pin === "admin") {
             openModal('adminModal');
-            switchAdminTab('deposits');
+            switchAdminTab('stats');
         } else if (pin !== null) {
             alert("Incorrect Admin PIN!");
         }
@@ -1748,15 +1748,21 @@ document.addEventListener('change', function(e) {
                 .then(data => {
                     if (data.success && data.users && data.users.length > 0) {
                         const usersHtml = data.users.map(u => {
-                            const displayName = u.username ? `@${u.username}` : (u.firstName || 'Farming_Master');
+                            const cleanUser = u.username ? String(u.username).replace(/^@+/, '').trim() : '';
+                            const displayName = cleanUser ? `@${cleanUser}` : (u.firstName || '');
+                            const copyHandle = cleanUser ? `@${cleanUser}` : (u.telegramId || '');
+                            const tgId = u.telegramId || '';
                             const dep = parseFloat(u.userDepositAmount || 0).toFixed(2);
                             return `
-                                <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                                <div onclick="copyAdminValue('${tgId}', 'User ID')" class="bg-slate-900 hover:bg-slate-800/90 active:scale-[0.99] p-2.5 rounded-xl border border-slate-800 hover:border-amber-500/40 flex justify-between items-center text-xs cursor-pointer transition select-none">
                                     <div>
-                                        <span class="text-white font-bold block">${displayName}</span>
-                                        <span class="text-[10px] text-gray-400">ID: ${u.telegramId || '5939907983'} | Plan: ${u.activePlanTier || 'NONE'}</span>
+                                        <span onclick="event.stopPropagation(); copyAdminValue('${copyHandle}', 'Username')" class="text-white hover:text-amber-300 font-bold block underline decoration-dotted underline-offset-2">${displayName}</span>
+                                        <span class="text-[10px] text-gray-400">ID: ${tgId} | Plan: ${u.activePlanTier || 'NONE'}</span>
                                     </div>
-                                    <span class="text-solGreen font-mono font-bold">${dep} SOL</span>
+                                    <div class="text-right">
+                                        <span class="text-solGreen font-mono font-bold block">${dep} SOL</span>
+                                        <span class="text-[9px] text-amber-400/80">Tap to copy ID</span>
+                                    </div>
                                 </div>
                             `;
                         }).join('');
@@ -2105,6 +2111,44 @@ document.addEventListener('change', function(e) {
             console.error('Broadcast Network Error:', err);
             alert('❌ Server connection error while sending broadcast.');
         }
+    }
+        
+    function showAdminCopyNotice(msg) {
+        let notice = document.getElementById('adminCopyNotice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'adminCopyNotice';
+            notice.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-[100] bg-emerald-950/95 border border-solGreen/60 text-solGreen font-mono text-xs font-bold px-4 py-2 rounded-xl shadow-2xl transition-opacity duration-200';
+            document.body.appendChild(notice);
+        }
+        notice.innerText = msg;
+        notice.style.opacity = '1';
+        clearTimeout(window._adminCopyTimer);
+        window._adminCopyTimer = setTimeout(() => {
+            notice.style.opacity = '0';
+        }, 1800);
+    }
+
+    function copyAdminValue(val, label = 'ID') {
+        if (!val) return;
+        const text = String(val).trim();
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(() => fallbackAdminCopy(text));
+        } else {
+            fallbackAdminCopy(text);
+        }
+        showAdminCopyNotice(`✅ Copied ${label}: ${text}`);
+    }
+
+    function fallbackAdminCopy(text) {
+        const input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        input.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        document.body.removeChild(input);
     }
 
     // Calculate and update Team Volumes dynamically from levelMembersData
