@@ -1068,6 +1068,145 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const MINI_APP_URL = process.env.MINI_APP_URL || 'https://sol-mining-farm-bot-jrni.onrender.com';
+
+async function tgApi(method, payload) {
+    if (!BOT_TOKEN) return null;
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    return await res.json();
+}
+
+async function handleBotStart(msg) {
+    if (!msg || !msg.text || !msg.from) return;
+    const text = String(msg.text).trim();
+    if (!text.startsWith('/start')) return;
+
+    const parts = text.split(/\s+/);
+    const rawPayload = parts[1] ? String(parts[1]).trim() : '';
+    const refCode = rawPayload
+        ? rawPayload.replace(/^(ref_|start_|sponsor_)/i, '').trim()
+        : '';
+
+    const tgIdStr = String(msg.from.id).trim();
+    const cleanU = msg.from.username ? String(msg.from.username).replace(/^@+/, '').trim() : '';
+    const firstName = msg.from.first_name || '';
+
+    let user = await User.findOne({ telegramId: tgIdStr });
+    let isNewUser = false;
+    let sponsorAssignedNow = false;
+
+    if (!user) {
+        isNewUser = true;
+        user = new User({
+            telegramId: tgIdStr,
+            username: cleanU,
+            firstName,
+            profileName: cleanU ? `@${cleanU}` : (firstName || `User_${tgIdStr.slice(-4)}`),
+            sponsor: 'None'
+        });
+    } else if (user.isBlocked) {
+        await tgApi('sendMessage', {
+            chat_id: msg.chat.id,
+            text: '🚫 Your account is blocked by admin.'
+        });
+        return;
+    }
+
+    if (cleanU) user.username = cleanU;
+    if (firstName) user.firstName = firstName;
+
+    const currentSpClean = cleanSponsorRaw(user.sponsor);
+    if (currentSpClean !== 'None') {
+        user.sponsor = cleanSponsorDisplay(currentSpClean);
+    } else if (refCode && refCode.toLowerCase() !== 'none' && refCode !== tgIdStr) {
+        const sponsorUser = await findUserByIdentifier(refCode);
+        if (sponsorUser && String(sponsorUser.telegramId).trim() !== tgIdStr) {
+            user.sponsor = formatSponsorForUser(sponsorUser);
+            sponsorAssignedNow = true;
+        }
+    }
+
+    user.lastUpdated = Date.now();
+    await user.save();
+
+    if (isNewUser || sponsorAssignedNow) {
+        const spDoc = await findUserByIdentifier(user.sponsor);
+        if (spDoc) {
+            if (sponsorAssignedNow) {
+                spDoc.promoBonusBalance = (spDoc.promoBonusBalance || 0.0100) + 0.01;
+                while (spDoc.promoBonusBalance >= 0.10) {
+                    spDoc.promoBonusBalance -= 0.10;
+                    spDoc.userDepositAmount = (spDoc.userDepositAmount || 0) + 0.10;
+                }
+            }
+            await recalculateUserLegs(spDoc);
+            spDoc.lastUpdated = Date.now();
+            await spDoc.save();
+        }
+    }
+
+    const savedSponsor = cleanSponsorDisplay(user.sponsor);
+    const appLaunchUrl = savedSponsor !== 'None'
+        ? `${MINI_APP_URL}?startapp=${encodeURIComponent(cleanSponsorRaw(user.sponsor))}`
+        : MINI_APP_URL;
+
+    await tgApi('sendMessage', {
+        chat_id: msg.chat.id,
+        text:
+            `⚡ <b>SolMiningFarmBot</b>\n\n` +
+            `• Status: <b>Active ID</b>\n` +
+            `• Sponsor: <b>${savedSponsor}</b>\n\n` +
+            `Open Mini App below to start mining:`,
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard: [[
+                { text: '🚀 Open SolMiningFarm Mini App', web_app: { url: appLaunchUrl } }
+            ]]
+        }
+    });
+}
+
+let botUpdateOffset = 0;
+let botPollingActive = false;
+
+async function pollBotUpdates() {
+    if (!BOT_TOKEN || botPollingActive) return;
+    botPollingActive = true;
+    try {
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook`);
+    } catch (_) {}
+    while (true) {
+        try {
+            const res = await fetch(
+                `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${botUpdateOffset}&timeout=25&allowed_updates=${encodeURIComponent(JSON.stringify(['message']))}`
+            );
+            const data = await res.json();
+            if (data && data.ok && Array.isArray(data.result)) {
+                for (const upd of data.result) {
+                    botUpdateOffset = upd.update_id + 1;
+                    if (upd.message) {
+                        await handleBotStart(upd.message);
+                    }
+                }
+            }
+        } catch (err) {
+            await new Promise(r => setTimeout(r, 3000));
+        }
+    }
+}
+
+if (BOT_TOKEN) {
+    pollBotUpdates();
+    console.log('Telegram /start Sponsor Listener Active');
+} else {
+    console.warn('TELEGRAM_BOT_TOKEN not set; bot /start listener not started');
+}
+
 app.listen(PORT, () => {
     console.log('Server is running on port ' + PORT);
 });
