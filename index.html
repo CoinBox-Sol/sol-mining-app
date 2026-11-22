@@ -796,6 +796,11 @@ document.addEventListener('change', function(e) {
                     <input type="file" id="profile-avatar-url" accept="image/*" class="w-full bg-slate-900/90 border border-purple-500/30 rounded-xl p-3 text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer">
                 </div>
 
+                <div class="bg-slate-900/90 border border-purple-500/30 rounded-xl px-3.5 py-2.5 flex justify-between items-center font-mono text-xs">
+                    <span class="text-purple-300 font-bold uppercase tracking-wider text-[10px]">Sponsor</span>
+                    <strong id="user-sponsor" class="text-solGreen font-bold">None</strong>
+                </div>
+
                 <button onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-solPurple via-purple-600 to-solGreen hover:opacity-90 transition py-3 rounded-xl font-bold text-xs text-white shadow-lg shadow-solPurple/25 flex items-center justify-center space-x-2 cursor-pointer">
                     <span>💾</span>
                     <span>Save Profile & Withdrawal Address</span>
@@ -1976,13 +1981,16 @@ document.addEventListener('change', function(e) {
         else if (type === 'sponsor') {
             let newSponsor = prompt("Enter new Sponsor Telegram Username or ID:");
             if (!newSponsor) return;
+            const cleanQ = query.replace(/^@+/, '').trim();
+            const isNumericId = /^\d+$/.test(cleanQ);
             endpoint = 'https://sol-mining-farm-bot-jrni.onrender.com/api/admin/sponsor';
-            requestBody = { 
-                telegramId: query.startsWith('5') ? query : null, 
-                username: !query.startsWith('5') ? query : null,
-                sponsor: newSponsor 
+            requestBody = {
+                query: cleanQ,
+                telegramId: isNumericId ? cleanQ : null,
+                username: !isNumericId ? cleanQ : null,
+                sponsor: newSponsor
             };
-        } 
+        }
         else if (type === 'balance') {
             let amt = prompt("Enter amount to add (e.g. 0.5) or deduct (e.g. -0.5) SOL:");
             if (!amt) return;
