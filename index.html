@@ -2584,9 +2584,12 @@ document.addEventListener('change', function(e) {
                         updateMiningSpeedForPlan(activePlanTier, userDepositAmount);
 
                         if (typeof data.user.minedSolBalance !== 'undefined') {
-                            if (minedSolBalance <= 0 && data.user.minedSolBalance > 0) {
-                                minedSolBalance = parseFloat(data.user.minedSolBalance) || 0;
+                            const serverMined = parseFloat(data.user.minedSolBalance) || 0;
+                            if (serverMined > 0 || (data.user.totalSelfFarmingClaimed === 0 && minedSolBalance === 0)) {
+                                minedSolBalance = Math.max(minedSolBalance, serverMined);
                             }
+                            lastMiningTickMs = Date.now();
+                            renderMinedBalanceUI();
                         }
 
                         if (typeof totalSelfFarmingClaimed !== 'undefined') {
@@ -2628,10 +2631,9 @@ document.addEventListener('change', function(e) {
 
                         const totalEarnedEl = document.getElementById('total-earned-display');
                         if (totalEarnedEl) totalEarnedEl.innerHTML = `${totalEarnedAmount.toFixed(4)} <span class="text-xs text-white">SOL</span>`;
-                        
-                        const minedEl = document.getElementById('mined-balance');
-                        if (minedEl && minedSolBalance > 0) {
-                            minedEl.innerHTML = `${minedSolBalance.toFixed(8)} <span class="text-solGreen text-lg">SOL</span>`;
+
+                        if (typeof renderMinedBalanceUI === 'function') {
+                            renderMinedBalanceUI();
                         }
 
                         const balanceEl = document.getElementById('balance-display');
@@ -2697,4 +2699,3 @@ document.addEventListener('change', function(e) {
     </script>
 </body>
 </html>
-
