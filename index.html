@@ -1015,6 +1015,44 @@ document.addEventListener('change', function(e) {
     let miningSpeedPerSec = 0.0000;
     let activeDirectsCount = 0;
 
+    let miningIntervalId = null;
+    let lastMiningTickMs = Date.now();
+
+    function getDailyRateByPlan(planName) {
+        if (planName === 'GALAXY') return 0.02;
+        if (planName === 'PREMIUM') return 0.015;
+        if (planName === 'ADVANCE') return 0.01;
+        if (planName === 'STARTER') return 0.005;
+        return 0.005;
+    }
+
+    function renderMinedBalanceUI() {
+        const minedEl = document.getElementById('mined-balance');
+        if (minedEl) {
+            minedEl.innerHTML = `${Math.max(0, minedSolBalance).toFixed(8)} <span class="text-solGreen text-lg">SOL</span>`;
+        }
+    }
+
+    function startMiningTicker() {
+        if (miningIntervalId) {
+            clearInterval(miningIntervalId);
+            miningIntervalId = null;
+        }
+        lastMiningTickMs = Date.now();
+        renderMinedBalanceUI();
+
+        miningIntervalId = setInterval(() => {
+            const now = Date.now();
+            const elapsedSec = Math.max(0, (now - lastMiningTickMs) / 1000);
+            lastMiningTickMs = now;
+
+            if (userDepositAmount > 0 && miningSpeedPerSec > 0) {
+                minedSolBalance += miningSpeedPerSec * elapsedSec;
+                renderMinedBalanceUI();
+            }
+        }, 1000);
+    }
+
     // Promo, Earning Breakdowns & Ranks State
     let promoBonusBalance = 0.0100;
     let totalPromoTopups = 0;
@@ -1267,30 +1305,22 @@ document.addEventListener('change', function(e) {
         const remainingCapVal = Math.max(0, maxCapVal - totalEarnedAmount);
         const remCapEl = document.getElementById('remaining-cap-amount');
         if (remCapEl) remCapEl.innerText = `${remainingCapVal.toFixed(4)} SOL`;
-        
-    // Real-time second-by-second smooth mining loop
-    setInterval(() => {
-        if (userDepositAmount > 0) {
-             minedSolBalance += miningSpeedPerSec;
-                 
-             const minedEl = document.getElementById('mined-balance');
-             if (minedEl) {
-                 minedEl.innerHTML = `${minedSolBalance.toFixed(8)} <span class="text-solGreen text-lg">SOL</span>`;
-             }
-         }
-     }, 1000);
+
+        startMiningTicker();
     }
 
     async function claimMinedRewards() {
         if (minedSolBalance <= 0) {
             alert('No mined rewards available to claim yet! Please wait a few seconds while the bot mines SOL.');
-             return;
+            return;
         }
 
         const claimedAmount = minedSolBalance;
         availableSolBalance += claimedAmount;
         totalSelfFarmingClaimed += claimedAmount;
         minedSolBalance = 0.0;
+        lastMiningTickMs = Date.now();
+        renderMinedBalanceUI();
 
         const balanceEl = document.getElementById('balance-display');
         if (balanceEl) {
@@ -1308,11 +1338,6 @@ document.addEventListener('change', function(e) {
             totalEarnedEl.innerHTML = `${currentTotal.toFixed(4)} <span class="text-xs text-white">SOL</span>`;
         }
 
-        const minedEl = document.getElementById('mined-balance');
-        if (minedEl) {
-            minedEl.innerHTML = `0.00000000 <span class="text-solGreen text-lg">SOL</span>`;
-        }
-
         try {
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
             if (tgUser && tgUser.id) {
@@ -1326,7 +1351,8 @@ document.addEventListener('change', function(e) {
                         totalSelfFarmingClaimed: totalSelfFarmingClaimed,
                         activePlanTier: activePlanTier,
                         userDepositAmount: userDepositAmount,
-                        miningSpeedPerSec: miningSpeedPerSec
+                        miningSpeedPerSec: miningSpeedPerSec,
+                        lastClaimedAt: Date.now()
                     })
                 });
             }
