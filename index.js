@@ -460,11 +460,9 @@ app.post('/api/user/sync', async (req, res) => {
 
         if (claimedRecently) {
             user.minedSolBalance = offlineMined;
-        } else if (minedSolBalance !== undefined) {
-            const incomingMined = Math.max(0, parseFloat(minedSolBalance) || 0);
-            user.minedSolBalance = Math.max(user.minedSolBalance || 0, incomingMined, (user.minedSolBalance || 0) + offlineMined);
         } else {
-            user.minedSolBalance = (user.minedSolBalance || 0) + offlineMined;
+            const currentDbMined = Math.max(0, parseFloat(user.minedSolBalance) || 0);
+            user.minedSolBalance = currentDbMined + offlineMined;
         }
 
         user.lastUpdated = Date.now();
