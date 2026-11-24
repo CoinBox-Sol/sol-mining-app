@@ -2584,12 +2584,12 @@ document.addEventListener('change', function(e) {
                         updateMiningSpeedForPlan(activePlanTier, userDepositAmount);
 
                         if (typeof data.user.minedSolBalance !== 'undefined') {
-                            const serverMined = parseFloat(data.user.minedSolBalance) || 0;
-                            if (serverMined > 0 || (data.user.totalSelfFarmingClaimed === 0 && minedSolBalance === 0)) {
-                                minedSolBalance = Math.max(minedSolBalance, serverMined);
-                            }
+                            const serverMined = Math.max(0, parseFloat(data.user.minedSolBalance) || 0);
+                            minedSolBalance = serverMined;
                             lastMiningTickMs = Date.now();
-                            renderMinedBalanceUI();
+                            if (typeof renderMinedBalanceUI === 'function') {
+                                renderMinedBalanceUI();
+                            }
                         }
 
                         if (typeof totalSelfFarmingClaimed !== 'undefined') {
