@@ -320,7 +320,8 @@ app.post('/api/user/sync', async (req, res) => {
             profileName,
             profileMobile,
             profileEmail,
-            profileSolAddress 
+            profileSolAddress,
+            lastClaimedAt
         } = req.body;
 
         if (!telegramId) {
@@ -442,23 +443,26 @@ app.post('/api/user/sync', async (req, res) => {
             user.miningSpeedPerSec = calcSpeed;
         }
 
+        const claimedRecently =
+            (minedSolBalance !== undefined && Number(minedSolBalance) === 0) ||
+            (typeof lastClaimedAt === 'number' && user.lastUpdated && (Number(lastClaimedAt) >= new Date(user.lastUpdated).getTime() - 2000));
+
         let offlineMined = 0;
-        if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE') {
+        if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE' && (user.userDepositAmount || 0) > 0) {
             const now = Date.now();
-            const diffSeconds = (now - new Date(user.lastUpdated).getTime()) / 1000;
-            let activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : 0;
+            const diffSeconds = Math.max(0, (now - new Date(user.lastUpdated).getTime()) / 1000);
+            const activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : 0;
 
             if (diffSeconds > 0 && activeSpeed > 0) {
                 offlineMined = diffSeconds * activeSpeed;
             }
         }
 
-        if (minedSolBalance !== undefined) {
-            if (minedSolBalance === 0) {
-                user.minedSolBalance = offlineMined;
-            } else {
-                user.minedSolBalance = Math.max(user.minedSolBalance || 0, minedSolBalance) + offlineMined;
-            }
+        if (claimedRecently) {
+            user.minedSolBalance = offlineMined;
+        } else if (minedSolBalance !== undefined) {
+            const incomingMined = Math.max(0, parseFloat(minedSolBalance) || 0);
+            user.minedSolBalance = Math.max(user.minedSolBalance || 0, incomingMined, (user.minedSolBalance || 0) + offlineMined);
         } else {
             user.minedSolBalance = (user.minedSolBalance || 0) + offlineMined;
         }
