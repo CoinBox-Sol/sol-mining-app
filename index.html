@@ -20,22 +20,23 @@
                 }
             }
         }
+    </script>
+    <script>
+        let selectedAvatarBase64 = "";
 
-let selectedAvatarBase64 = "";
-
-document.addEventListener('change', function(e) {
-    if (e.target && e.target.id === 'profile-avatar-url') {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                selectedAvatarBase64 = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-});
-</script>
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.id === 'profile-avatar-url') {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        selectedAvatarBase64 = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+    </script>
 </head>
 <body class="bg-darkBg text-white font-sans antialiased pb-24 selection:bg-solPurple selection:text-white">
 
@@ -2724,6 +2725,18 @@ document.addEventListener('change', function(e) {
                                 minedSolBalance = Math.max(0, parseFloat(d.user.minedSolBalance) || 0);
                                 lastMiningTickMs = Date.now();
                                 renderMinedBalanceUI();
+                            }
+                            if (typeof d.user.totalSelfFarmingClaimed !== 'undefined' || typeof d.user.selfFarmingBonus !== 'undefined') {
+                                totalSelfFarmingClaimed = parseFloat(d.user.totalSelfFarmingClaimed ?? d.user.selfFarmingBonus) || 0;
+                                const statSelfEl = document.getElementById('stat-self-bonus');
+                                if (statSelfEl) statSelfEl.innerText = `${totalSelfFarmingClaimed.toFixed(4)} SOL`;
+                            }
+                            if (typeof d.user.availableSolBalance !== 'undefined') {
+                                availableSolBalance = parseFloat(d.user.availableSolBalance) || 0;
+                                const balanceEl = document.getElementById('balance-display');
+                                if (balanceEl) {
+                                    balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
+                                }
                             }
                         }
                     })
