@@ -77,10 +77,25 @@ const userSchema = new mongoose.Schema({
     profileSolAddress: { type: String, default: '' },
 
     totalEarnedAmount: { type: Number, default: 0.0000 },
+    lastMiningTickAt: { type: Number, default: Date.now },
     lastUpdated: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', userSchema);
+
+function getDailyRateByPlan(planName) {
+    if (planName === 'GALAXY') return 0.02;
+    if (planName === 'PREMIUM') return 0.015;
+    if (planName === 'ADVANCE') return 0.01;
+    if (planName === 'STARTER') return 0.005;
+    return 0.005;
+}
+
+function calculateMiningSpeedPerSec(planName, depositAmount) {
+    const dep = Math.max(0, parseFloat(depositAmount) || 0);
+    if (dep <= 0 || !planName || planName === 'NONE') return 0;
+    return (dep * getDailyRateByPlan(planName)) / 86400;
+}
 
 function escapeRegex(str) {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -275,20 +290,32 @@ app.post('/api/user/claim', async (req, res) => {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
 
-        let amount = parseFloat(claimedAmount) || 0;
-        if (amount > 0) {
-            user.availableSolBalance = (user.availableSolBalance || 0) + amount;
-            user.totalSelfFarmingClaimed = (user.totalSelfFarmingClaimed || 0) + amount;
-            user.minedSolBalance = 0;
-            user.lastUpdated = Date.now();
-            await user.save();
+        const nowMs = Date.now();
+        const currentDeposit = Math.max(0, parseFloat(user.userDepositAmount) || 0);
+        const speedPerSec = calculateMiningSpeedPerSec(user.activePlanTier, currentDeposit);
+        const prevTickMs = Number(user.lastMiningTickAt) || (user.lastUpdated ? new Date(user.lastUpdated).getTime() : nowMs);
+        const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
+        const accruedSinceLastTick = currentDeposit > 0 ? (speedPerSec * elapsedSec) : 0;
+
+        const totalServerMined = Math.max(0, (parseFloat(user.minedSolBalance) || 0) + accruedSinceLastTick);
+        const reqAmt = Math.max(0, parseFloat(claimedAmount) || 0);
+        const finalClaim = totalServerMined > 0 ? totalServerMined : reqAmt;
+
+        if (finalClaim > 0) {
+            user.availableSolBalance = (user.availableSolBalance || 0) + finalClaim;
+            user.totalSelfFarmingClaimed = (user.totalSelfFarmingClaimed || 0) + finalClaim;
         }
+        user.minedSolBalance = 0;
+        user.miningSpeedPerSec = speedPerSec;
+        user.lastMiningTickAt = nowMs;
+        user.lastUpdated = new Date(nowMs);
+        await user.save();
 
         return res.json({
             success: true,
             user: {
                 telegramId: user.telegramId,
-                minedSolBalance: user.minedSolBalance || 0,
+                minedSolBalance: 0,
                 availableSolBalance: user.availableSolBalance || 0,
                 totalSelfFarmingClaimed: user.totalSelfFarmingClaimed || 0,
                 selfFarmingBonus: user.totalSelfFarmingClaimed || 0,
@@ -310,18 +337,15 @@ app.post('/api/user/sync', async (req, res) => {
             telegramId, 
             username, 
             firstName, 
-            minedSolBalance, 
             availableSolBalance, 
             totalSelfFarmingClaimed, 
             activePlanTier, 
             userDepositAmount, 
-            miningSpeedPerSec, 
             promoBonusBalance,
             profileName,
             profileMobile,
             profileEmail,
-            profileSolAddress,
-            lastClaimedAt
+            profileSolAddress
         } = req.body;
 
         if (!telegramId) {
@@ -348,7 +372,8 @@ app.post('/api/user/sync', async (req, res) => {
                 activePlanTier: 'NONE',
                 userDepositAmount: 0.00,
                 miningSpeedPerSec: 0.0000,
-                promoBonusBalance: 0.0100
+                promoBonusBalance: 0.0100,
+                lastMiningTickAt: Date.now()
             });
 
             if (refCode && refCode !== tgIdStr) {
@@ -399,10 +424,6 @@ app.post('/api/user/sync', async (req, res) => {
         if (totalSelfFarmingClaimed !== undefined && totalSelfFarmingClaimed > (user.totalSelfFarmingClaimed || 0)) {
             user.totalSelfFarmingClaimed = totalSelfFarmingClaimed;
         }
-        
-        if (miningSpeedPerSec !== undefined && miningSpeedPerSec > 0) {
-            user.miningSpeedPerSec = miningSpeedPerSec;
-        }
 
         if (activePlanTier && activePlanTier !== 'NONE') {
             user.activePlanTier = activePlanTier;
@@ -423,49 +444,40 @@ app.post('/api/user/sync', async (req, res) => {
             user.userDepositAmount = (user.userDepositAmount || 0) + 0.10;
         }
 
-        if (user.userDepositAmount > 0) {
-            let calculatedTier = 'STARTER';
-            let calcSpeed = 0.00000578;
-            if (user.userDepositAmount >= 25.10) {
-                calculatedTier = 'GALAXY';
-                calcSpeed = 0.00002315;
-            } else if (user.userDepositAmount >= 10.10) {
-                calculatedTier = 'PREMIUM';
-                calcSpeed = 0.00001736;
-            } else if (user.userDepositAmount >= 2.10) {
-                calculatedTier = 'ADVANCE';
-                calcSpeed = 0.00001157;
-            } else {
-                calculatedTier = 'STARTER';
-                calcSpeed = 0.00000578;
-            }
-            user.activePlanTier = calculatedTier;
-            user.miningSpeedPerSec = calcSpeed;
-        }
+        const nowMs = Date.now();
+        const currentDeposit = Math.max(0, parseFloat(user.userDepositAmount) || 0);
 
-        const claimedRecently =
-            (minedSolBalance !== undefined && Number(minedSolBalance) === 0) ||
-            (typeof lastClaimedAt === 'number' && user.lastUpdated && (Number(lastClaimedAt) >= new Date(user.lastUpdated).getTime() - 2000));
-
-        let offlineMined = 0;
-        if (user.lastUpdated && user.activePlanTier && user.activePlanTier !== 'NONE' && (user.userDepositAmount || 0) > 0) {
-            const now = Date.now();
-            const diffSeconds = Math.max(0, (now - new Date(user.lastUpdated).getTime()) / 1000);
-            const activeSpeed = user.miningSpeedPerSec > 0 ? user.miningSpeedPerSec : 0;
-
-            if (diffSeconds > 0 && activeSpeed > 0) {
-                offlineMined = diffSeconds * activeSpeed;
-            }
-        }
-
-        if (claimedRecently) {
-            user.minedSolBalance = offlineMined;
+        if (currentDeposit > 0) {
+            if (currentDeposit >= 25.10) user.activePlanTier = 'GALAXY';
+            else if (currentDeposit >= 10.10) user.activePlanTier = 'PREMIUM';
+            else if (currentDeposit >= 2.10) user.activePlanTier = 'ADVANCE';
+            else user.activePlanTier = 'STARTER';
         } else {
-            const currentDbMined = Math.max(0, parseFloat(user.minedSolBalance) || 0);
-            user.minedSolBalance = currentDbMined + offlineMined;
+            user.activePlanTier = 'NONE';
         }
 
-        user.lastUpdated = Date.now();
+        const speedPerSec = calculateMiningSpeedPerSec(user.activePlanTier, currentDeposit);
+        user.miningSpeedPerSec = speedPerSec;
+
+        const prevTickMs = Number(user.lastMiningTickAt) || (user.lastUpdated ? new Date(user.lastUpdated).getTime() : nowMs);
+        const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
+        const accruedSinceLastTick = currentDeposit > 0 ? (speedPerSec * elapsedSec) : 0;
+
+        const isExplicitClaim = req.body.isClaim === true;
+
+        if (isExplicitClaim) {
+            const totalToClaim = Math.max(0, (parseFloat(user.minedSolBalance) || 0) + accruedSinceLastTick);
+            user.totalSelfFarmingClaimed = (parseFloat(user.totalSelfFarmingClaimed) || 0) + totalToClaim;
+            user.availableSolBalance = (parseFloat(user.availableSolBalance) || 0) + totalToClaim;
+            user.minedSolBalance = 0;
+            user.lastMiningTickAt = nowMs;
+        } else {
+            const baseMined = Math.max(0, parseFloat(user.minedSolBalance) || 0);
+            user.minedSolBalance = currentDeposit > 0 ? (baseMined + accruedSinceLastTick) : 0;
+            user.lastMiningTickAt = nowMs;
+        }
+
+        user.lastUpdated = new Date(nowMs);
         await user.save();
 
         if (sponsorAssignedNow && user.sponsor && user.sponsor !== 'None') {
@@ -477,7 +489,7 @@ app.post('/api/user/sync', async (req, res) => {
                     sponsorDoc.userDepositAmount = (sponsorDoc.userDepositAmount || 0) + 0.10;
                 }
                 await recalculateUserLegs(sponsorDoc);
-                sponsorDoc.lastUpdated = Date.now();
+                sponsorDoc.lastUpdated = new Date();
                 await sponsorDoc.save();
             }
         } else if (user.sponsor && user.sponsor !== 'None') {
@@ -681,30 +693,34 @@ app.post('/api/admin/topup', async (req, res) => {
         if (!user) return res.status(404).json({ success: false, error: 'User not found in database' });
 
         const topupAmount = parseFloat(amount) || 0.10;
+        const nowMs = Date.now();
+        const prevDeposit = Math.max(0, parseFloat(user.userDepositAmount) || 0);
+        const prevSpeed = calculateMiningSpeedPerSec(user.activePlanTier, prevDeposit);
+        const prevTickMs = Number(user.lastMiningTickAt) || (user.lastUpdated ? new Date(user.lastUpdated).getTime() : nowMs);
+        const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
+        if (prevDeposit > 0 && prevSpeed > 0) {
+            user.minedSolBalance = Math.max(0, parseFloat(user.minedSolBalance) || 0) + (prevSpeed * elapsedSec);
+        }
 
-        user.userDepositAmount = (user.userDepositAmount || 0) + topupAmount;
+        user.userDepositAmount = prevDeposit + topupAmount;
 
         let calculatedTier = 'STARTER';
-        let calcSpeed = 0.00000578;
         if (user.userDepositAmount >= 25.10) {
             calculatedTier = 'GALAXY';
-            calcSpeed = 0.00002315;
         } else if (user.userDepositAmount >= 10.10) {
             calculatedTier = 'PREMIUM';
-            calcSpeed = 0.00001736;
         } else if (user.userDepositAmount >= 2.10) {
             calculatedTier = 'ADVANCE';
-            calcSpeed = 0.00001157;
         } else {
             calculatedTier = 'STARTER';
-            calcSpeed = 0.00000578;
         }
 
         user.activePlanTier = calculatedTier;
-        user.miningSpeedPerSec = calcSpeed;
+        user.miningSpeedPerSec = calculateMiningSpeedPerSec(calculatedTier, user.userDepositAmount);
+        user.lastMiningTickAt = nowMs;
 
         await recalculateUserLegs(user);
-        user.lastUpdated = Date.now();
+        user.lastUpdated = new Date(nowMs);
         await user.save();
 
         if (user.sponsor && user.sponsor !== 'None') {
