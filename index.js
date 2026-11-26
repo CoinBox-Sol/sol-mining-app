@@ -487,11 +487,15 @@ app.post('/api/user/sync', async (req, res) => {
         if (profileEmail !== undefined) user.profileEmail = profileEmail;
         if (profileSolAddress !== undefined) user.profileSolAddress = profileSolAddress;
 
-        if (availableSolBalance !== undefined && availableSolBalance > (user.availableSolBalance || 0)) {
-            user.availableSolBalance = availableSolBalance;
-        }
-        if (totalSelfFarmingClaimed !== undefined && totalSelfFarmingClaimed > (user.totalSelfFarmingClaimed || 0)) {
-            user.totalSelfFarmingClaimed = totalSelfFarmingClaimed;
+        const isExplicitClaim = req.body.isClaim === true;
+
+        if (!isExplicitClaim) {
+            if (availableSolBalance !== undefined && availableSolBalance > (user.availableSolBalance || 0)) {
+                user.availableSolBalance = availableSolBalance;
+            }
+            if (totalSelfFarmingClaimed !== undefined && totalSelfFarmingClaimed > (user.totalSelfFarmingClaimed || 0)) {
+                user.totalSelfFarmingClaimed = totalSelfFarmingClaimed;
+            }
         }
 
         if (activePlanTier && activePlanTier !== 'NONE') {
