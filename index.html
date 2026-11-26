@@ -1317,27 +1317,15 @@
         }
 
         const claimedAmount = minedSolBalance;
-        availableSolBalance += claimedAmount;
-        totalSelfFarmingClaimed += claimedAmount;
         minedSolBalance = 0.0;
         lastMiningTickMs = Date.now();
         renderMinedBalanceUI();
 
         const balanceEl = document.getElementById('balance-display');
-        if (balanceEl) {
-            balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
-        }
-
         const statSelfBonusEl = document.getElementById('stat-self-bonus');
-        if (statSelfBonusEl) {
-            statSelfBonusEl.innerText = `${totalSelfFarmingClaimed.toFixed(4)} SOL`;
-        }
-
         const totalEarnedEl = document.getElementById('total-earned-display');
-        if (totalEarnedEl) {
-            const currentTotal = totalSelfFarmingClaimed;
-            totalEarnedEl.innerHTML = `${currentTotal.toFixed(4)} <span class="text-xs text-white">SOL</span>`;
-        }
+
+        let syncedFromServer = false;
 
         try {
             const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -1348,28 +1336,36 @@
                     body: JSON.stringify({
                         telegramId: tgUser.id.toString(),
                         isClaim: true,
-                        claimedAmount: claimedAmount,
-                        availableSolBalance: availableSolBalance,
-                        totalSelfFarmingClaimed: totalSelfFarmingClaimed
+                        claimedAmount: claimedAmount
                     })
                 });
                 const syncData = await res.json();
                 if (syncData.success && syncData.user) {
+                    syncedFromServer = true;
                     minedSolBalance = Math.max(0, parseFloat(syncData.user.minedSolBalance) || 0);
-                    totalSelfFarmingClaimed = parseFloat(syncData.user.totalSelfFarmingClaimed) || totalSelfFarmingClaimed;
+                    totalSelfFarmingClaimed = parseFloat(syncData.user.totalSelfFarmingClaimed ?? syncData.user.selfFarmingBonus) || totalSelfFarmingClaimed;
                     availableSolBalance = parseFloat(syncData.user.availableSolBalance) || availableSolBalance;
                     lastMiningTickMs = Date.now();
                     renderMinedBalanceUI();
-                    if (balanceEl) {
-                        balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
-                    }
-                    if (statSelfBonusEl) {
-                        statSelfBonusEl.innerText = `${totalSelfFarmingClaimed.toFixed(4)} SOL`;
-                    }
                 }
             }
         } catch (err) {
             console.error("Claim Sync Error:", err);
+        }
+
+        if (!syncedFromServer) {
+            availableSolBalance += claimedAmount;
+            totalSelfFarmingClaimed += claimedAmount;
+        }
+
+        if (balanceEl) {
+            balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
+        }
+        if (statSelfBonusEl) {
+            statSelfBonusEl.innerText = `${totalSelfFarmingClaimed.toFixed(4)} SOL`;
+        }
+        if (totalEarnedEl) {
+            totalEarnedEl.innerHTML = `${totalSelfFarmingClaimed.toFixed(4)} <span class="text-xs text-white">SOL</span>`;
         }
 
         alert(`Successfully claimed ${claimedAmount.toFixed(8)} SOL into your Available Balance!`);
