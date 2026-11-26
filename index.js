@@ -536,8 +536,6 @@ app.post('/api/user/sync', async (req, res) => {
         const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
         const accruedSinceLastTick = currentDeposit > 0 ? (speedPerSec * elapsedSec) : 0;
 
-        const isExplicitClaim = req.body.isClaim === true;
-
         if (isExplicitClaim) {
             const totalToClaim = Math.max(0, (parseFloat(user.minedSolBalance) || 0) + accruedSinceLastTick);
             user.totalSelfFarmingClaimed = (parseFloat(user.totalSelfFarmingClaimed) || 0) + totalToClaim;
