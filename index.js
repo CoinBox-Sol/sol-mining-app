@@ -254,6 +254,74 @@ async function recalculateSponsorByRef(sponsorRef) {
     }
 }
 
+const OVERRIDE_LEVEL_CONFIG = {
+    1:  { rate: 0.15, reqDirect: 0 },
+    2:  { rate: 0.10, reqDirect: 2 },
+    3:  { rate: 0.05, reqDirect: 3 },
+    4:  { rate: 0.03, reqDirect: 4 },
+    5:  { rate: 0.02, reqDirect: 5 },
+    6:  { rate: 0.02, reqDirect: 6 },
+    7:  { rate: 0.02, reqDirect: 7 },
+    8:  { rate: 0.02, reqDirect: 8 },
+    9:  { rate: 0.02, reqDirect: 9 },
+    10: { rate: 0.02, reqDirect: 10 },
+    11: { rate: 0.02, reqDirect: 11 },
+    12: { rate: 0.02, reqDirect: 12 },
+    13: { rate: 0.02, reqDirect: 13 },
+    14: { rate: 0.02, reqDirect: 14 },
+    15: { rate: 0.02, reqDirect: 15 },
+    16: { rate: 0.02, reqDirect: 16 },
+    17: { rate: 0.02, reqDirect: 17 },
+    18: { rate: 0.02, reqDirect: 18 },
+    19: { rate: 0.02, reqDirect: 19 },
+    20: { rate: 0.02, reqDirect: 20 },
+    21: { rate: 0.02, reqDirect: 21 },
+    22: { rate: 0.03, reqDirect: 22 },
+    23: { rate: 0.05, reqDirect: 23 },
+    24: { rate: 0.10, reqDirect: 24 },
+    25: { rate: 0.15, reqDirect: 25 }
+};
+
+function getUserDirectBusiness(uplineDoc) {
+    const strongest = parseFloat(uplineDoc.userStrongestDone) || 0;
+    const other = parseFloat(uplineDoc.userOtherDone) || 0;
+    return strongest + other;
+}
+
+async function distributeTeamOverrideBonus(claimerUser, claimedAmount) {
+    const amount = parseFloat(claimedAmount) || 0;
+    if (!claimerUser || amount <= 0) return;
+
+    let currentSponsorRef = cleanSponsorRaw(claimerUser.sponsor);
+    const visited = new Set([normalizeHandle(claimerUser.telegramId), normalizeHandle(claimerUser.username)].filter(Boolean));
+
+    for (let lvl = 1; lvl <= 25; lvl++) {
+        if (!currentSponsorRef || currentSponsorRef === 'None') break;
+
+        const uplineDoc = await findUserByIdentifier(currentSponsorRef);
+        if (!uplineDoc) break;
+
+        const uplineKeys = [normalizeHandle(uplineDoc.telegramId), normalizeHandle(uplineDoc.username)].filter(Boolean);
+        if (uplineKeys.some(k => visited.has(k))) break;
+        uplineKeys.forEach(k => visited.add(k));
+
+        const cfg = OVERRIDE_LEVEL_CONFIG[lvl];
+        const directBusiness = getUserDirectBusiness(uplineDoc);
+
+        if (cfg && !uplineDoc.isBlocked && directBusiness >= cfg.reqDirect) {
+            const overrideAmt = amount * cfg.rate;
+            if (overrideAmt > 0) {
+                uplineDoc.teamOverrideBonus = (parseFloat(uplineDoc.teamOverrideBonus) || 0) + overrideAmt;
+                uplineDoc.availableSolBalance = (parseFloat(uplineDoc.availableSolBalance) || 0) + overrideAmt;
+                uplineDoc.lastUpdated = new Date();
+                await uplineDoc.save();
+            }
+        }
+
+        currentSponsorRef = cleanSponsorRaw(uplineDoc.sponsor);
+    }
+}
+
 function extractReferralCode(req) {
     const body = req.body || {};
     const query = req.query || {};
@@ -304,6 +372,7 @@ app.post('/api/user/claim', async (req, res) => {
         if (finalClaim > 0) {
             user.availableSolBalance = (user.availableSolBalance || 0) + finalClaim;
             user.totalSelfFarmingClaimed = (user.totalSelfFarmingClaimed || 0) + finalClaim;
+            await distributeTeamOverrideBonus(user, finalClaim);
         }
         user.minedSolBalance = 0;
         user.miningSpeedPerSec = speedPerSec;
@@ -471,6 +540,9 @@ app.post('/api/user/sync', async (req, res) => {
             user.availableSolBalance = (parseFloat(user.availableSolBalance) || 0) + totalToClaim;
             user.minedSolBalance = 0;
             user.lastMiningTickAt = nowMs;
+            if (totalToClaim > 0) {
+                await distributeTeamOverrideBonus(user, totalToClaim);
+            }
         } else {
             const baseMined = Math.max(0, parseFloat(user.minedSolBalance) || 0);
             user.minedSolBalance = currentDeposit > 0 ? (baseMined + accruedSinceLastTick) : 0;
