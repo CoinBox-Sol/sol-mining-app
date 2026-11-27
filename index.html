@@ -1674,15 +1674,75 @@
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
-    function verifyAndAutoUpdateDeposit() {
-        const txHash = document.getElementById('tx-hash-input').value.trim();
+    async function verifyAndAutoUpdateDeposit() {
+        const txInput = document.getElementById('tx-hash-input');
+        const submitBtn = document.querySelector('#depositModal button[onclick="verifyAndAutoUpdateDeposit()"]');
+        const txHash = txInput ? txInput.value.trim() : '';
+
         if (!txHash) {
             alert('Please enter a valid Solana Transaction Hash (Tx Hash).');
             return;
         }
-        alert('Transaction hash verified successfully! Your deposit and package have been auto-updated.');
-        document.getElementById('tx-hash-input').value = '';
-        closeModal('depositModal');
+
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (!tgUser || !tgUser.id) {
+            alert('Telegram user ID not found. Please open inside Telegram Mini App.');
+            return;
+        }
+
+        const originalBtnText = submitBtn ? submitBtn.innerText : 'Submit & Auto-Update';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Verifying...';
+        }
+
+        try {
+            const res = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/user/verify-deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegramId: tgUser.id.toString(),
+                    txHash: txHash
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.user) {
+                const updatedDeposit = parseFloat(data.user.userDepositAmount) || 0;
+                const updatedPlan = data.user.activePlanTier || 'STARTER';
+
+                if (typeof data.user.minedSolBalance !== 'undefined') {
+                    minedSolBalance = Math.max(0, parseFloat(data.user.minedSolBalance) || 0);
+                    lastMiningTickMs = Date.now();
+                    renderMinedBalanceUI();
+                }
+
+                if (typeof data.user.activeDirectsCount !== 'undefined') {
+                    activeDirectsCount = data.user.activeDirectsCount || 0;
+                }
+
+                updateMiningSpeedForPlan(updatedPlan, updatedDeposit);
+
+                if (typeof fetchTeamMembersFromDB === 'function') {
+                    await fetchTeamMembersFromDB(tgUser.id.toString(), tgUser.username || '');
+                }
+
+                if (txInput) txInput.value = '';
+                closeModal('depositModal');
+                alert(`Verified ${parseFloat(data.addedSol || 0).toFixed(4)} SOL! Total Deposit: ${updatedDeposit.toFixed(2)} SOL (${updatedPlan}).`);
+            } else {
+                alert(data.error || 'Transaction could not be verified.');
+            }
+        } catch (err) {
+            console.error('Deposit Verification Error:', err);
+            alert('Network/server error while verifying transaction.');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalBtnText;
+            }
+        }
     }
 
     function openAdminPanel() {
