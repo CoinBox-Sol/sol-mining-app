@@ -1582,11 +1582,12 @@
         window.open(whatsappUrl, '_blank');
     }
 
-    function submitWithdrawal() {
+    async function submitWithdrawal() {
         const amt = parseFloat(document.getElementById('withdraw-amount').value);
         const addr = document.getElementById('withdraw-address').value.trim();
-        
-        if (!amt || !addr) {
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+
+        if (!amt || isNaN(amt) || !addr) {
             showBotAlert("❌ Error", "Please fill in both withdrawal amount and wallet address.");
             return;
         }
@@ -1596,56 +1597,106 @@
             return;
         }
 
-        const lastWithdrawDate = localStorage.getItem('last_withdrawal_date');
-        const todayStr = new Date().toDateString();
-
-        if (lastWithdrawDate === todayStr) {
-            showBotAlert(
-                "🚫 Daily Withdrawal Limit Reached", 
-                "Only one withdrawal is allowed per 24 hours.<br><br>⏳ Please try again tomorrow to process a new withdrawal request."
-            );
-            return;
-        }
-
-        let wList = completedWithdrawals || [];
-        let historyList = adminPendingWithdrawals || [];
-        let currentUserName = profileName || '@CryptoUser';
-
+        let currentUserName = profileName || (tgUser?.username ? `@${tgUser.username}` : (tgUser?.first_name || (tgUser?.id ? `User_${String(tgUser.id).slice(-4)}` : 'User')));
         const feeAmount = amt * 0.10;
         const netReceiveAmount = amt - feeAmount;
 
+        if (!tgUser || !tgUser.id) {
+            showBotAlert("❌ Error", "Telegram user ID not found. Please open inside Telegram Mini App.");
+            return;
+        }
+
         if (amt >= 0.01 && amt <= 0.10) {
-            const fakeTxId = "5tQTRJN5zktug6AbyLHYatBRXwP1KjRxjCRCZZ2gsWtPa6hCzvhs1iZ7zAbx5HvkCHhppUUBrCHQTXgfSMekeER";
-            
-            historyList.unshift({
-                username: currentUserName,
-                requestedAmount: amt.toFixed(4),
-                fee: feeAmount.toFixed(4),
-                amount: netReceiveAmount.toFixed(4),
-                address: addr,
-                status: 'Auto-Paid'
-            });
-            localStorage.setItem('last_withdrawal_date', todayStr);
+            try {
+                const res = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramId: tgUser.id.toString(),
+                        amount: amt,
+                        address: addr
+                    })
+                });
 
-            showBotAlert(
-                "✅ Withdrawal Successful!", 
-                `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• You Will Receive: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br><span class="text-gray-400">🔗 TxID:</span><br><span class="text-[10px] font-mono break-all text-solGreen">${fakeTxId}</span>`
-            );
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    if (res.status === 429) {
+                        showBotAlert(
+                            "🚫 Daily Withdrawal Limit Reached",
+                            data.error || "Only one withdrawal is allowed per 24 hours.<br><br>⏳ Please try again after 24 hours to process a new withdrawal request."
+                        );
+                    } else {
+                        showBotAlert("❌ Error", data.error || "Auto-withdrawal failed.");
+                    }
+                    return;
+                }
+
+                const realTxId = data.txId || "";
+                const apiFee = parseFloat(data.fee ?? feeAmount);
+                const apiNet = parseFloat(data.netAmount ?? netReceiveAmount);
+
+                if (typeof data.newBalance !== 'undefined') {
+                    availableSolBalance = parseFloat(data.newBalance) || 0;
+                    const balanceEl = document.getElementById('balance-display');
+                    if (balanceEl) {
+                        balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
+                    }
+                }
+
+                showBotAlert(
+                    "✅ Withdrawal Successful!",
+                    `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${apiFee.toFixed(4)} SOL<br>• You Will Receive: <strong>${apiNet.toFixed(4)} SOL</strong><br><br><span class="text-gray-400">🔗 TxID:</span><br><span class="text-[10px] font-mono break-all text-solGreen">${realTxId}</span>`
+                );
+            } catch (err) {
+                console.error("Auto-Withdrawal Error:", err);
+                showBotAlert("❌ Error", "Server connection error while processing withdrawal.");
+                return;
+            }
         } else {
-            wList.push({
-                id: Date.now(),
-                username: currentUserName,
-                requestedAmount: amt.toFixed(4),
-                fee: feeAmount.toFixed(4),
-                amount: netReceiveAmount.toFixed(4),
-                address: addr
-            });
-            localStorage.setItem('last_withdrawal_date', todayStr);
+            try {
+                const res = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/withdraw/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramId: tgUser.id.toString(),
+                        username: currentUserName,
+                        amount: amt,
+                        address: addr
+                    })
+                });
 
-            showBotAlert(
-                "⏳ Pending Admin Approval", 
-                `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• You Will Receive: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br>Sent for admin approval.`
-            );
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    if (res.status === 429) {
+                        showBotAlert(
+                            "🚫 Daily Withdrawal Limit Reached",
+                            data.error || "Only one withdrawal is allowed per 24 hours.<br><br>⏳ Please try again after 24 hours to process a new withdrawal request."
+                        );
+                    } else {
+                        showBotAlert("❌ Error", data.error || "Failed to submit withdrawal request.");
+                    }
+                    return;
+                }
+
+                if (typeof data.newBalance !== 'undefined') {
+                    availableSolBalance = parseFloat(data.newBalance) || 0;
+                    const balanceEl = document.getElementById('balance-display');
+                    if (balanceEl) {
+                        balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
+                    }
+                }
+
+                showBotAlert(
+                    "⏳ Pending Admin Approval",
+                    `Requested: <strong>${amt.toFixed(4)} SOL</strong><br>• Fee (10%): ${feeAmount.toFixed(4)} SOL<br>• You Will Receive: <strong>${netReceiveAmount.toFixed(4)} SOL</strong><br><br>Sent for admin approval.`
+                );
+            } catch (err) {
+                console.error("Pending Withdrawal Error:", err);
+                showBotAlert("❌ Error", "Server connection error while submitting withdrawal.");
+                return;
+            }
         }
 
         document.getElementById('withdraw-amount').value = '';
@@ -1902,57 +1953,8 @@
                     `;
                 });
         } else if (tab === 'withdrawals') {
-            let wList = adminPendingWithdrawals || [];
-            let historyList = completedWithdrawals || [];
+            loadAdminWithdrawalsTab();
 
-            let html = '<div class="space-y-4">';
-            
-            html += '<div class="space-y-2"><div class="text-xs font-bold text-amber-400">🎁 Pending Withdrawals</div>';
-            if (wList.length === 0) {
-                html += '<div class="bg-slate-900 p-2 rounded-xl text-center text-[11px] text-gray-400">No pending withdrawals found.</div>';
-            } else {
-                wList.forEach((w, index) => {
-                    html += `
-                        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-white font-bold">${w.username}</span>
-                                <span class="text-solGreen font-mono font-bold">${w.amount} SOL</span>
-                            </div>
-                            <div class="text-[10px] text-gray-400 break-all bg-slate-950 p-1 rounded border border-slate-800">
-                                ${w.address}
-                            </div>
-                            <div class="flex space-x-2 pt-1">
-                                <button onclick="processWithdrawal(${index}, 'approve')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1 rounded-lg text-white font-bold text-[10px] cursor-pointer">Approve</button>
-                                <button onclick="processWithdrawal(${index}, 'reject')" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1 rounded-lg text-white font-bold text-[10px] cursor-pointer">Reject</button>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            html += '</div>';
-
-            html += '<div class="space-y-2 pt-2 border-t border-slate-800"><div class="text-xs font-bold text-emerald-400">✅ Withdrawal History (Paid)</div>';
-            if (historyList.length === 0) {
-                html += '<div class="bg-slate-900 p-2 rounded-xl text-center text-[11px] text-gray-400">No history found.</div>';
-            } else {
-                historyList.forEach((h) => {
-                    html += `
-                        <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 text-xs flex justify-between items-center">
-                            <div>
-                                <span class="text-white font-bold block">${h.username}</span>
-                                <span class="text-[10px] text-gray-400">Addr: ${h.address ? h.address.substring(0, 10) : ''}...</span>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-solGreen font-mono font-bold block">${h.amount} SOL</span>
-                                <span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold">${h.status || 'Auto-Paid'}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            html += '</div></div>';
-
-            area.innerHTML = html;
         } else if (tab === 'broadcast') {
             area.innerHTML = `
                 <div class="space-y-3 text-xs">
@@ -1997,28 +1999,90 @@
         }
     }
     
-    function processWithdrawal(index, action) {
-        let wList = adminPendingWithdrawals || [];
-        let historyList = completedWithdrawals || [];
-        
-        let item = wList[index];
-        if (!item) return;
-        
-        if (action === 'approve') {
-            historyList.unshift({
-                username: item.username,
-                amount: item.amount,
-                address: item.address,
-                status: 'Approved'
-            });
-            alert(`Withdrawal of ${item.amount} SOL for ${item.username} Approved Successfully!`);
-        } else {
-            alert(`Withdrawal for ${item.username} Rejected & Refunded!`);
+    async function loadAdminWithdrawalsTab() {
+        const area = document.getElementById('admin-content-area');
+        if (!area) return;
+        area.innerHTML = `<div class="text-center text-gray-400 py-4">Loading withdrawals...</div>`;
+
+        try {
+            const res = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/admin/withdrawals');
+            const data = await res.json();
+            const pending = (data.success && Array.isArray(data.pending)) ? data.pending : [];
+            const history = (data.success && Array.isArray(data.history)) ? data.history : [];
+
+            let html = '<div class="space-y-4">';
+            html += '<div class="space-y-2"><div class="text-xs font-bold text-amber-400">🎁 Pending Withdrawals (> 0.10 SOL)</div>';
+
+            if (pending.length === 0) {
+                html += '<div class="bg-slate-900 p-2 rounded-xl text-center text-[11px] text-gray-400">No pending withdrawals found.</div>';
+            } else {
+                pending.forEach((w) => {
+                    html += `
+                        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-white font-bold">${w.username || w.telegramId}</span>
+                                <span class="text-solGreen font-mono font-bold">Req: ${parseFloat(w.requestedAmount).toFixed(4)} SOL (Net: ${parseFloat(w.netAmount).toFixed(4)})</span>
+                            </div>
+                            <div class="text-[10px] text-gray-400 break-all bg-slate-950 p-1.5 rounded border border-slate-800">${w.address}</div>
+                            <div class="flex space-x-2 pt-1">
+                                <button onclick="decideWithdrawal('${w._id}', 'approve')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[10px] cursor-pointer">Approve</button>
+                                <button onclick="decideWithdrawal('${w._id}', 'reject')" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[10px] cursor-pointer">Reject</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            html += '</div>';
+
+            html += '<div class="space-y-2 pt-2 border-t border-slate-800"><div class="text-xs font-bold text-emerald-400">✅ Processed Withdrawals</div>';
+            if (history.length === 0) {
+                html += '<div class="bg-slate-900 p-2 rounded-xl text-center text-[11px] text-gray-400">No history found.</div>';
+            } else {
+                history.forEach((h) => {
+                    html += `
+                        <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 text-xs flex justify-between items-center">
+                            <div>
+                                <span class="text-white font-bold block">${h.username || h.telegramId}</span>
+                                <span class="text-[10px] text-gray-400">${h.address ? h.address.slice(0, 12) + '...' : ''}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-solGreen font-mono font-bold block">${parseFloat(h.netAmount || 0).toFixed(4)} SOL</span>
+                                <span class="text-[9px] text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded font-bold">${h.status}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            html += '</div></div>';
+            area.innerHTML = html;
+        } catch (err) {
+            console.error('Load Admin Withdrawals Error:', err);
+            area.innerHTML = `<div class="text-center text-rose-400 py-4">Failed to load withdrawals.</div>`;
         }
-        
-        wList.splice(index, 1);
-        
-        switchAdminTab('withdrawals');
+    }
+
+    async function decideWithdrawal(requestId, action) {
+        const endpoint = action === 'approve'
+            ? 'https://sol-mining-farm-bot-jrni.onrender.com/api/admin/withdrawals/approve'
+            : 'https://sol-mining-farm-bot-jrni.onrender.com/api/admin/withdrawals/reject';
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestId })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                alert(data.error || `Failed to ${action} withdrawal.`);
+                return;
+            }
+            alert(action === 'approve' ? 'Withdrawal approved successfully!' : 'Withdrawal rejected and balance refunded!');
+            loadAdminWithdrawalsTab();
+        } catch (err) {
+            console.error('Decide Withdrawal Error:', err);
+            alert('Server error while updating withdrawal.');
+        }
     }
 
     // Helper admin action handler functions
@@ -2734,9 +2798,24 @@
                             if (solAddrInput) solAddrInput.value = profileSolAddress;
                         }
                         
-                        activeDirectsCount = data.user.activeDirectsCount || 0;
-                        promoBonusBalance = data.user.promoBonusBalance || 0.0100;
-                        totalPromoTopups = Math.floor(activeDirectsCount / 10);
+                        activeDirectsCount = parseInt(data.user.activeDirectsCount) || 0;
+                        promoBonusBalance = parseFloat(data.user.promoBonusBalance);
+                        if (Number.isNaN(promoBonusBalance)) promoBonusBalance = 0.0100;
+
+                        totalPromoTopups = parseInt(
+                            data.user.promoTopupCount ??
+                            data.user.totalPromoTopups ??
+                            Math.floor(activeDirectsCount / 10)
+                        ) || 0;
+
+                        if (totalPromoTopups > lastProcessedPromoTopups) {
+                            lastProcessedPromoTopups = totalPromoTopups;
+                            showBotAlert(
+                                "🎉 Promo Auto Top-Up Activated!",
+                                `Your Promo Bonus reached <strong>0.10 SOL</strong> and automatically topped up your package!<br><br>• Active Plan: <strong>${activePlanTier}</strong><br>• Total Deposit: <strong>${userDepositAmount.toFixed(2)} SOL</strong><br>• Total Promo Top-ups: <strong>${totalPromoTopups}</strong>`
+                            );
+                        }
+
                         updateDirectMembersUI();
                         calculateAndUpdateTeamVolumes();
                         
@@ -2812,6 +2891,21 @@
                                 if (balanceEl) {
                                     balanceEl.innerHTML = `<span class="bg-gradient-to-r from-[#9945FF] via-[#38bdf8] to-[#14F195] bg-clip-text text-transparent font-extrabold">${availableSolBalance.toFixed(4)}</span> <span class="text-xl text-[#14F195] font-bold">SOL</span>`;
                                 }
+                            }
+                            if (typeof d.user.activeDirectsCount !== 'undefined') {
+                                activeDirectsCount = parseInt(d.user.activeDirectsCount) || 0;
+                            }
+                            if (typeof d.user.promoBonusBalance !== 'undefined') {
+                                promoBonusBalance = parseFloat(d.user.promoBonusBalance) || 0;
+                            }
+                            if (
+                                typeof d.user.promoTopupCount !== 'undefined' ||
+                                typeof d.user.totalPromoTopups !== 'undefined'
+                            ) {
+                                totalPromoTopups = parseInt(d.user.promoTopupCount ?? d.user.totalPromoTopups) || 0;
+                            }
+                            if (typeof updateDirectMembersUI === 'function') {
+                                updateDirectMembersUI();
                             }
                         }
                     })
