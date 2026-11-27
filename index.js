@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema({
     firstName: { type: String, default: '' },
     sponsor: { type: String, default: 'None' },
     isBlocked: { type: Boolean, default: false },
-    
+
     minedSolBalance: { type: Number, default: 0.0000 },
     availableSolBalance: { type: Number, default: 0.0000 },
     totalSelfFarmingClaimed: { type: Number, default: 0.0000 },
@@ -60,6 +60,7 @@ const userSchema = new mongoose.Schema({
     activeDirectsCount: { type: Number, default: 0 },
 
     promoBonusBalance: { type: Number, default: 0.0100 },
+    promoTopupCount: { type: Number, default: 0 },
     directReferralBonus: { type: Number, default: 0.0000 },
     teamReferralBonus: { type: Number, default: 0.0000 },
     teamOverrideBonus: { type: Number, default: 0.0000 },
@@ -80,6 +81,7 @@ const userSchema = new mongoose.Schema({
     usedTxHashes: { type: [String], default: [] },
 
     totalEarnedAmount: { type: Number, default: 0.0000 },
+    lastWithdrawalAt: { type: Date, default: null },
     lastMiningTickAt: { type: Number, default: Date.now },
     lastUpdated: { type: Date, default: Date.now }
 });
@@ -122,6 +124,34 @@ function calculateMiningSpeedPerSec(planName, depositAmount) {
     const dep = Math.max(0, parseFloat(depositAmount) || 0);
     if (dep <= 0 || !planName || planName === 'NONE') return 0;
     return (dep * getDailyRateByPlan(planName)) / 86400;
+}
+
+function applyPromoAutoTopup(userDoc, nowMs = Date.now()) {
+    let topupsApplied = 0;
+    const prevDeposit = Math.max(0, parseFloat(userDoc.userDepositAmount) || 0);
+    const prevSpeed = calculateMiningSpeedPerSec(userDoc.activePlanTier, prevDeposit);
+    const prevTickMs = Number(userDoc.lastMiningTickAt) || (userDoc.lastUpdated ? new Date(userDoc.lastUpdated).getTime() : nowMs);
+    const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
+
+    if (prevDeposit > 0 && prevSpeed > 0 && elapsedSec > 0) {
+        userDoc.minedSolBalance = Math.max(0, parseFloat(userDoc.minedSolBalance) || 0) + (prevSpeed * elapsedSec);
+    }
+
+    while ((parseFloat(userDoc.promoBonusBalance) || 0) >= 0.10 - 1e-9) {
+        userDoc.promoBonusBalance = Number(((parseFloat(userDoc.promoBonusBalance) || 0) - 0.10).toFixed(4));
+        userDoc.userDepositAmount = Number(((parseFloat(userDoc.userDepositAmount) || 0) + 0.10).toFixed(4));
+        userDoc.promoTopupCount = (parseInt(userDoc.promoTopupCount, 10) || 0) + 1;
+        topupsApplied += 1;
+    }
+
+    if (topupsApplied > 0) {
+        const updatedDep = Math.max(0, parseFloat(userDoc.userDepositAmount) || 0);
+        userDoc.activePlanTier = getPlanTierByDeposit(updatedDep);
+        userDoc.miningSpeedPerSec = calculateMiningSpeedPerSec(userDoc.activePlanTier, updatedDep);
+        userDoc.lastMiningTickAt = nowMs;
+    }
+
+    return topupsApplied;
 }
 
 function escapeRegex(str) {
@@ -335,6 +365,7 @@ async function recalculateSponsorByRef(sponsorRef) {
         visited.add(docKey);
 
         await recalculateUserLegs(sponsorDoc);
+        applyPromoAutoTopup(sponsorDoc, Date.now());
         sponsorDoc.lastUpdated = Date.now();
         await sponsorDoc.save();
 
@@ -493,6 +524,7 @@ app.post('/api/user/verify-deposit', async (req, res) => {
         user.usedTxHashes = Array.isArray(user.usedTxHashes) ? [...user.usedTxHashes, cleanTx] : [cleanTx];
 
         await recalculateUserLegs(user);
+        applyPromoAutoTopup(user, nowMs);
         await user.save();
 
         if (user.sponsor && user.sponsor !== 'None') {
@@ -509,7 +541,9 @@ app.post('/api/user/verify-deposit', async (req, res) => {
                 miningSpeedPerSec: user.miningSpeedPerSec,
                 minedSolBalance: user.minedSolBalance,
                 directReferralBonus: user.directReferralBonus || 0,
-                activeDirectsCount: user.activeDirectsCount || 0
+                activeDirectsCount: user.activeDirectsCount || 0,
+                promoBonusBalance: user.promoBonusBalance ?? 0.0100,
+                promoTopupCount: user.promoTopupCount || 0
             }
         });
     } catch (err) {
@@ -564,7 +598,8 @@ app.post('/api/user/claim', async (req, res) => {
                 self_farming_bonus: user.totalSelfFarmingClaimed || 0,
                 directReferralBonus: user.directReferralBonus || 0,
                 direct_referral_bonus: user.directReferralBonus || 0,
-                promoBonusBalance: user.promoBonusBalance || 0.0100
+                promoBonusBalance: user.promoBonusBalance ?? 0.0100,
+                promoTopupCount: user.promoTopupCount || 0
             }
         });
     } catch (err) {
@@ -575,14 +610,14 @@ app.post('/api/user/claim', async (req, res) => {
 
 app.post('/api/user/sync', async (req, res) => {
     try {
-        const { 
-            telegramId, 
-            username, 
-            firstName, 
-            availableSolBalance, 
-            totalSelfFarmingClaimed, 
-            activePlanTier, 
-            userDepositAmount, 
+        const {
+            telegramId,
+            username,
+            firstName,
+            availableSolBalance,
+            totalSelfFarmingClaimed,
+            activePlanTier,
+            userDepositAmount,
             promoBonusBalance,
             profileName,
             profileMobile,
@@ -605,9 +640,9 @@ app.post('/api/user/sync', async (req, res) => {
             isNewUser = true;
             const cleanU = username ? String(username).replace(/^@+/, '').trim() : '';
             const defaultProfileName = profileName || (cleanU ? `@${cleanU}` : (firstName || `User_${tgIdStr.slice(-4)}`));
-            user = new User({ 
-                telegramId: tgIdStr, 
-                username: cleanU, 
+            user = new User({
+                telegramId: tgIdStr,
+                username: cleanU,
                 firstName: firstName || '',
                 profileName: defaultProfileName,
                 sponsor: 'None',
@@ -615,6 +650,7 @@ app.post('/api/user/sync', async (req, res) => {
                 userDepositAmount: 0.00,
                 miningSpeedPerSec: 0.0000,
                 promoBonusBalance: 0.0100,
+                promoTopupCount: 0,
                 lastMiningTickAt: Date.now()
             });
 
@@ -678,29 +714,18 @@ app.post('/api/user/sync', async (req, res) => {
         if (userDepositAmount !== undefined) {
             user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
         }
-        
-        if (promoBonusBalance !== undefined && promoBonusBalance > (user.promoBonusBalance || 0.0100)) {
+
+        if (promoBonusBalance !== undefined && promoBonusBalance > (user.promoBonusBalance || 0)) {
             user.promoBonusBalance = promoBonusBalance;
         }
 
         await recalculateUserLegs(user);
 
-        while (user.promoBonusBalance >= 0.10) {
-            user.promoBonusBalance -= 0.10;
-            user.userDepositAmount = (user.userDepositAmount || 0) + 0.10;
-        }
-
         const nowMs = Date.now();
-        const currentDeposit = Math.max(0, parseFloat(user.userDepositAmount) || 0);
+        applyPromoAutoTopup(user, nowMs);
 
-        if (currentDeposit > 0) {
-            if (currentDeposit >= 25.10) user.activePlanTier = 'GALAXY';
-            else if (currentDeposit >= 10.10) user.activePlanTier = 'PREMIUM';
-            else if (currentDeposit >= 2.10) user.activePlanTier = 'ADVANCE';
-            else user.activePlanTier = 'STARTER';
-        } else {
-            user.activePlanTier = 'NONE';
-        }
+        const currentDeposit = Math.max(0, parseFloat(user.userDepositAmount) || 0);
+        user.activePlanTier = getPlanTierByDeposit(currentDeposit);
 
         const speedPerSec = calculateMiningSpeedPerSec(user.activePlanTier, currentDeposit);
         user.miningSpeedPerSec = speedPerSec;
@@ -730,12 +755,9 @@ app.post('/api/user/sync', async (req, res) => {
         if (sponsorAssignedNow && user.sponsor && user.sponsor !== 'None') {
             const sponsorDoc = await findUserByIdentifier(user.sponsor);
             if (sponsorDoc) {
-                sponsorDoc.promoBonusBalance = (sponsorDoc.promoBonusBalance || 0.0100) + 0.01;
-                while (sponsorDoc.promoBonusBalance >= 0.10) {
-                    sponsorDoc.promoBonusBalance -= 0.10;
-                    sponsorDoc.userDepositAmount = (sponsorDoc.userDepositAmount || 0) + 0.10;
-                }
+                sponsorDoc.promoBonusBalance = Number(((parseFloat(sponsorDoc.promoBonusBalance) || 0) + 0.01).toFixed(4));
                 await recalculateUserLegs(sponsorDoc);
+                applyPromoAutoTopup(sponsorDoc, Date.now());
                 sponsorDoc.lastUpdated = new Date();
                 await sponsorDoc.save();
             }
@@ -746,7 +768,7 @@ app.post('/api/user/sync', async (req, res) => {
         const finalUsername = user.username || username || '';
         const formattedSponsor = cleanSponsorDisplay(user.sponsor);
 
-        return res.json({ 
+        return res.json({
             success: true,
             isNewUser,
             user: {
@@ -767,7 +789,8 @@ app.post('/api/user/sync', async (req, res) => {
                 userDepositAmount: user.userDepositAmount || 0,
                 miningSpeedPerSec: user.miningSpeedPerSec || 0,
                 activeDirectsCount: user.activeDirectsCount || 0,
-                promoBonusBalance: user.promoBonusBalance || 0.0100,
+                promoBonusBalance: user.promoBonusBalance ?? 0.0100,
+                promoTopupCount: user.promoTopupCount || 0,
                 directReferralBonus: user.directReferralBonus || 0,
                 direct_referral_bonus: user.directReferralBonus || 0,
                 teamReferralBonus: user.teamReferralBonus || 0,
@@ -778,11 +801,12 @@ app.post('/api/user/sync', async (req, res) => {
                 rank_royalty_bonus: user.rankRoyaltyBonus || 0,
                 highestAchievedRank: user.highestAchievedRank || 'NO RANK',
                 totalEarnedAmount: user.totalEarnedAmount || 0,
+                lastWithdrawalAt: user.lastWithdrawalAt || null,
                 strongestDone: user.userStrongestDone || 0,
                 otherDone: user.userOtherDone || 0,
                 userStrongestDone: user.userStrongestDone || 0,
                 userOtherDone: user.userOtherDone || 0
-            } 
+            }
         });
 
     } catch (error) {
@@ -859,7 +883,7 @@ app.post('/api/admin/search', async (req, res) => {
         if (!query) return res.status(400).json({ success: false, error: 'Query is required' });
 
         let cleanQuery = String(query).replace(/^@+/, '').trim();
-        let user = await User.findOne({ 
+        let user = await User.findOne({
             $or: [
                 { username: { $regex: new RegExp('^' + escapeRegex(cleanQuery) + '$', 'i') } },
                 { telegramId: cleanQuery }
@@ -874,7 +898,7 @@ app.post('/api/admin/search', async (req, res) => {
         if (userRank !== 'NO RANK') {
             let requiredStrongest = 12;
             let requiredOther = 18;
-            
+
             if (user.userStrongestDone < requiredStrongest || user.userOtherDone < requiredOther) {
                 userRank = 'NO RANK';
                 user.highestAchievedRank = 'NO RANK';
@@ -911,7 +935,7 @@ app.post('/api/admin/balance', async (req, res) => {
     try {
         const { telegramId, username, amount, type } = req.body;
         let query = telegramId ? { telegramId: String(telegramId).trim() } : { username: (username || '').replace(/^@+/, '').trim() };
-        
+
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
@@ -968,6 +992,7 @@ app.post('/api/admin/topup', async (req, res) => {
         user.lastMiningTickAt = nowMs;
 
         await recalculateUserLegs(user);
+        applyPromoAutoTopup(user, nowMs);
         user.lastUpdated = new Date(nowMs);
         await user.save();
 
@@ -977,15 +1002,16 @@ app.post('/api/admin/topup', async (req, res) => {
 
         console.log(`Admin Top-Up Successful for User: ${user.telegramId || user.username}, Added: ${topupAmount} SOL, Total Deposit: ${user.userDepositAmount} SOL, Plan: ${calculatedTier}`);
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: `Successfully processed top-up of ${topupAmount.toFixed(2)} SOL! Total Deposit: ${user.userDepositAmount.toFixed(2)} SOL, Plan: ${calculatedTier}`,
             user: {
                 telegramId: user.telegramId,
                 username: user.username,
                 deposit: user.userDepositAmount,
                 plan: user.activePlanTier,
-                promoBonusBalance: user.promoBonusBalance
+                promoBonusBalance: user.promoBonusBalance,
+                promoTopupCount: user.promoTopupCount || 0
             }
         });
     } catch (err) {
@@ -1094,11 +1120,11 @@ app.post('/api/admin/fix-legs', async (req, res) => {
         if (other !== undefined) user.userOtherDone = parseFloat(other);
 
         await user.save();
-        res.json({ 
-            success: true, 
-            message: 'Leg volumes updated successfully!', 
-            strongest: user.userStrongestDone, 
-            other: user.userOtherDone 
+        res.json({
+            success: true,
+            message: 'Leg volumes updated successfully!',
+            strongest: user.userStrongestDone,
+            other: user.userOtherDone
         });
     } catch (err) {
         console.error('Fix Legs Error:', err);
@@ -1140,7 +1166,7 @@ app.post('/api/admin/broadcast', upload.single('photo'), async (req, res) => {
                     formData.append('chat_id', user.telegramId);
                     formData.append('caption', message);
                     formData.append('parse_mode', 'HTML');
-                    
+
                     const blob = new Blob([photoFile.buffer], { type: photoFile.mimetype });
                     formData.append('photo', blob, photoFile.originalname || 'broadcast.jpg');
 
@@ -1201,7 +1227,7 @@ app.get('/api/admin/stats', async (req, res) => {
     try {
         let totalUsers = await User.countDocuments();
         if (totalUsers === 0) totalUsers = 1;
-        
+
         const agg = await User.aggregate([
             { $group: { _id: null, totalDeposits: { $sum: "$userDepositAmount" } } }
         ]);
@@ -1216,7 +1242,7 @@ app.get('/api/admin/users', async (req, res) => {
     try {
         let users = await User.find({}, 'telegramId username firstName profileName activePlanTier userDepositAmount')
                                .sort({ lastUpdated: -1 });
-        
+
         if (!users || users.length === 0) {
             users = [{
                 telegramId: '5939907983',
@@ -1235,19 +1261,27 @@ app.get('/api/admin/users', async (req, res) => {
 
 app.post('/api/withdraw', async (req, res) => {
     try {
-        const { telegramId, amount, address } = req.body;
+        const { telegramId, amount, address } = req.body || {};
+        const cleanId = String(telegramId || '').trim();
+        const cleanAddr = String(address || '').trim();
+        const parsedAmount = parseFloat(amount);
 
-        if (!telegramId || !amount || !address) {
+        if (!cleanId || !cleanAddr || !Number.isFinite(parsedAmount)) {
             return res.status(400).json({ success: false, error: 'Missing required withdrawal fields' });
         }
 
-        const parsedAmount = parseFloat(amount);
         if (parsedAmount < 0.01) {
             return res.status(400).json({ success: false, error: 'Minimum withdrawal amount is 0.01 SOL' });
         }
 
-        const tgIdStr = String(telegramId).trim();
-        let user = await User.findOne({ telegramId: tgIdStr });
+        let recipientPubKey;
+        try {
+            recipientPubKey = new PublicKey(cleanAddr);
+        } catch (_) {
+            return res.status(400).json({ success: false, error: 'Invalid Solana wallet address' });
+        }
+
+        const user = await User.findOne({ telegramId: cleanId });
         if (!user) {
             return res.status(404).json({ success: false, error: 'User not found in database' });
         }
@@ -1256,63 +1290,82 @@ app.post('/api/withdraw', async (req, res) => {
             return res.status(403).json({ success: false, error: 'User is blocked' });
         }
 
-        if ((user.availableSolBalance || 0) < parsedAmount) {
+        if (user.lastWithdrawalAt) {
+            const elapsedMs = Date.now() - new Date(user.lastWithdrawalAt).getTime();
+            const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+            if (elapsedMs < twentyFourHoursMs) {
+                const remainingMs = twentyFourHoursMs - elapsedMs;
+                const hoursLeft = Math.floor(remainingMs / (60 * 60 * 1000));
+                const minsLeft = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+                return res.status(429).json({
+                    success: false,
+                    error: `Only 1 withdrawal is allowed every 24 hours. Please try again after ${hoursLeft}h ${minsLeft}m.`
+                });
+            }
+        }
+
+        const currentBal = parseFloat(user.availableSolBalance) || 0;
+        if (currentBal < parsedAmount) {
             return res.status(400).json({ success: false, error: 'Insufficient available balance for withdrawal' });
         }
 
-        const feeAmount = parsedAmount * 0.10;
-        const netReceiveAmount = parsedAmount - feeAmount;
+        const feeAmount = Number((parsedAmount * 0.10).toFixed(6));
+        const netReceiveAmount = Number((parsedAmount - feeAmount).toFixed(6));
+        const lamports = Math.floor(netReceiveAmount * 1000000000);
 
-        user.availableSolBalance -= parsedAmount;
-        user.totalEarnedAmount = (user.totalEarnedAmount || 0) + parsedAmount;
-        await user.save();
+        if (lamports <= 0) {
+            return res.status(400).json({ success: false, error: 'Net withdrawal amount is too small' });
+        }
 
         if (parsedAmount >= 0.01 && parsedAmount <= 0.10) {
             if (!adminKeypair) {
-                user.availableSolBalance += parsedAmount;
-                await user.save();
                 return res.status(500).json({ success: false, error: 'Server wallet not configured for auto-payouts' });
             }
 
-            try {
-                const recipientPubKey = new PublicKey(address);
-                const lamports = Math.floor(netReceiveAmount * 1000000000);
+            const transaction = new Transaction().add(
+                SystemProgram.transfer({
+                    fromPubkey: adminKeypair.publicKey,
+                    toPubkey: recipientPubKey,
+                    lamports: lamports,
+                })
+            );
 
-                const transaction = new Transaction().add(
-                    SystemProgram.transfer({
-                        fromPubkey: adminKeypair.publicKey,
-                        toPubkey: recipientPubKey,
-                        lamports: lamports,
-                    })
-                );
+            const txId = await sendAndConfirmTransaction(
+                connection,
+                transaction,
+                [adminKeypair],
+                { commitment: 'confirmed' }
+            );
 
-                const txId = await sendAndConfirmTransaction(
-                    connection,
-                    transaction,
-                    [adminKeypair]
-                );
+            user.availableSolBalance = Number(Math.max(0, currentBal - parsedAmount).toFixed(6));
+            user.totalEarnedAmount = Number(((parseFloat(user.totalEarnedAmount) || 0) + parsedAmount).toFixed(6));
+            user.lastWithdrawalAt = new Date();
+            user.lastUpdated = new Date();
+            await user.save();
 
-                console.log(`Auto-Withdrawal Executed Successfully! TxID: ${txId}`);
+            console.log(`Auto-Withdrawal Executed Successfully! TxID: ${txId}`);
 
-                return res.json({
-                    success: true,
-                    status: 'Auto-Paid',
-                    txId: txId,
-                    requestedAmount: parsedAmount,
-                    fee: feeAmount,
-                    netAmount: netReceiveAmount,
-                    newBalance: user.availableSolBalance,
-                    message: 'Withdrawal processed successfully via blockchain.'
-                });
-
-            } catch (blockchainErr) {
-                user.availableSolBalance += parsedAmount;
-                await user.save();
-                console.error('Blockchain Transfer Failed, Refunded User Balance:', blockchainErr.message);
-                return res.status(500).json({ success: false, error: 'Blockchain transaction failed: ' + blockchainErr.message });
-            }
-
+            return res.json({
+                success: true,
+                status: 'Auto-Paid',
+                txId: txId,
+                requestedAmount: parsedAmount,
+                fee: feeAmount,
+                netAmount: netReceiveAmount,
+                newBalance: user.availableSolBalance,
+                promoBonusBalance: user.promoBonusBalance ?? 0.0100,
+                promoTopupCount: user.promoTopupCount || 0,
+                userDepositAmount: user.userDepositAmount || 0,
+                activePlanTier: user.activePlanTier || 'NONE',
+                message: 'Withdrawal processed successfully via blockchain.'
+            });
         } else {
+            user.availableSolBalance = Number(Math.max(0, currentBal - parsedAmount).toFixed(6));
+            user.totalEarnedAmount = Number(((parseFloat(user.totalEarnedAmount) || 0) + parsedAmount).toFixed(6));
+            user.lastWithdrawalAt = new Date();
+            user.lastUpdated = new Date();
+            await user.save();
+
             return res.json({
                 success: true,
                 status: 'Pending Admin Approval',
@@ -1404,13 +1457,10 @@ async function handleBotStart(msg) {
         const spDoc = await findUserByIdentifier(user.sponsor);
         if (spDoc) {
             if (sponsorAssignedNow) {
-                spDoc.promoBonusBalance = (spDoc.promoBonusBalance || 0.0100) + 0.01;
-                while (spDoc.promoBonusBalance >= 0.10) {
-                    spDoc.promoBonusBalance -= 0.10;
-                    spDoc.userDepositAmount = (spDoc.userDepositAmount || 0) + 0.10;
-                }
+                spDoc.promoBonusBalance = Number(((parseFloat(spDoc.promoBonusBalance) || 0) + 0.01).toFixed(4));
             }
             await recalculateUserLegs(spDoc);
+            applyPromoAutoTopup(spDoc, Date.now());
             spDoc.lastUpdated = Date.now();
             await spDoc.save();
         }
