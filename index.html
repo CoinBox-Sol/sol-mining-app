@@ -1872,21 +1872,47 @@
                         <input type="text" id="adm-search-user" placeholder="Enter Telegram ID or Username..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white outline-none">
                         <button onclick="adminSearchUser()" class="bg-amber-600 hover:bg-amber-500 px-4 rounded-xl text-white font-bold text-xs cursor-pointer">Search</button>
                     </div>
-                    <div id="adm-user-result" class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2 hidden">
+                    <div id="adm-user-result" class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2.5 hidden">
                         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                            <span id="res-username" class="text-amber-300 font-bold">@Username</span>
+                            <div>
+                                <span id="res-username" class="text-amber-300 font-bold">@Username</span>
+                                <span id="res-tgid" class="text-[10px] text-gray-400 block">ID: -</span>
+                            </div>
                             <span id="res-status" class="text-emerald-400 text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">Active</span>
                         </div>
-                        <div class="text-[11px] text-gray-300 space-y-1">
+                        <div class="text-[11px] text-gray-300 grid grid-cols-2 gap-1.5">
                             <div>Deposit: <strong id="res-deposit" class="text-white">0.00 SOL</strong></div>
                             <div>Sponsor: <strong id="res-sponsor" class="text-sky-400">@Sponsor</strong></div>
                             <div>Rank: <strong id="res-rank" class="text-amber-400">NO RANK</strong></div>
+                            <div>Promo: <strong id="res-promo" class="text-emerald-400">0.0100</strong> (<span id="res-promotopups">0</span>)</div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 pt-2">
+
+                        <div class="grid grid-cols-2 gap-2 pt-1">
                             <button onclick="adminAction('block')" class="bg-rose-600 hover:bg-rose-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">🚫 Block / Unblock</button>
                             <button onclick="adminAction('sponsor')" class="bg-blue-600 hover:bg-blue-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">🔗 Change Sponsor</button>
                             <button onclick="adminAction('balance')" class="bg-purple-600 hover:bg-purple-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">💰 Manage Balance</button>
                             <button onclick="adminAction('rank')" class="bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">👑 Update Rank</button>
+                        </div>
+
+                        <div class="border-t border-slate-800 pt-2.5 space-y-2">
+                            <div class="text-[10px] font-bold text-amber-400 uppercase">⚙️ Set Exact Fields</div>
+                            <div class="grid grid-cols-3 gap-1.5">
+                                <div>
+                                    <label class="text-[9px] text-gray-400 block">Deposit (SOL)</label>
+                                    <input type="number" step="any" id="adm-set-deposit" placeholder="1.1" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-gray-400 block">Promo Topups</label>
+                                    <input type="number" step="1" id="adm-set-promotopups" placeholder="1" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] text-gray-400 block">Promo Bal</label>
+                                    <input type="number" step="any" id="adm-set-promobal" placeholder="0.02" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-[11px] text-white outline-none">
+                                </div>
+                            </div>
+                            <button onclick="adminSetFields()" class="w-full bg-amber-600 hover:bg-amber-500 py-1.5 rounded-lg text-white font-bold text-[11px] cursor-pointer">
+                                💾 Save Exact Fields
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2105,12 +2131,43 @@
 
             if (data.success && data.user) {
                 resBox.classList.remove('hidden');
-                
+
+                const cleanQ = query.replace(/^@+/, '').trim();
+                const resolvedTgId = data.user.telegramId || (/^\d+$/.test(cleanQ) ? cleanQ : '');
+                window._lastSearchedAdminUser = {
+                    telegramId: resolvedTgId,
+                    username: data.user.username || (!/^\d+$/.test(cleanQ) ? cleanQ : '')
+                };
+
                 document.getElementById('res-username').innerText = `@${data.user.username || query}`;
+                const tgIdEl = document.getElementById('res-tgid');
+                if (tgIdEl) tgIdEl.innerText = `ID: ${resolvedTgId || '-'}`;
                 document.getElementById('res-status').innerText = data.user.status;
-                document.getElementById('res-deposit').innerText = `${parseFloat(data.user.deposit).toFixed(2)} SOL`;
+                document.getElementById('res-deposit').innerText = `${parseFloat(data.user.deposit || 0).toFixed(2)} SOL`;
                 document.getElementById('res-sponsor').innerText = `@${data.user.sponsor || 'None'}`;
                 document.getElementById('res-rank').innerText = data.user.rank || 'NO RANK';
+
+                const promoEl = document.getElementById('res-promo');
+                if (promoEl && typeof data.user.promoBonusBalance !== 'undefined') {
+                    promoEl.innerText = parseFloat(data.user.promoBonusBalance).toFixed(4);
+                }
+                const promoTopupsEl = document.getElementById('res-promotopups');
+                if (promoTopupsEl && typeof data.user.promoTopupCount !== 'undefined') {
+                    promoTopupsEl.innerText = parseInt(data.user.promoTopupCount, 10) || 0;
+                }
+
+                const depInput = document.getElementById('adm-set-deposit');
+                if (depInput && typeof data.user.deposit !== 'undefined') {
+                    depInput.value = parseFloat(data.user.deposit);
+                }
+                const ptInput = document.getElementById('adm-set-promotopups');
+                if (ptInput && typeof data.user.promoTopupCount !== 'undefined') {
+                    ptInput.value = parseInt(data.user.promoTopupCount, 10) || 0;
+                }
+                const pbInput = document.getElementById('adm-set-promobal');
+                if (pbInput && typeof data.user.promoBonusBalance !== 'undefined') {
+                    pbInput.value = parseFloat(data.user.promoBonusBalance);
+                }
             } else {
                 resBox.classList.add('hidden');
                 alert(data.error || 'User not found in database.');
@@ -2118,6 +2175,56 @@
         } catch (err) {
             console.error('Admin Search Error:', err);
             alert('Failed to connect to server for user search.');
+        }
+    }
+
+    async function adminSetFields() {
+        const query = document.getElementById('adm-search-user').value.trim();
+        const cleanQ = query.replace(/^@+/, '').trim();
+        const cached = window._lastSearchedAdminUser || {};
+        const tgId = cached.telegramId || (/^\d+$/.test(cleanQ) ? cleanQ : null);
+        const uname = cached.username || (!/^\d+$/.test(cleanQ) ? cleanQ : null);
+
+        if (!tgId && !uname) {
+            alert('Please search a user first.');
+            return;
+        }
+
+        const depRaw = document.getElementById('adm-set-deposit').value;
+        const ptRaw = document.getElementById('adm-set-promotopups').value;
+        const pbRaw = document.getElementById('adm-set-promobal').value;
+
+        const fields = {};
+        if (depRaw !== '' && !Number.isNaN(parseFloat(depRaw))) fields.userDepositAmount = parseFloat(depRaw);
+        if (ptRaw !== '' && !Number.isNaN(parseInt(ptRaw, 10))) fields.promoTopupCount = parseInt(ptRaw, 10);
+        if (pbRaw !== '' && !Number.isNaN(parseFloat(pbRaw))) fields.promoBonusBalance = parseFloat(pbRaw);
+
+        if (Object.keys(fields).length === 0) {
+            alert('Please enter at least one field value to update.');
+            return;
+        }
+
+        try {
+            const response = await fetch('https://sol-mining-farm-bot-jrni.onrender.com/api/admin/set-fields', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegramId: tgId,
+                    username: uname,
+                    fields: fields
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert('✅ Fields updated successfully!');
+                adminSearchUser();
+            } else {
+                alert('❌ Error: ' + (result.error || 'Failed to update fields'));
+            }
+        } catch (err) {
+            console.error('Admin Set Fields Error:', err);
+            alert('❌ Server connection error while updating fields.');
         }
     }
 
