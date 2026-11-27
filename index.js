@@ -957,22 +957,28 @@ app.post('/api/admin/balance', async (req, res) => {
 app.post('/api/admin/topup', async (req, res) => {
     try {
         const { telegramId, username, amount } = req.body;
-        let query = telegramId ? { telegramId: String(telegramId).trim() } : { username: (username || '').replace(/^@+/, '').trim() };
+        let query = telegramId
+            ? { telegramId: String(telegramId).trim() }
+            : { username: String(username || '').replace(/^@+/, '').trim() };
 
         let user = await User.findOne(query);
         if (!user) return res.status(404).json({ success: false, error: 'User not found in database' });
 
-        const topupAmount = parseFloat(amount) || 0.10;
+        const topupAmount = Number(amount);
+        if (!Number.isFinite(topupAmount) || topupAmount <= 0) {
+            return res.status(400).json({ success: false, error: 'Invalid top-up amount' });
+        }
+
         const nowMs = Date.now();
         const prevDeposit = Math.max(0, parseFloat(user.userDepositAmount) || 0);
         const prevSpeed = calculateMiningSpeedPerSec(user.activePlanTier, prevDeposit);
         const prevTickMs = Number(user.lastMiningTickAt) || (user.lastUpdated ? new Date(user.lastUpdated).getTime() : nowMs);
         const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
-        if (prevDeposit > 0 && prevSpeed > 0) {
+        if (prevDeposit > 0 && prevSpeed > 0 && elapsedSec > 0) {
             user.minedSolBalance = Math.max(0, parseFloat(user.minedSolBalance) || 0) + (prevSpeed * elapsedSec);
         }
 
-        user.userDepositAmount = prevDeposit + topupAmount;
+        user.userDepositAmount = Number((prevDeposit + topupAmount).toFixed(4));
 
         let calculatedTier = 'STARTER';
         if (user.userDepositAmount >= 25.10) {
@@ -990,7 +996,6 @@ app.post('/api/admin/topup', async (req, res) => {
         user.lastMiningTickAt = nowMs;
 
         await recalculateUserLegs(user);
-        applyPromoAutoTopup(user, nowMs);
         user.lastUpdated = new Date(nowMs);
         await user.save();
 
@@ -1126,6 +1131,70 @@ app.post('/api/admin/fix-legs', async (req, res) => {
         });
     } catch (err) {
         console.error('Fix Legs Error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/set-fields', async (req, res) => {
+    try {
+        const { telegramId, username, fields } = req.body || {};
+        if (!fields || typeof fields !== 'object') {
+            return res.status(400).json({ success: false, error: 'fields object is required' });
+        }
+
+        const query = telegramId
+            ? { telegramId: String(telegramId).trim() }
+            : { username: String(username || '').replace(/^@+/, '').trim() };
+
+        const user = await User.findOne(query);
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        const allowedKeys = [
+            'userDepositAmount',
+            'activePlanTier',
+            'miningSpeedPerSec',
+            'minedSolBalance',
+            'availableSolBalance',
+            'promoBonusBalance',
+            'promoTopupCount',
+            'activeDirectsCount',
+            'userStrongestDone',
+            'userOtherDone',
+            'highestAchievedRank'
+        ];
+
+        const updateObj = {};
+        for (const key of allowedKeys) {
+            if (fields[key] !== undefined) {
+                updateObj[key] = fields[key];
+            }
+        }
+
+        if (updateObj.userDepositAmount !== undefined) {
+            const dep = Number(updateObj.userDepositAmount);
+            updateObj.userDepositAmount = dep;
+            if (!updateObj.activePlanTier) {
+                updateObj.activePlanTier = getPlanTierByDeposit(dep);
+            }
+            updateObj.miningSpeedPerSec = calculateMiningSpeedPerSec(updateObj.activePlanTier, dep);
+        }
+
+        updateObj.lastUpdated = new Date();
+        updateObj.lastMiningTickAt = Date.now();
+
+        const updated = await User.findOneAndUpdate(
+            { _id: user._id },
+            { $set: updateObj },
+            { new: true }
+        );
+
+        if (updated.sponsor && updated.sponsor !== 'None') {
+            await recalculateSponsorByRef(updated.sponsor);
+        }
+
+        res.json({ success: true, user: updated });
+    } catch (err) {
+        console.error('Admin Set Fields Error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
