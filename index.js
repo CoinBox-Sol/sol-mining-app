@@ -137,15 +137,17 @@ function applyPromoAutoTopup(userDoc, nowMs = Date.now(), maxTopupsPerCall = 1) 
         userDoc.minedSolBalance = Math.max(0, parseFloat(userDoc.minedSolBalance) || 0) + (prevSpeed * elapsedSec);
     }
 
-    while (
-        topupsApplied < maxTopupsPerCall &&
-        (parseFloat(userDoc.promoBonusBalance) || 0) >= 0.10 - 1e-9
-    ) {
-        userDoc.promoBonusBalance = Number(((parseFloat(userDoc.promoBonusBalance) || 0) - 0.10).toFixed(4));
-        userDoc.userDepositAmount = Number(((parseFloat(userDoc.userDepositAmount) || 0) + 0.10).toFixed(4));
+    const unitThreshold = 0.10;
+    let currentPromo = Number((parseFloat(userDoc.promoBonusBalance) || 0).toFixed(4));
+
+    while (topupsApplied < maxTopupsPerCall && currentPromo + 1e-9 >= unitThreshold) {
+        currentPromo = Number(Math.max(0, currentPromo - unitThreshold).toFixed(4));
+        userDoc.userDepositAmount = Number(((parseFloat(userDoc.userDepositAmount) || 0) + unitThreshold).toFixed(4));
         userDoc.promoTopupCount = (parseInt(userDoc.promoTopupCount, 10) || 0) + 1;
         topupsApplied += 1;
     }
+
+    userDoc.promoBonusBalance = currentPromo;
 
     if (topupsApplied > 0) {
         const updatedDep = Math.max(0, parseFloat(userDoc.userDepositAmount) || 0);
@@ -333,11 +335,6 @@ async function recalculateUserLegs(user) {
 
         const activeDirects = directs.filter(d => (parseFloat(d.depositAmount) || 0) > 0);
         user.activeDirectsCount = activeDirects.length;
-
-        const expectedPromo = 0.01 + (directs.length * 0.01);
-        if (user.promoBonusBalance < expectedPromo && user.promoBonusBalance < 0.10) {
-            user.promoBonusBalance = expectedPromo;
-        }
 
         const totalDirectDeposit = directs.reduce((acc, d) => acc + (parseFloat(d.depositAmount) || 0), 0);
         user.directReferralBonus = totalDirectDeposit * 0.05;
