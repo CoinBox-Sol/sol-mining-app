@@ -88,6 +88,21 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+const withdrawalSchema = new mongoose.Schema({
+    telegramId: { type: String, required: true, index: true },
+    username: { type: String, default: '' },
+    requestedAmount: { type: Number, required: true },
+    amount: { type: Number, required: true },
+    fee: { type: Number, default: 0 },
+    netAmount: { type: Number, required: true },
+    address: { type: String, required: true },
+    txId: { type: String, default: '' },
+    status: { type: String, default: 'Pending Admin Approval' },
+    createdAt: { type: Date, default: Date.now }
+});
+
+const Withdrawal = mongoose.model('Withdrawal', withdrawalSchema);
+
 function getDailyRateByPlan(planName) {
     if (planName === 'GALAXY') return 0.02;
     if (planName === 'PREMIUM') return 0.015;
@@ -1325,9 +1340,9 @@ app.get('/api/admin/users', async (req, res) => {
     }
 });
 
-app.post('/api/withdraw', async (req, res) => {
+async function handleWithdrawalRequest(req, res) {
     try {
-        const { telegramId, amount, address } = req.body || {};
+        const { telegramId, username, amount, address } = req.body || {};
         const cleanId = String(telegramId || '').trim();
         const cleanAddr = String(address || '').trim();
         const parsedAmount = parseFloat(amount);
@@ -1383,6 +1398,11 @@ app.post('/api/withdraw', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Net withdrawal amount is too small' });
         }
 
+        const cleanUserName =
+            String(username || '').trim() ||
+            user.profileName ||
+            (user.username ? `@${String(user.username).replace(/^@+/, '').trim()}` : `User_${cleanId.slice(-4)}`);
+
         if (parsedAmount >= 0.01 && parsedAmount <= 0.10) {
             if (!adminKeypair) {
                 return res.status(500).json({ success: false, error: 'Server wallet not configured for auto-payouts' });
@@ -1403,13 +1423,26 @@ app.post('/api/withdraw', async (req, res) => {
                 { commitment: 'confirmed' }
             );
 
-            user.availableSolBalance = Number(Math.max(0, currentBal - parsedAmount).toFixed(6));
-            user.totalEarnedAmount = Number(((parseFloat(user.totalEarnedAmount) || 0) + parsedAmount).toFixed(6));
+            const nextAvailableBal = Number(Math.max(0, currentBal - parsedAmount).toFixed(6));
+            const currentEarned = parseFloat(user.totalEarnedAmount) || 0;
+
+            user.availableSolBalance = nextAvailableBal;
+            user.totalEarnedAmount = Number(Math.max(0, currentEarned - parsedAmount).toFixed(6));
             user.lastWithdrawalAt = new Date();
             user.lastUpdated = new Date();
             await user.save();
 
-            console.log(`Auto-Withdrawal Executed Successfully! TxID: ${txId}`);
+            await Withdrawal.create({
+                telegramId: cleanId,
+                username: cleanUserName,
+                requestedAmount: parsedAmount,
+                amount: parsedAmount,
+                fee: feeAmount,
+                netAmount: netReceiveAmount,
+                address: cleanAddr,
+                txId: txId,
+                status: 'Auto-Paid'
+            });
 
             return res.json({
                 success: true,
@@ -1426,11 +1459,26 @@ app.post('/api/withdraw', async (req, res) => {
                 message: 'Withdrawal processed successfully via blockchain.'
             });
         } else {
-            user.availableSolBalance = Number(Math.max(0, currentBal - parsedAmount).toFixed(6));
-            user.totalEarnedAmount = Number(((parseFloat(user.totalEarnedAmount) || 0) + parsedAmount).toFixed(6));
+            const nextAvailableBal = Number(Math.max(0, currentBal - parsedAmount).toFixed(6));
+            const currentEarned = parseFloat(user.totalEarnedAmount) || 0;
+
+            user.availableSolBalance = nextAvailableBal;
+            user.totalEarnedAmount = Number(Math.max(0, currentEarned - parsedAmount).toFixed(6));
             user.lastWithdrawalAt = new Date();
             user.lastUpdated = new Date();
             await user.save();
+
+            await Withdrawal.create({
+                telegramId: cleanId,
+                username: cleanUserName,
+                requestedAmount: parsedAmount,
+                amount: parsedAmount,
+                fee: feeAmount,
+                netAmount: netReceiveAmount,
+                address: cleanAddr,
+                txId: '',
+                status: 'Pending Admin Approval'
+            });
 
             return res.json({
                 success: true,
@@ -1442,10 +1490,114 @@ app.post('/api/withdraw', async (req, res) => {
                 message: 'Withdrawal request sent for admin approval.'
             });
         }
-
     } catch (error) {
         console.error('Withdrawal Processing Error:', error);
         return res.status(500).json({ success: false, error: error.message || 'Blockchain transaction failed' });
+    }
+}
+
+app.post('/api/withdraw', handleWithdrawalRequest);
+app.post('/api/withdraw/request', handleWithdrawalRequest);
+
+app.get('/api/admin/withdrawals', async (req, res) => {
+    try {
+        const all = await Withdrawal.find({}).sort({ createdAt: -1 }).limit(100);
+        const pending = all.filter(w => String(w.status || '').toLowerCase().includes('pending'));
+        const history = all.filter(w => !String(w.status || '').toLowerCase().includes('pending'));
+
+        return res.json({
+            success: true,
+            pending,
+            history,
+            withdrawals: all
+        });
+    } catch (err) {
+        console.error('Admin Withdrawals Fetch Error:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/withdrawals/approve', async (req, res) => {
+    try {
+        const { requestId, txId } = req.body || {};
+        if (!requestId) {
+            return res.status(400).json({ success: false, error: 'requestId is required' });
+        }
+
+        const wd = await Withdrawal.findById(requestId);
+        if (!wd) {
+            return res.status(404).json({ success: false, error: 'Withdrawal request not found' });
+        }
+
+        if (wd.status !== 'Pending Admin Approval') {
+            return res.status(400).json({ success: false, error: `Already marked as ${wd.status}` });
+        }
+
+        if (!adminKeypair) {
+            return res.status(500).json({ success: false, error: 'Server hot wallet not configured' });
+        }
+
+        const netAmt = parseFloat(wd.netAmount) || 0;
+        const lamports = Math.floor(netAmt * 1000000000);
+        if (lamports <= 0) {
+            return res.status(400).json({ success: false, error: 'Invalid net amount' });
+        }
+
+        const recipientPubKey = new PublicKey(wd.address);
+        const transaction = new Transaction().add(
+            SystemProgram.transfer({
+                fromPubkey: adminKeypair.publicKey,
+                toPubkey: recipientPubKey,
+                lamports: lamports
+            })
+        );
+
+        const signature = txId && String(txId).trim()
+            ? String(txId).trim()
+            : await sendAndConfirmTransaction(connection, transaction, [adminKeypair], { commitment: 'confirmed' });
+
+        wd.status = 'Approved';
+        wd.txId = signature;
+        await wd.save();
+
+        return res.json({ success: true, txId: signature, withdrawal: wd });
+    } catch (err) {
+        console.error('Approve Withdrawal Error:', err);
+        return res.status(500).json({ success: false, error: err.message || 'Approval failed' });
+    }
+});
+
+app.post('/api/admin/withdrawals/reject', async (req, res) => {
+    try {
+        const { requestId } = req.body || {};
+        if (!requestId) {
+            return res.status(400).json({ success: false, error: 'requestId is required' });
+        }
+
+        const wd = await Withdrawal.findById(requestId);
+        if (!wd) {
+            return res.status(404).json({ success: false, error: 'Withdrawal request not found' });
+        }
+
+        if (wd.status !== 'Pending Admin Approval') {
+            return res.status(400).json({ success: false, error: `Already marked as ${wd.status}` });
+        }
+
+        const refundAmt = parseFloat(wd.requestedAmount ?? wd.amount) || 0;
+        const user = await User.findOne({ telegramId: String(wd.telegramId).trim() });
+        if (user && refundAmt > 0) {
+            user.availableSolBalance = Number(((parseFloat(user.availableSolBalance) || 0) + refundAmt).toFixed(6));
+            user.lastUpdated = new Date();
+            await user.save();
+        }
+
+        wd.status = 'Rejected';
+        await wd.save();
+
+        return res.json({ success: true, withdrawal: wd });
+    } catch (err) {
+        console.error('Reject Withdrawal Error:', err);
+        return res.status(500).json({ success: false, error: err.message || 'Rejection failed' });
     }
 });
 
