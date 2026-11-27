@@ -1182,7 +1182,9 @@ app.post('/api/admin/set-fields', async (req, res) => {
         }
 
         applyPromoAutoTopup(user, nowMs);
+        const promoAfterTopup = user.promoBonusBalance;
         await recalculateUserLegs(user);
+        user.promoBonusBalance = promoAfterTopup;
 
         user.lastUpdated = new Date(nowMs);
         user.lastMiningTickAt = nowMs;
@@ -1192,8 +1194,7 @@ app.post('/api/admin/set-fields', async (req, res) => {
             await recalculateSponsorByRef(user.sponsor);
         }
 
-        const updated = await User.findById(user._id);
-        res.json({ success: true, user: updated });
+        res.json({ success: true, user });
     } catch (err) {
         console.error('Admin Set Fields Error:', err);
         res.status(500).json({ success: false, error: err.message });
