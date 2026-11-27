@@ -2855,16 +2855,18 @@
                         userOtherDone = parseFloat(data.user.userOtherDone ?? data.user.otherDone) || 0;
                         highestAchievedRank = data.user.highestAchievedRank || 'NO RANK';
 
+                        const bonusesTotal = Math.max(
+                            0,
+                            selfFarmingBonus + directReferralBonus + teamReferralBonus + teamOverrideBonus + rankRoyaltyBonus
+                        );
+
+                        const dbTotalEarned = parseFloat(data.user.totalEarnedAmount) || 0;
+                        totalEarnedAmount = Math.max(bonusesTotal, dbTotalEarned);
+
                         if (typeof data.user.availableSolBalance !== 'undefined') {
                             availableSolBalance = Math.max(0, parseFloat(data.user.availableSolBalance) || 0);
                         } else {
-                            availableSolBalance = Math.max(0, selfFarmingBonus + directReferralBonus + teamReferralBonus + teamOverrideBonus + rankRoyaltyBonus);
-                        }
-
-                        if (typeof data.user.totalEarnedAmount !== 'undefined') {
-                            totalEarnedAmount = Math.max(0, parseFloat(data.user.totalEarnedAmount) || 0);
-                        } else {
-                            totalEarnedAmount = selfFarmingBonus + directReferralBonus + teamReferralBonus + teamOverrideBonus + rankRoyaltyBonus;
+                            availableSolBalance = bonusesTotal;
                         }
 
                         // Update Remaining Capacity during background sync
