@@ -19,6 +19,7 @@ const MONGO_URI = process.env.MONGO_URI;
 
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+const DEPOSIT_WALLET_ADDRESS = process.env.DEPOSIT_WALLET_ADDRESS || 'BY3Tzt5cA8FwoPRw3B265jwb8NDU5dupf76SXwKqjnRZ';
 
 let adminKeypair;
 try {
@@ -76,6 +77,8 @@ const userSchema = new mongoose.Schema({
     profileEmail: { type: String, default: '' },
     profileSolAddress: { type: String, default: '' },
 
+    usedTxHashes: { type: [String], default: [] },
+
     totalEarnedAmount: { type: Number, default: 0.0000 },
     lastMiningTickAt: { type: Number, default: Date.now },
     lastUpdated: { type: Date, default: Date.now }
@@ -89,6 +92,30 @@ function getDailyRateByPlan(planName) {
     if (planName === 'ADVANCE') return 0.01;
     if (planName === 'STARTER') return 0.005;
     return 0.005;
+}
+
+function getPlanTierByDeposit(depositAmt) {
+    if (depositAmt >= 25.10) return 'GALAXY';
+    if (depositAmt >= 10.10) return 'PREMIUM';
+    if (depositAmt >= 2.10) return 'ADVANCE';
+    if (depositAmt >= 0.10) return 'STARTER';
+    return 'NONE';
+}
+
+function getSolReceivedForWallet(tx, targetWallet) {
+    if (!tx || !tx.meta || tx.meta.err) return 0;
+
+    const keys = tx.transaction.message.accountKeys.map(k =>
+        typeof k === 'string' ? k : (k.pubkey ? k.pubkey.toString() : '')
+    );
+    const idx = keys.indexOf(targetWallet);
+    if (idx === -1) return 0;
+
+    const preBal = tx.meta.preBalances?.[idx] ?? 0;
+    const postBal = tx.meta.postBalances?.[idx] ?? 0;
+    const diffLamports = postBal - preBal;
+
+    return diffLamports > 0 ? diffLamports / 1e9 : 0;
 }
 
 function calculateMiningSpeedPerSec(planName, depositAmount) {
@@ -344,6 +371,91 @@ function extractReferralCode(req) {
     }
     return str.replace(/^(ref_|start_|sponsor_)/i, '').trim() || null;
 }
+
+app.post('/api/user/verify-deposit', async (req, res) => {
+    try {
+        const { telegramId, txHash } = req.body || {};
+        const cleanId = String(telegramId || '').trim();
+        const cleanTx = String(txHash || '').trim();
+
+        if (!cleanId || !cleanTx) {
+            return res.status(400).json({ success: false, error: 'Telegram ID and Tx Hash are required' });
+        }
+
+        const user = await User.findOne({ telegramId: cleanId });
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+        if (user.isBlocked) {
+            return res.status(403).json({ success: false, error: 'User is blocked by admin' });
+        }
+
+        const alreadyUsed = await User.findOne({ usedTxHashes: cleanTx });
+        if (alreadyUsed) {
+            return res.status(400).json({ success: false, error: 'This transaction hash has already been used' });
+        }
+
+        const parsedTx = await connection.getParsedTransaction(cleanTx, {
+            commitment: 'confirmed',
+            maxSupportedTransactionVersion: 0
+        });
+
+        if (!parsedTx) {
+            return res.status(400).json({ success: false, error: 'Transaction not found or not confirmed yet on Solana' });
+        }
+
+        const receivedSol = getSolReceivedForWallet(parsedTx, DEPOSIT_WALLET_ADDRESS);
+        if (receivedSol < 0.10) {
+            return res.status(400).json({
+                success: false,
+                error: `Minimum deposit is 0.10 SOL. Detected ${receivedSol.toFixed(4)} SOL to deposit wallet.`
+            });
+        }
+
+        const nowMs = Date.now();
+        const prevDeposit = Math.max(0, parseFloat(user.userDepositAmount) || 0);
+        const prevSpeed = calculateMiningSpeedPerSec(user.activePlanTier, prevDeposit);
+        const prevTickMs = Number(user.lastMiningTickAt) || (user.lastUpdated ? new Date(user.lastUpdated).getTime() : nowMs);
+        const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
+        if (prevDeposit > 0 && prevSpeed > 0) {
+            user.minedSolBalance = Math.max(0, parseFloat(user.minedSolBalance) || 0) + (prevSpeed * elapsedSec);
+        }
+
+        const newDepositAmount = Number((prevDeposit + receivedSol).toFixed(4));
+        const newPlanTier = getPlanTierByDeposit(newDepositAmount);
+
+        user.userDepositAmount = newDepositAmount;
+        user.activePlanTier = newPlanTier;
+        user.miningSpeedPerSec = calculateMiningSpeedPerSec(newPlanTier, newDepositAmount);
+        user.lastMiningTickAt = nowMs;
+        user.lastUpdated = new Date(nowMs);
+        user.usedTxHashes = Array.isArray(user.usedTxHashes) ? [...user.usedTxHashes, cleanTx] : [cleanTx];
+
+        await recalculateUserLegs(user);
+        await user.save();
+
+        if (user.sponsor && user.sponsor !== 'None') {
+            await recalculateSponsorByRef(user.sponsor);
+        }
+
+        return res.json({
+            success: true,
+            addedSol: receivedSol,
+            user: {
+                telegramId: user.telegramId,
+                userDepositAmount: user.userDepositAmount,
+                activePlanTier: user.activePlanTier,
+                miningSpeedPerSec: user.miningSpeedPerSec,
+                minedSolBalance: user.minedSolBalance,
+                directReferralBonus: user.directReferralBonus || 0,
+                activeDirectsCount: user.activeDirectsCount || 0
+            }
+        });
+    } catch (err) {
+        console.error('Verify Deposit Error:', err);
+        return res.status(500).json({ success: false, error: err.message || 'Verification failed' });
+    }
+});
 
 app.post('/api/user/claim', async (req, res) => {
     try {
