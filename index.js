@@ -920,7 +920,9 @@ app.post('/api/admin/search', async (req, res) => {
                 strongestDone: user.userStrongestDone || 0,
                 otherDone: user.userOtherDone || 0,
                 userStrongestDone: user.userStrongestDone || 0,
-                userOtherDone: user.userOtherDone || 0
+                userOtherDone: user.userOtherDone || 0,
+                promoBonusBalance: user.promoBonusBalance ?? 0.0100,
+                promoTopupCount: user.promoTopupCount || 0
             }
         });
     } catch (err) {
@@ -1163,35 +1165,34 @@ app.post('/api/admin/set-fields', async (req, res) => {
             'highestAchievedRank'
         ];
 
-        const updateObj = {};
+        const nowMs = Date.now();
         for (const key of allowedKeys) {
             if (fields[key] !== undefined) {
-                updateObj[key] = fields[key];
+                user[key] = fields[key];
             }
         }
 
-        if (updateObj.userDepositAmount !== undefined) {
-            const dep = Number(updateObj.userDepositAmount);
-            updateObj.userDepositAmount = dep;
-            if (!updateObj.activePlanTier) {
-                updateObj.activePlanTier = getPlanTierByDeposit(dep);
+        if (fields.userDepositAmount !== undefined) {
+            const dep = Math.max(0, Number(fields.userDepositAmount) || 0);
+            user.userDepositAmount = dep;
+            if (!fields.activePlanTier) {
+                user.activePlanTier = getPlanTierByDeposit(dep);
             }
-            updateObj.miningSpeedPerSec = calculateMiningSpeedPerSec(updateObj.activePlanTier, dep);
+            user.miningSpeedPerSec = calculateMiningSpeedPerSec(user.activePlanTier, dep);
         }
 
-        updateObj.lastUpdated = new Date();
-        updateObj.lastMiningTickAt = Date.now();
+        applyPromoAutoTopup(user, nowMs);
+        await recalculateUserLegs(user);
 
-        const updated = await User.findOneAndUpdate(
-            { _id: user._id },
-            { $set: updateObj },
-            { new: true }
-        );
+        user.lastUpdated = new Date(nowMs);
+        user.lastMiningTickAt = nowMs;
+        await user.save();
 
-        if (updated.sponsor && updated.sponsor !== 'None') {
-            await recalculateSponsorByRef(updated.sponsor);
+        if (user.sponsor && user.sponsor !== 'None') {
+            await recalculateSponsorByRef(user.sponsor);
         }
 
+        const updated = await User.findById(user._id);
         res.json({ success: true, user: updated });
     } catch (err) {
         console.error('Admin Set Fields Error:', err);
