@@ -845,17 +845,17 @@
 
     <!-- DEPOSIT MODAL -->
     <div id="depositModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-cardBorder rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="bg-cardBg border border-cardBorder rounded-3xl p-5 max-w-sm w-full space-y-3.5 shadow-2xl max-h-[88vh] overflow-y-auto">
             <div class="flex justify-between items-center">
                 <h3 class="text-base font-black text-white" id="deposit-modal-title">💰 Deposit SOL</h3>
                 <button onclick="closeModal('depositModal')" class="text-gray-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
             </div>
-            
-            <div class="flex flex-col items-center justify-center space-y-3 bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80 shadow-inner">
-                <div class="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 shadow-lg">
+        
+            <div class="flex flex-col items-center justify-center space-y-2.5 bg-slate-900/80 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800/80 shadow-inner">
+                <div class="p-2 bg-slate-950/60 rounded-xl border border-slate-800 shadow-lg">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=BY3Tzt5cA8FwoPRw3B265jwb8NDU5dupf76SXwKqjnRZ&color=ffffff&bgcolor=0f172a" 
                          alt="Solana Deposit QR Code" 
-                         class="w-40 h-40 rounded-lg" />
+                         class="w-36 h-36 rounded-lg" />
                 </div>
 
                 <div class="w-full text-center bg-amber-500/10 border border-amber-500/30 p-2 rounded-xl text-xs font-mono font-bold text-amber-300">
@@ -871,13 +871,23 @@
             <p class="text-xs text-gray-300 leading-relaxed text-center">
                 Send SOL to the official deposit wallet address below:
             </p>
-            <div id="deposit-address-text" class="bg-slate-900 border border-slate-800 p-3 rounded-xl font-mono text-[11px] text-solGreen break-all text-center select-all">
+            <div id="deposit-address-text" class="bg-slate-900 border border-slate-800 p-2.5 rounded-xl font-mono text-[11px] text-solGreen break-all text-center select-all">
                 BY3Tzt5cA8FwoPRw3B265jwb8NDU5dupf76SXwKqjnRZ
             </div>
 
-            <div class="space-y-1.5 pt-1">
+            <div class="space-y-1.5 pt-0.5">
                 <label class="text-[10px] text-solGreen block font-bold uppercase tracking-wider">Enter Tx Hash for Auto-Verification</label>
                 <input type="text" id="tx-hash-input" placeholder="Paste Solana Transaction Hash here..." class="w-full bg-slate-900 border border-solGreen/40 rounded-xl p-2.5 text-xs text-white outline-none font-mono focus:border-solGreen">
+            </div>
+
+            <!-- Submit & Cancel buttons right above the note for easy access when keyboard is open -->
+            <div class="grid grid-cols-2 gap-2 pt-0.5">
+                <button onclick="closeModal('depositModal')" class="bg-slate-800 hover:bg-slate-700 transition py-2.5 rounded-xl font-bold text-xs text-white cursor-pointer">
+                    Cancel
+                </button>
+                <button onclick="verifyAndAutoUpdateDeposit()" class="bg-gradient-to-r from-solGreen to-emerald-500 hover:opacity-90 transition py-2.5 rounded-xl font-bold text-xs text-slate-950 shadow-lg shadow-solGreen/25 cursor-pointer">
+                    Submit & Auto-Update
+                </button>
             </div>
 
             <div class="bg-purple-950/60 border border-solPurple p-3 rounded-2xl space-y-1 text-left text-xs shadow-lg">
@@ -887,15 +897,6 @@
                 <p class="text-white leading-relaxed text-[10px] font-medium">
                     Enter your transaction hash above and click submit to instantly verify and auto-update your active package and balance!
                 </p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="closeModal('depositModal')" class="bg-slate-800 hover:bg-slate-700 transition py-2.5 rounded-xl font-bold text-xs text-white cursor-pointer">
-                    Cancel
-                </button>
-                <button onclick="verifyAndAutoUpdateDeposit()" class="bg-gradient-to-r from-solGreen to-emerald-500 hover:opacity-90 transition py-2.5 rounded-xl font-bold text-xs text-slate-950 shadow-lg shadow-solGreen/25 cursor-pointer">
-                    Submit & Auto-Update
-                </button>
             </div>
         </div>
     </div>
