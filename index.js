@@ -230,28 +230,72 @@ function getDownlineByLevels(allUsers, rootIdentifiersSet, maxLevel = 25) {
     return levelsMap;
 }
 
+const RANK_TIERS = [
+    { name: "STAR RANK", target: 30, strongestNeed: 12, otherNeed: 18, royalty: 0.03 },
+    { name: "ORBIT RANK", target: 100, strongestNeed: 40, otherNeed: 60, royalty: 0.10 },
+    { name: "SOLAR RANK", target: 300, strongestNeed: 120, otherNeed: 180, royalty: 0.30 },
+    { name: "SUPERNOVA RANK", target: 1000, strongestNeed: 400, otherNeed: 600, royalty: 1.00 },
+    { name: "GALAXY RANK", target: 3000, strongestNeed: 1200, otherNeed: 1800, royalty: 3.00 },
+    { name: "SUPER GALAXY RANK", target: 10000, strongestNeed: 4000, otherNeed: 6000, royalty: 10.00 },
+    { name: "CROWN RANK", target: 30000, strongestNeed: 12000, otherNeed: 18000, royalty: 30.00 },
+    { name: "GRAND CROWN RANK", target: 100000, strongestNeed: 40000, otherNeed: 60000, royalty: 100.00 },
+    { name: "UNIVERSE RANK", target: 300000, strongestNeed: 120000, otherNeed: 180000, royalty: 300.00 },
+    { name: "SUPREME UNIVERSE RANK", target: 1000000, strongestNeed: 400000, otherNeed: 600000, royalty: 1000.00 }
+];
+
+function computeLegVolumeForBranch(allUsers, branchRootDoc) {
+    const rootSet = getUserIdentifiersSet(branchRootDoc);
+    const levelsMap = getDownlineByLevels(allUsers, rootSet, 25);
+
+    let branchVolume = parseFloat(branchRootDoc.userDepositAmount) || 0;
+    for (let lvl = 1; lvl <= 25; lvl++) {
+        const members = levelsMap[lvl] || [];
+        for (const m of members) {
+            branchVolume += parseFloat(m.depositAmount) || 0;
+        }
+    }
+    return Number(branchVolume.toFixed(4));
+}
+
+function updateUserRankFromLegs(user) {
+    const strongest = parseFloat(user.userStrongestDone) || 0;
+    const other = parseFloat(user.userOtherDone) || 0;
+
+    let achievedRank = 'NO RANK';
+    let achievedRoyalty = 0.0;
+
+    for (const r of RANK_TIERS) {
+        if (strongest >= r.strongestNeed && other >= r.otherNeed) {
+            achievedRank = r.name;
+            achievedRoyalty = r.royalty;
+        }
+    }
+
+    user.highestAchievedRank = achievedRank;
+    user.rankRoyaltyBonus = achievedRoyalty;
+}
+
 async function recalculateUserLegs(user) {
     try {
-        const usernameClean = user.username ? user.username.replace(/^@+/, '').trim().toLowerCase() : '';
-        const telegramIdStr = user.telegramId ? String(user.telegramId).trim() : '';
+        const allUsers = await User.find(
+            {},
+            'telegramId username firstName profileName sponsor userDepositAmount lastUpdated activePlanTier'
+        );
 
-        const allUsers = await User.find({}, 'telegramId username sponsor userDepositAmount');
-        const directs = allUsers.filter(u => {
-            if (!u.telegramId || String(u.telegramId).trim() === telegramIdStr) return false;
-            const spNorm = normalizeHandle(u.sponsor);
-            if (!spNorm || spNorm === 'none') return false;
-            return (telegramIdStr && spNorm === telegramIdStr) || (usernameClean && spNorm === usernameClean);
-        });
+        const rootSet = getUserIdentifiersSet(user);
+        const levelsMap = getDownlineByLevels(allUsers, rootSet, 25);
+        const directs = levelsMap[1] || [];
 
         if (!directs || directs.length === 0) {
             user.userStrongestDone = 0.0;
             user.userOtherDone = 0.0;
             user.activeDirectsCount = 0;
             user.directReferralBonus = 0.0;
+            updateUserRankFromLegs(user);
             return;
         }
 
-        const activeDirects = directs.filter(d => (d.userDepositAmount || 0) > 0);
+        const activeDirects = directs.filter(d => (parseFloat(d.depositAmount) || 0) > 0);
         user.activeDirectsCount = activeDirects.length;
 
         const expectedPromo = 0.01 + (directs.length * 0.01);
@@ -259,25 +303,42 @@ async function recalculateUserLegs(user) {
             user.promoBonusBalance = expectedPromo;
         }
 
-        const totalDirectDeposit = directs.reduce((acc, d) => acc + (d.userDepositAmount || 0), 0);
+        const totalDirectDeposit = directs.reduce((acc, d) => acc + (parseFloat(d.depositAmount) || 0), 0);
         user.directReferralBonus = totalDirectDeposit * 0.05;
 
-        const directVolumes = directs.map(d => (d.userDepositAmount || 0));
-        directVolumes.sort((a, b) => b - a);
+        const branchVolumes = directs.map(d => {
+            const directDoc = allUsers.find(u => String(u.telegramId).trim() === String(d.telegramId).trim());
+            if (!directDoc) return parseFloat(d.depositAmount) || 0;
+            return computeLegVolumeForBranch(allUsers, directDoc);
+        });
 
-        user.userStrongestDone = directVolumes[0] || 0.0;
-        user.userOtherDone = directVolumes.slice(1).reduce((acc, val) => acc + val, 0.0);
+        branchVolumes.sort((a, b) => b - a);
+        user.userStrongestDone = branchVolumes[0] || 0.0;
+        user.userOtherDone = branchVolumes.slice(1).reduce((acc, val) => acc + val, 0.0);
+
+        updateUserRankFromLegs(user);
     } catch (err) {
         console.error('Error recalculating legs:', err);
     }
 }
 
 async function recalculateSponsorByRef(sponsorRef) {
-    const sponsorDoc = await findUserByIdentifier(sponsorRef);
-    if (sponsorDoc) {
+    let currentRef = cleanSponsorRaw(sponsorRef);
+    const visited = new Set();
+
+    while (currentRef && currentRef !== 'None') {
+        const sponsorDoc = await findUserByIdentifier(currentRef);
+        if (!sponsorDoc) break;
+
+        const docKey = String(sponsorDoc.telegramId).trim();
+        if (!docKey || visited.has(docKey)) break;
+        visited.add(docKey);
+
         await recalculateUserLegs(sponsorDoc);
         sponsorDoc.lastUpdated = Date.now();
         await sponsorDoc.save();
+
+        currentRef = cleanSponsorRaw(sponsorDoc.sponsor);
     }
 }
 
@@ -715,6 +776,7 @@ app.post('/api/user/sync', async (req, res) => {
                 team_override_bonus: user.teamOverrideBonus || 0,
                 rankRoyaltyBonus: user.rankRoyaltyBonus || 0,
                 rank_royalty_bonus: user.rankRoyaltyBonus || 0,
+                highestAchievedRank: user.highestAchievedRank || 'NO RANK',
                 totalEarnedAmount: user.totalEarnedAmount || 0,
                 strongestDone: user.userStrongestDone || 0,
                 otherDone: user.userOtherDone || 0,
