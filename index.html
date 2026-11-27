@@ -2371,27 +2371,39 @@
         const container = document.getElementById('all-ranks-container');
         if (!container) return;
 
-        const l1Members = (typeof levelMembersData !== 'undefined' && levelMembersData[1]) ? levelMembersData[1] : [];
-        
-        let legVolumes = [];
-        if (l1Members.length > 0) {
-            legVolumes = l1Members.map(m => {
-                let depStr = (typeof m === 'string') ? m : (m.deposit || "0");
-                let numMatch = String(depStr).match(/[\d.]+/);
-                return numMatch ? parseFloat(numMatch[0]) : 0.0;
-            });
-        }
+        const hasServerLegs =
+            (typeof userStrongestDone === 'number' && userStrongestDone > 0) ||
+            (typeof userOtherDone === 'number' && userOtherDone > 0);
 
         let rawStrongest = 0;
         let rawOther = 0;
 
-        if (legVolumes.length > 0) {
-            rawStrongest = Math.max(...legVolumes);
-            const totalRaw = legVolumes.reduce((sum, v) => sum + v, 0);
-            rawOther = totalRaw - rawStrongest;
+        if (hasServerLegs) {
+            rawStrongest = parseFloat(userStrongestDone) || 0;
+            rawOther = parseFloat(userOtherDone) || 0;
         } else {
-            rawStrongest = userStrongestDone || 0;
-            rawOther = userOtherDone || 0;
+            const l1Members = (typeof levelMembersData !== 'undefined' && levelMembersData[1]) ? levelMembersData[1] : [];
+
+            let legVolumes = [];
+            if (l1Members.length > 0) {
+                legVolumes = l1Members.map(m => {
+                    if (typeof m === 'object' && m !== null && typeof m.depositAmount !== 'undefined') {
+                        return parseFloat(m.depositAmount) || 0;
+                    }
+                    let depStr = (typeof m === 'string') ? m : (m.deposit || "0");
+                    let numMatch = String(depStr).match(/[\d.]+/);
+                    return numMatch ? parseFloat(numMatch[0]) : 0.0;
+                });
+            }
+
+            if (legVolumes.length > 0) {
+                rawStrongest = Math.max(...legVolumes);
+                const totalRaw = legVolumes.reduce((sum, v) => sum + v, 0);
+                rawOther = totalRaw - rawStrongest;
+            } else {
+                rawStrongest = parseFloat(userStrongestDone) || 0;
+                rawOther = parseFloat(userOtherDone) || 0;
+            }
         }
 
         const ranks = [
@@ -2407,20 +2419,19 @@
             {name: "SUPREME UNIVERSE RANK", symbol: "🏆", target: 1000000, strongestNeed: 400000, otherNeed: 600000, royalty: "1000.00 SOL", theme: "fuchsia", textCol: "text-fuchsia-400", borderCol: "border-fuchsia-500/30", bgGrad: "from-fuchsia-950/20", barGrad: "from-fuchsia-500 to-pink-400"}
         ];
 
-        let highestAchieved = "NO RANK";
+        let highestAchieved = highestAchievedRank || "NO RANK";
         let highestRoyalty = "0.00 SOL Daily Basis";
 
         container.innerHTML = ranks.map((r) => {
             const countedStrongest = Math.min(rawStrongest, r.strongestNeed);
             const countedOther = Math.min(rawOther, r.otherNeed);
 
-            // Check if individual leg requirements are met
             const isStrongestAchieved = rawStrongest >= r.strongestNeed;
             const isOtherAchieved = rawOther >= r.otherNeed;
 
             const currentTotalDone = countedStrongest + countedOther;
             const progress = Math.min(100, Math.floor((currentTotalDone / r.target) * 100));
-            
+
             let status = "Locked";
             if (isStrongestAchieved && isOtherAchieved) {
                 status = "Achieved";
@@ -2482,6 +2493,11 @@
             </div>
         `;
         }).join('');
+
+        const matchedRank = ranks.find(item => item.name === highestAchieved);
+        if (matchedRank) {
+            highestRoyalty = `${matchedRank.royalty} Daily Basis`;
+        }
 
         const titleEl = document.getElementById('highest-rank-title');
         const bonusEl = document.getElementById('highest-rank-bonus');
@@ -2664,6 +2680,9 @@
                         teamReferralBonus = parseFloat(data.user.teamReferralBonus || data.user.team_referral_bonus || 0);
                         teamOverrideBonus = parseFloat(data.user.teamOverrideBonus || data.user.team_override_bonus || 0);
                         rankRoyaltyBonus = parseFloat(data.user.rankRoyaltyBonus || data.user.rank_royalty_bonus || 0);
+                        userStrongestDone = parseFloat(data.user.userStrongestDone ?? data.user.strongestDone) || 0;
+                        userOtherDone = parseFloat(data.user.userOtherDone ?? data.user.otherDone) || 0;
+                        highestAchievedRank = data.user.highestAchievedRank || 'NO RANK';
 
                         // Automatically set Available Balance to the exact sum of all Earning Breakdown bonuses
                         availableSolBalance = selfFarmingBonus + directReferralBonus + teamReferralBonus + teamOverrideBonus + rankRoyaltyBonus;
