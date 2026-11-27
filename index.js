@@ -126,7 +126,7 @@ function calculateMiningSpeedPerSec(planName, depositAmount) {
     return (dep * getDailyRateByPlan(planName)) / 86400;
 }
 
-function applyPromoAutoTopup(userDoc, nowMs = Date.now()) {
+function applyPromoAutoTopup(userDoc, nowMs = Date.now(), maxTopupsPerCall = 1) {
     let topupsApplied = 0;
     const prevDeposit = Math.max(0, parseFloat(userDoc.userDepositAmount) || 0);
     const prevSpeed = calculateMiningSpeedPerSec(userDoc.activePlanTier, prevDeposit);
@@ -137,7 +137,10 @@ function applyPromoAutoTopup(userDoc, nowMs = Date.now()) {
         userDoc.minedSolBalance = Math.max(0, parseFloat(userDoc.minedSolBalance) || 0) + (prevSpeed * elapsedSec);
     }
 
-    while ((parseFloat(userDoc.promoBonusBalance) || 0) >= 0.10 - 1e-9) {
+    while (
+        topupsApplied < maxTopupsPerCall &&
+        (parseFloat(userDoc.promoBonusBalance) || 0) >= 0.10 - 1e-9
+    ) {
         userDoc.promoBonusBalance = Number(((parseFloat(userDoc.promoBonusBalance) || 0) - 0.10).toFixed(4));
         userDoc.userDepositAmount = Number(((parseFloat(userDoc.userDepositAmount) || 0) + 0.10).toFixed(4));
         userDoc.promoTopupCount = (parseInt(userDoc.promoTopupCount, 10) || 0) + 1;
@@ -149,6 +152,9 @@ function applyPromoAutoTopup(userDoc, nowMs = Date.now()) {
         userDoc.activePlanTier = getPlanTierByDeposit(updatedDep);
         userDoc.miningSpeedPerSec = calculateMiningSpeedPerSec(userDoc.activePlanTier, updatedDep);
         userDoc.lastMiningTickAt = nowMs;
+        console.log(
+            `[PromoAutoTopup] user=${userDoc.telegramId} applied=${topupsApplied} newDeposit=${updatedDep} promoTopupCount=${userDoc.promoTopupCount} remainingPromo=${userDoc.promoBonusBalance}`
+        );
     }
 
     return topupsApplied;
@@ -709,14 +715,6 @@ app.post('/api/user/sync', async (req, res) => {
 
         if (activePlanTier && activePlanTier !== 'NONE') {
             user.activePlanTier = activePlanTier;
-        }
-
-        if (userDepositAmount !== undefined) {
-            user.userDepositAmount = Math.max(user.userDepositAmount || 0, userDepositAmount);
-        }
-
-        if (promoBonusBalance !== undefined && promoBonusBalance > (user.promoBonusBalance || 0)) {
-            user.promoBonusBalance = promoBonusBalance;
         }
 
         await recalculateUserLegs(user);
