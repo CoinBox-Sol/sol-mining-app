@@ -81,6 +81,7 @@ const userSchema = new mongoose.Schema({
     usedTxHashes: { type: [String], default: [] },
 
     totalEarnedAmount: { type: Number, default: 0.0000 },
+    totalWithdrawn: { type: Number, default: 0.0000 },
     lastWithdrawalAt: { type: Date, default: null },
     lastMiningTickAt: { type: Number, default: Date.now },
     lastUpdated: { type: Date, default: Date.now }
@@ -716,15 +717,6 @@ app.post('/api/user/sync', async (req, res) => {
 
         const isExplicitClaim = req.body.isClaim === true;
 
-        if (!isExplicitClaim) {
-            if (availableSolBalance !== undefined && availableSolBalance > (user.availableSolBalance || 0)) {
-                user.availableSolBalance = availableSolBalance;
-            }
-            if (totalSelfFarmingClaimed !== undefined && totalSelfFarmingClaimed > (user.totalSelfFarmingClaimed || 0)) {
-                user.totalSelfFarmingClaimed = totalSelfFarmingClaimed;
-            }
-        }
-
         if (activePlanTier && activePlanTier !== 'NONE') {
             user.activePlanTier = activePlanTier;
         }
@@ -811,6 +803,7 @@ app.post('/api/user/sync', async (req, res) => {
                 rank_royalty_bonus: user.rankRoyaltyBonus || 0,
                 highestAchievedRank: user.highestAchievedRank || 'NO RANK',
                 totalEarnedAmount: user.totalEarnedAmount || 0,
+                totalWithdrawn: user.totalWithdrawn || 0,
                 lastWithdrawalAt: user.lastWithdrawalAt || null,
                 strongestDone: user.userStrongestDone || 0,
                 otherDone: user.userOtherDone || 0,
@@ -1425,9 +1418,11 @@ async function handleWithdrawalRequest(req, res) {
 
             const nextAvailableBal = Number(Math.max(0, currentBal - parsedAmount).toFixed(6));
             const currentEarned = parseFloat(user.totalEarnedAmount) || 0;
+            const prevWithdrawn = parseFloat(user.totalWithdrawn) || 0;
 
             user.availableSolBalance = nextAvailableBal;
-            user.totalEarnedAmount = Number(Math.max(0, currentEarned - parsedAmount).toFixed(6));
+            user.totalWithdrawn = Number((prevWithdrawn + parsedAmount).toFixed(6));
+            user.totalEarnedAmount = Number((currentEarned + parsedAmount).toFixed(6));
             user.lastWithdrawalAt = new Date();
             user.lastUpdated = new Date();
             await user.save();
@@ -1461,9 +1456,11 @@ async function handleWithdrawalRequest(req, res) {
         } else {
             const nextAvailableBal = Number(Math.max(0, currentBal - parsedAmount).toFixed(6));
             const currentEarned = parseFloat(user.totalEarnedAmount) || 0;
+            const prevWithdrawn = parseFloat(user.totalWithdrawn) || 0;
 
             user.availableSolBalance = nextAvailableBal;
-            user.totalEarnedAmount = Number(Math.max(0, currentEarned - parsedAmount).toFixed(6));
+            user.totalWithdrawn = Number((prevWithdrawn + parsedAmount).toFixed(6));
+            user.totalEarnedAmount = Number((currentEarned + parsedAmount).toFixed(6));
             user.lastWithdrawalAt = new Date();
             user.lastUpdated = new Date();
             await user.save();
