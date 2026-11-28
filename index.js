@@ -145,13 +145,15 @@ function calculateMiningSpeedPerSec(planName, depositAmount) {
 function applyPromoAutoTopup(userDoc, nowMs = Date.now(), maxTopupsPerCall = 1) {
     let topupsApplied = 0;
     const prevDeposit = Math.max(0, parseFloat(userDoc.userDepositAmount) || 0);
-    const prevSpeed = calculateMiningSpeedPerSec(userDoc.activePlanTier, prevDeposit);
+    const prevTier = getPlanTierByDeposit(prevDeposit);
+    const prevSpeed = calculateMiningSpeedPerSec(prevTier, prevDeposit);
     const prevTickMs = Number(userDoc.lastMiningTickAt) || (userDoc.lastUpdated ? new Date(userDoc.lastUpdated).getTime() : nowMs);
-    const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
+    const elapsedSec = Math.max(0, Math.min((nowMs - prevTickMs) / 1000, 86400 * 7));
 
     if (prevDeposit > 0 && prevSpeed > 0 && elapsedSec > 0) {
         userDoc.minedSolBalance = Math.max(0, parseFloat(userDoc.minedSolBalance) || 0) + (prevSpeed * elapsedSec);
     }
+    userDoc.lastMiningTickAt = nowMs;
 
     const unitThreshold = 0.10;
     let currentPromo = Number((parseFloat(userDoc.promoBonusBalance) || 0).toFixed(4));
@@ -169,10 +171,6 @@ function applyPromoAutoTopup(userDoc, nowMs = Date.now(), maxTopupsPerCall = 1) 
         const updatedDep = Math.max(0, parseFloat(userDoc.userDepositAmount) || 0);
         userDoc.activePlanTier = getPlanTierByDeposit(updatedDep);
         userDoc.miningSpeedPerSec = calculateMiningSpeedPerSec(userDoc.activePlanTier, updatedDep);
-        userDoc.lastMiningTickAt = nowMs;
-        console.log(
-            `[PromoAutoTopup] user=${userDoc.telegramId} applied=${topupsApplied} newDeposit=${updatedDep} promoTopupCount=${userDoc.promoTopupCount} remainingPromo=${userDoc.promoBonusBalance}`
-        );
     }
 
     return topupsApplied;
@@ -384,8 +382,7 @@ async function recalculateSponsorByRef(sponsorRef) {
         visited.add(docKey);
 
         await recalculateUserLegs(sponsorDoc);
-        applyPromoAutoTopup(sponsorDoc, Date.now());
-        sponsorDoc.lastUpdated = Date.now();
+        sponsorDoc.lastUpdated = new Date();
         await sponsorDoc.save();
 
         currentRef = cleanSponsorRaw(sponsorDoc.sponsor);
@@ -717,24 +714,21 @@ app.post('/api/user/sync', async (req, res) => {
 
         const isExplicitClaim = req.body.isClaim === true;
 
-        if (activePlanTier && activePlanTier !== 'NONE') {
-            user.activePlanTier = activePlanTier;
-        }
-
         await recalculateUserLegs(user);
 
         const nowMs = Date.now();
         applyPromoAutoTopup(user, nowMs);
 
         const currentDeposit = Math.max(0, parseFloat(user.userDepositAmount) || 0);
-        user.activePlanTier = getPlanTierByDeposit(currentDeposit);
+        const planTier = getPlanTierByDeposit(currentDeposit);
+        const speedPerSec = calculateMiningSpeedPerSec(planTier, currentDeposit);
 
-        const speedPerSec = calculateMiningSpeedPerSec(user.activePlanTier, currentDeposit);
+        user.activePlanTier = planTier;
         user.miningSpeedPerSec = speedPerSec;
 
         const prevTickMs = Number(user.lastMiningTickAt) || (user.lastUpdated ? new Date(user.lastUpdated).getTime() : nowMs);
-        const elapsedSec = Math.max(0, (nowMs - prevTickMs) / 1000);
-        const accruedSinceLastTick = currentDeposit > 0 ? (speedPerSec * elapsedSec) : 0;
+        const elapsedSec = Math.max(0, Math.min((nowMs - prevTickMs) / 1000, 86400 * 7));
+        const accruedSinceLastTick = (currentDeposit > 0 && speedPerSec > 0) ? (speedPerSec * elapsedSec) : 0;
 
         if (isExplicitClaim) {
             const totalToClaim = Math.max(0, (parseFloat(user.minedSolBalance) || 0) + accruedSinceLastTick);
